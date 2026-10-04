@@ -1,0 +1,123 @@
+#!/usr/bin/env bash
+# Ship the committed HEAD to production.
+#
+#   bin/server-deploy               build assets locally, deploy HEAD
+#   bin/server-deploy --skip-build  reuse the current public/build
+#   bin/server-deploy --dry-run     run every check and the build, change nothing on the server
+#
+# Refuses to run if the server has edits that are not in git (run bin/server-pull),
+# or if HEAD does not contain the latest server state.
+source "$(dirname "$0")/lib/server.sh"
+cd "$REPO_ROOT"
+
+build=1 dry_run=0
+for arg in "$@"; do
+    case "$arg" in
+        --skip-build) build=0 ;;
+        --dry-run) dry_run=1 ;;
+        *) die "Unknown option: $arg" ;;
+    esac
+done
+
+require_clean_tree
+ensure_production_branch
+git merge-base --is-ancestor "$PRODUCTION_BRANCH" HEAD \
+    || die "HEAD does not contain '$PRODUCTION_BRANCH'. Run bin/server-pull first."
+[[ "$(git rev-parse HEAD)" != "$(git rev-parse "$PRODUCTION_BRANCH")" ]] \
+    || die "Nothing to deploy: HEAD is already on the server."
+
+info "Checking the server for edits that are not in git"
+drift="$(server_drift)"
+[[ -z "$drift" ]] || { printf '%s\n' "$drift"; die "Server has unsynced edits. Run bin/server-pull first."; }
+
+info "Changes going out:"
+git diff --stat "$PRODUCTION_BRANCH" HEAD | tail -n 25
+if git diff --name-only "$PRODUCTION_BRANCH" HEAD | grep -q '^database/migrations/'; then
+    warn "This deploy includes database migrations."
+fi
+
+if (( build )); then
+    info "Building front-end assets"
+    [[ -d node_modules ]] || npm ci --no-audit --no-fund
+    npm run build
+fi
+[[ -f public/build/manifest.json ]] || die "public/build/manifest.json missing. Run npm run build."
+
+commit="$(git rev-parse HEAD)"
+prev_commit="$(git rev-parse "$PRODUCTION_BRANCH")"
+stamp="$(date -u +%Y%m%d-%H%M%S)"
+tmp="$(mktemp -d)"
+trap 'rm -rf "$tmp"' EXIT
+git archive --format=tar.gz -o "$tmp/code.tgz" HEAD
+tar -czf "$tmp/build.tgz" -C public build
+
+if (( dry_run )); then
+    ok "Dry run complete. Would deploy $(git rev-parse --short HEAD) ($(du -h "$tmp/code.tgz" | cut -f1) code)."
+    exit 0
+fi
+
+info "Uploading release $stamp"
+release="$REMOTE_STATE/releases/$stamp"
+ssh -o BatchMode=yes -o LogLevel=ERROR "$FINDO_SSH_HOST" \
+    "install -d -m 700 '$REMOTE_STATE' '$REMOTE_STATE/releases' '$REMOTE_STATE/backups' '$release' \
+     && cat > '$release/code.tgz'" < "$tmp/code.tgz"
+ssh -o BatchMode=yes -o LogLevel=ERROR "$FINDO_SSH_HOST" "cat > '$release/build.tgz'" < "$tmp/build.tgz"
+git diff --name-only --no-renames --diff-filter=D "$prev_commit" HEAD \
+    | ssh -o BatchMode=yes -o LogLevel=ERROR "$FINDO_SSH_HOST" "cat > '$release/deleted.txt'"
+
+info "Installing on the server"
+install_script() {
+    printf 'STAMP=%q\nPREV_COMMIT=%q\n' "$stamp" "$prev_commit"
+    cat <<'EOF'
+REL="$STATE/releases/$STAMP"
+exec 9>"$STATE/deploy.lock"
+flock -n 9 || { echo "Another deploy is running." >&2; exit 1; }
+
+echo "  backup → $STATE/backups/$STAMP-before.tgz"
+{ scope_files "$APP"; (cd "$APP" && find public/build -type f); } \
+    | tar -C "$APP" -czf "$STATE/backups/$STAMP-before.tgz" --verbatim-files-from -T -
+echo "$PREV_COMMIT" > "$STATE/backups/$STAMP-before.commit"
+
+mkdir "$REL/code" "$REL/build"
+tar -xzf "$REL/code.tgz" -C "$REL/code"
+tar -xzf "$REL/build.tgz" -C "$REL/build"
+
+echo "  copying files"
+cp -a "$REL/code/." "$APP/"
+(cd "$APP" && xargs -r -d '\n' rm -f -- < "$REL/deleted.txt")
+# Keep old hashed assets so pages cached by browsers keep working.
+cp -a "$REL/build/build/." "$APP/public/build/"
+find "$APP" -path "$APP/public/wp-content" -prune -o ! -user findo -exec chown -h findo:findo {} +
+
+cd "$APP"
+echo "  composer install"
+as_findo "$PHP" /usr/bin/composer install --no-dev --optimize-autoloader --no-interaction --no-progress --quiet
+echo "  migrate"
+as_findo "$PHP" artisan migrate --force --no-interaction
+echo "  optimize"
+as_findo "$PHP" artisan optimize --quiet
+as_findo "$PHP" artisan queue:restart --quiet
+/usr/local/lsws/bin/lswsctrl restart >/dev/null
+
+ls -1dt "$STATE/releases"/* | tail -n +6 | xargs -r rm -rf
+ls -1t "$STATE/backups"/*-before.* | tail -n +21 | xargs -r rm -f
+
+sleep 2
+code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 "$SITE_URL")
+echo "  site → HTTP $code"
+[[ "$code" == 200 ]] || exit 42
+EOF
+}
+status=0
+install_script | remote || status=$?
+if (( status != 0 && status != 42 )); then
+    die "Deploy stopped on the server (exit $status). Files may be half-copied; restore with: bin/server-rollback $stamp"
+fi
+
+git branch -f "$PRODUCTION_BRANCH" "$commit"
+git tag "deploy-$stamp" "$commit"
+if git remote get-url origin >/dev/null 2>&1; then
+    git push -q origin "$PRODUCTION_BRANCH" "deploy-$stamp" || warn "Could not push to origin."
+fi
+(( status != 42 )) || die "Deployed, but the site did not return HTTP 200. Roll back with: bin/server-rollback $stamp"
+ok "Deployed $(git rev-parse --short "$commit") as deploy-$stamp"

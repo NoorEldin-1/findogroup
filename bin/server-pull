@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# Bring code edited directly on the server into git. Read-only on the server.
+#
+#   bin/server-pull            commit server state to `production`, merge into current branch
+#   bin/server-pull --no-merge only update `production`
+source "$(dirname "$0")/lib/server.sh"
+cd "$REPO_ROOT"
+
+merge=1
+[[ "${1:-}" == "--no-merge" ]] && merge=0
+
+require_clean_tree
+ensure_production_branch
+
+tmp="$(mktemp -d)"
+cleanup() { git worktree remove --force "$tmp/wt" >/dev/null 2>&1 || true; rm -rf "$tmp"; }
+trap cleanup EXIT
+
+info "Downloading code from $FINDO_SSH_HOST:$REMOTE_APP"
+remote > "$tmp/code.tgz" <<'EOF'
+scope_files "$APP" | tar -C "$APP" -czf - --verbatim-files-from -T -
+EOF
+mkdir "$tmp/tree"
+tar -xzf "$tmp/code.tgz" -C "$tmp/tree"
+
+info "Recording server state on '$PRODUCTION_BRANCH'"
+git worktree add -q "$tmp/wt" "$PRODUCTION_BRANCH"
+scope_files "$tmp/wt" | (cd "$tmp/wt" && xargs -r -d '\n' rm -f)
+cp -a "$tmp/tree/." "$tmp/wt/"
+git -C "$tmp/wt" add -A
+if git -C "$tmp/wt" diff --cached --quiet; then
+    ok "Server matches '$PRODUCTION_BRANCH' — nothing new on the server."
+else
+    git -C "$tmp/wt" diff --cached --stat | tail -n 25
+    git -C "$tmp/wt" commit -q -m "sync(server): pull production state $(date -u +%Y-%m-%dT%H:%MZ)"
+    ok "Committed server changes to '$PRODUCTION_BRANCH' ($(git rev-parse --short "$PRODUCTION_BRANCH"))"
+fi
+cleanup
+trap - EXIT
+
+if (( merge )); then
+    git merge --no-edit "$PRODUCTION_BRANCH" \
+        || die "Merge conflict between your branch and the server. Resolve, then commit."
+    ok "Merged '$PRODUCTION_BRANCH' into $(git branch --show-current)"
+fi
+
+if git remote get-url origin >/dev/null 2>&1; then
+    git push -q origin "$PRODUCTION_BRANCH" && ok "Pushed '$PRODUCTION_BRANCH' to origin"
+fi

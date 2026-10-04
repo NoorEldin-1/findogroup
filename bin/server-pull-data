@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# Copy runtime data that is not in git from the server. Read-only on the server.
+#
+#   bin/server-pull-data --db      PostgreSQL dump → .server-data/db/findo_production-<stamp>.dump
+#   bin/server-pull-data --cms     storage/app/cms (renderer.cjs, seed.json, templates, media manifest)
+#   bin/server-pull-data --media   public/wp-content + public/media (~1.4 GB)
+#
+# Flags can be combined. Nothing here touches .env or other secrets.
+source "$(dirname "$0")/lib/server.sh"
+cd "$REPO_ROOT"
+
+(( $# )) || { sed -n '2,8p' "$0" | sed 's/^# \{0,1\}//'; exit 1; }
+
+pull_tree() {
+    local paths="$1"
+    info "Downloading $paths"
+    printf 'PATHS=%q\n' "$paths" | cat - <(cat <<'EOF'
+cd "$APP" && tar -czf - $PATHS
+EOF
+) | remote | tar -xzf - -C "$REPO_ROOT"
+    ok "Extracted $paths"
+}
+
+for arg in "$@"; do
+    case "$arg" in
+        --db)
+            mkdir -p .server-data/db
+            out=".server-data/db/findo_production-$(date -u +%Y%m%d-%H%M%S).dump"
+            info "Dumping database to $out"
+            remote > "$out" <<'EOF'
+runuser -u postgres -- /usr/pgsql-17/bin/pg_dump -Fc -d findo_production
+EOF
+            ok "Database dump: $out ($(du -h "$out" | cut -f1))"
+            ;;
+        --cms) pull_tree "storage/app/cms" ;;
+        --media) pull_tree "public/wp-content public/media" ;;
+        *) die "Unknown option: $arg" ;;
+    esac
+done

@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# Restore the code that was on the server before a deploy.
+#
+#   bin/server-rollback            list available backups
+#   bin/server-rollback <stamp>    restore the backup taken by deploy-<stamp>
+#
+# Restores code and public/build only. Database migrations are NOT reverted.
+source "$(dirname "$0")/lib/server.sh"
+cd "$REPO_ROOT"
+
+stamp="${1:-}"
+if [[ -z "$stamp" ]]; then
+    info "Backups on the server (pass one as the argument):"
+    remote <<'EOF'
+ls -1t "$STATE/backups" 2>/dev/null | sed -n 's/-before\.tgz$//p' | sed 's/^/  /'
+EOF
+    exit 0
+fi
+[[ "$stamp" =~ ^[0-9]{8}-[0-9]{6}$ ]] || die "Invalid stamp: $stamp"
+
+warn "This replaces the live code with the backup from before deploy-$stamp."
+read -r -p "Type the stamp again to confirm: " confirm
+[[ "$confirm" == "$stamp" ]] || die "Cancelled."
+
+restore_script() {
+    printf 'STAMP=%q\n' "$stamp"
+    cat <<'EOF'
+BACKUP="$STATE/backups/$STAMP-before.tgz"
+[[ -f "$BACKUP" ]] || { echo "No backup $BACKUP" >&2; exit 1; }
+exec 9>"$STATE/deploy.lock"
+flock -n 9 || { echo "A deploy is running." >&2; exit 1; }
+
+# Remove code files that did not exist before the deploy, then restore.
+comm -23 <(scope_files "$APP") <(tar -tzf "$BACKUP" | grep -v '/$' | LC_ALL=C sort) \
+    | grep -v '^public/build/' | (cd "$APP" && xargs -r -d '\n' rm -f --)
+tar -xzf "$BACKUP" -C "$APP"
+find "$APP" -path "$APP/public/wp-content" -prune -o ! -user findo -exec chown -h findo:findo {} +
+
+cd "$APP"
+as_findo "$PHP" /usr/bin/composer install --no-dev --optimize-autoloader --no-interaction --no-progress --quiet
+as_findo "$PHP" artisan optimize --quiet
+as_findo "$PHP" artisan queue:restart --quiet
+/usr/local/lsws/bin/lswsctrl restart >/dev/null
+cat "$STATE/backups/$STAMP-before.commit"
+EOF
+}
+
+restored_commit="$(restore_script | remote | tail -n 1)"
+git branch -f "$PRODUCTION_BRANCH" "$restored_commit"
+ok "Server restored to $(git rev-parse --short "$restored_commit"); '$PRODUCTION_BRANCH' moved there."
+warn "Your branch still has the rolled-back commits. Fix forward, then bin/server-deploy."

@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Show what is on the server vs git. Read-only on the server.
+source "$(dirname "$0")/lib/server.sh"
+cd "$REPO_ROOT"
+ensure_production_branch
+
+info "'$PRODUCTION_BRANCH' is at $(git log -1 --format='%h %s (%cr)' "$PRODUCTION_BRANCH")"
+ahead=$(git rev-list --count "$PRODUCTION_BRANCH..HEAD")
+behind=$(git rev-list --count "HEAD..$PRODUCTION_BRANCH")
+info "HEAD is $ahead commit(s) ahead of the server, $behind behind"
+
+info "Comparing server files with '$PRODUCTION_BRANCH'"
+drift="$(server_drift)"
+if [[ -z "$drift" ]]; then
+    ok "No unsynced edits on the server."
+else
+    warn "Server has edits not in git (M=modified A=added D=deleted). Run bin/server-pull:"
+    printf '%s\n' "$drift"
+fi
+
+info "Server services"
+remote <<'EOF'
+for unit in lshttpd findo-queue findo-redis findo-scheduler.timer postgresql-17; do
+    printf '  %-22s %s\n' "$unit" "$(systemctl is-active "$unit" 2>/dev/null || true)"
+done
+printf '  %-22s HTTP %s\n' "site" "$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$SITE_URL")"
+EOF

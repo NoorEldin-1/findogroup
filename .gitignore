@@ -29,3 +29,7 @@ Thumbs.db
 /storage/backups/
 /public/wp-content/
 /public/findo-profile-v2.pdf
+
+# Local-only: data pulled from the server (bin/server-pull-data) and editor settings
+/.server-data/
+/.claude/settings.local.json
