@@ -1,0 +1,8 @@
+@extends('admin.layout')
+@section('title',__('مصفوفة الصلاحيات'))
+@section('content')
+<div class="page-heading"><div><h1>{{ __('مصفوفة الصلاحيات') }}</h1><p class="muted">{{ __('المنع في الخادم. الموظف يرى تقييمه، والمدير المباشر يرى تقارير فريقه فقط. السجلات الحساسة لها نطاق خاص.') }}</p></div><a class="button" href="/admin/users">{{ __('إدارة الحسابات') }}</a></div>
+<div class="card table-card"><table><thead><tr><th>{{ __('الدور') }}</th>@foreach(config('operating.groups') as $group)<th>{{ $catalog->label($group['label']) }}</th>@endforeach</tr></thead><tbody>@foreach(config('operating.roles') as $role=>$label)<tr><td>{{ $catalog->label($label) }}</td>@foreach(config('operating.groups') as $group)<td>{{ $role==='owner'?'R / W / A':(in_array($role,$group['write'],true)?'R / W':(in_array($role,$group['read'],true)?'R':'—')) }}</td>@endforeach</tr>@endforeach</tbody></table></div>
+<div class="notice">R: {{ __('قراءة') }} · W: {{ __('تعديل ضمن نطاق الدور') }} · A: {{ __('اعتماد') }}. {{ __('الاعتمادات المالية للإدارة؛ تفويض مكتوب محدد المدة والسقف يسمح بالاستثناء المحدد فقط.') }}</div>
+<section class="card"><h2>{{ __('حدود مهمة') }}</h2><ul><li>{{ __('المطور يعدّل مهامه، والمراجع يقبل مراجعة مستقلة. QA يثبت النتيجة على إصدار محدد.') }}</li><li>{{ __('المصمم والمونتير يعملان على مخرجاتهما المخصصة. دور إدخال البيانات لا يفتح العقود والمالية.') }}</li><li>{{ __('صلاحية الموقع مستقلة عن دور التشغيل؛ تُمنح من شاشة الحسابات.') }}</li><li>{{ __('سجل التدقيق والإصدارات لا يملك زر حذف. القرارات الإدارية ليست تلقائية.') }}</li></ul><a href="/admin/operations/delegations">{{ __('التفويضات المكتوبة') }} ↗</a></section>
+@endsection

@@ -1,0 +1,1 @@
+<img class="brand-logo" src="{{ (app(\App\Services\Cms::class)->collection('settings')['logo'] ?? '') ?: '/wp-content/themes/findo-wordpress-theme/react-build/assets/findo-logo.png' }}" alt="Findo Group" width="184" height="47">

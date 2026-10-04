@@ -1,0 +1,591 @@
+import {cmsCollection} from '@/adapters/cms.js';
+import {
+  Globe,
+  ShoppingCart,
+  LayoutTemplate,
+  Smartphone,
+  TabletSmartphone,
+  LayoutDashboard,
+  Users,
+  Building2,
+  UserCog,
+  CreditCard,
+  CalendarCheck,
+  GraduationCap,
+  Store,
+  Boxes,
+  Brain,
+  Plug,
+  Palette,
+  Sparkles,
+  Wrench,
+  Cloud,
+  ShieldCheck,
+  Megaphone,
+  Share2,
+  Target,
+  Clapperboard
+} from "lucide-react";
+export const ENTERPRISE_LABEL = { ar: "Contact Sales", en: "Contact Sales" };
+const original_pricingGroups = [
+  { id: "web", icon: Globe, nameAr: "\u0627\u0644\u0645\u0648\u0627\u0642\u0639 \u0648\u0627\u0644\u0645\u062A\u0627\u062C\u0631", nameEn: "Web & Stores" },
+  { id: "apps", icon: Smartphone, nameAr: "\u062A\u0637\u0628\u064A\u0642\u0627\u062A \u0627\u0644\u062C\u0648\u0627\u0644", nameEn: "Mobile Apps" },
+  { id: "systems", icon: LayoutDashboard, nameAr: "\u0627\u0644\u0623\u0646\u0638\u0645\u0629 \u0648\u0627\u0644\u0645\u0646\u0635\u0651\u0627\u062A", nameEn: "Systems & Platforms" },
+  { id: "ai", icon: Brain, nameAr: "\u0627\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0627\u0635\u0637\u0646\u0627\u0639\u064A \u0648\u0627\u0644\u062A\u0642\u0646\u064A\u0629", nameEn: "AI & Tech" },
+  { id: "design", icon: Palette, nameAr: "\u0627\u0644\u062A\u0635\u0645\u064A\u0645 \u0648\u0627\u0644\u0647\u0648\u064A\u0629", nameEn: "Design & Branding" },
+  { id: "marketing", icon: Megaphone, nameAr: "\u0627\u0644\u062A\u0633\u0648\u064A\u0642 \u0627\u0644\u0631\u0642\u0645\u064A", nameEn: "Digital Marketing" },
+  { id: "support", icon: Wrench, nameAr: "\u0627\u0644\u062F\u0639\u0645 \u0648\u0627\u0644\u0635\u064A\u0627\u0646\u0629", nameEn: "Support & Maintenance" }
+];
+export const pricingGroups = cmsCollection('pricingGroups',original_pricingGroups);
+export const tierMeta = {
+  startup: {
+    nameEn: "Startup",
+    nameAr: "Startup",
+    descAr: "\u0644\u0644\u0634\u0631\u0643\u0627\u062A \u0627\u0644\u0646\u0627\u0634\u0626\u0629 \u0648\u0627\u0644\u0645\u0634\u0627\u0631\u064A\u0639 \u0627\u0644\u0635\u063A\u064A\u0631\u0629",
+    descEn: "For startups & small projects"
+  },
+  business: {
+    nameEn: "Business",
+    nameAr: "Business",
+    descAr: "\u0644\u0644\u0634\u0631\u0643\u0627\u062A \u0627\u0644\u0645\u062A\u0648\u0633\u0637\u0629 \u2014 \u0627\u0644\u0623\u0643\u062B\u0631 \u0637\u0644\u0628\u064B\u0627",
+    descEn: "For mid-sized businesses \u2014 most popular"
+  },
+  enterprise: {
+    nameEn: "Enterprise",
+    nameAr: "Enterprise",
+    descAr: "\u0644\u0644\u0645\u0634\u0627\u0631\u064A\u0639 \u0627\u0644\u0643\u0628\u064A\u0631\u0629 \u0648\u0627\u0644\u0623\u0646\u0638\u0645\u0629 \u0627\u0644\u0645\u062E\u0635\u0651\u0635\u0629",
+    descEn: "For large projects & custom systems",
+    featuresAr: ["\u0643\u0644 \u0645\u0632\u0627\u064A\u0627 \u0628\u0627\u0642\u0629 Business", "\u062A\u062E\u0635\u064A\u0635 \u0643\u0627\u0645\u0644 \u062D\u0633\u0628 \u0627\u062D\u062A\u064A\u0627\u062C\u0643", "\u0646\u0637\u0627\u0642 \u0648\u0645\u062E\u0631\u062C\u0627\u062A \u0645\u0648\u0633\u0651\u0639\u0629", "\u0623\u0648\u0644\u0648\u064A\u0629 \u0642\u0635\u0648\u0649 \u0641\u064A \u0627\u0644\u062A\u0646\u0641\u064A\u0630", "\u0645\u062F\u064A\u0631 \u062D\u0633\u0627\u0628 \u0645\u062E\u0635\u0651\u0635 + SLA"],
+    featuresEn: ["Everything in Business", "Full customization to your needs", "Expanded scope & deliverables", "Top execution priority", "Dedicated account manager + SLA"]
+  }
+};
+const original_pricingServices = [
+  // ─────────────── Web & Stores ───────────────
+  {
+    id: "website",
+    group: "web",
+    icon: Globe,
+    nameAr: "\u062A\u0637\u0648\u064A\u0631 \u0627\u0644\u0645\u0648\u0627\u0642\u0639",
+    nameEn: "Website Development",
+    descAr: "\u0645\u0648\u0642\u0639 \u062A\u0639\u0631\u064A\u0641\u064A \u0627\u062D\u062A\u0631\u0627\u0641\u064A \u064A\u0639\u0643\u0633 \u0647\u0648\u064A\u062A\u0643 \u0648\u064A\u062C\u0630\u0628 \u0639\u0645\u0644\u0627\u0621\u0643.",
+    descEn: "A professional brochure site that reflects your brand and attracts clients.",
+    startup: {
+      price: "$699",
+      featuresAr: ["\u0645\u0648\u0642\u0639 \u0645\u0646 \u0639\u062F\u0629 \u0635\u0641\u062D\u0627\u062A", "\u062A\u0635\u0645\u064A\u0645 \u0645\u0646 \u0642\u0648\u0627\u0644\u0628 \u0627\u062D\u062A\u0631\u0627\u0641\u064A\u0629", "\u0645\u062A\u062C\u0627\u0648\u0628 \u0645\u0639 \u0627\u0644\u062C\u0648\u0627\u0644", "\u0646\u0645\u0648\u0630\u062C \u062A\u0648\u0627\u0635\u0644 + \u062E\u0631\u0627\u0626\u0637", "\u0631\u0628\u0637 \u0648\u0627\u062A\u0633\u0627\u0628"],
+      featuresEn: ["Multi-page website", "Professional template design", "Mobile responsive", "Contact form + maps", "WhatsApp integration"]
+    },
+    business: {
+      price: "$1,499",
+      featuresAr: ["\u0635\u0641\u062D\u0627\u062A \u063A\u064A\u0631 \u0645\u062D\u062F\u0648\u062F\u0629", "\u062A\u0635\u0645\u064A\u0645 \u0645\u062E\u0635\u0651\u0635 \u0644\u0647\u0648\u064A\u062A\u0643", "\u0645\u062F\u0648\u0646\u0629 + \u0644\u0648\u062D\u0629 \u062A\u062D\u0643\u0645", "SEO \u0645\u062A\u0642\u062F\u0651\u0645", "\u062F\u0639\u0645 \u0645\u062A\u0639\u062F\u062F \u0627\u0644\u0644\u063A\u0627\u062A"],
+      featuresEn: ["Unlimited pages", "Custom brand design", "Blog + admin panel", "Advanced SEO", "Multi-language support"]
+    }
+  },
+  {
+    id: "ecommerce",
+    group: "web",
+    icon: ShoppingCart,
+    nameAr: "\u0645\u062A\u062C\u0631 \u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A",
+    nameEn: "E-Commerce Store",
+    descAr: "\u0645\u062A\u062C\u0631 \u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A \u0645\u062A\u0643\u0627\u0645\u0644 \u0644\u0628\u064A\u0639 \u0645\u0646\u062A\u062C\u0627\u062A\u0643 \u0623\u0648\u0646\u0644\u0627\u064A\u0646 \u0628\u0633\u0647\u0648\u0644\u0629.",
+    descEn: "A complete online store to sell your products easily.",
+    startup: {
+      price: "$1,299",
+      featuresAr: ["\u0625\u062F\u0627\u0631\u0629 \u0643\u062A\u0627\u0644\u0648\u062C \u0627\u0644\u0645\u0646\u062A\u062C\u0627\u062A", "\u0628\u0648\u0627\u0628\u0629 \u062F\u0641\u0639", "\u0633\u0644\u0629 \u0648\u062D\u0633\u0627\u0628 \u0639\u0645\u064A\u0644", "\u0625\u062F\u0627\u0631\u0629 \u0637\u0644\u0628\u0627\u062A \u0623\u0633\u0627\u0633\u064A\u0629", "\u062A\u0635\u0645\u064A\u0645 \u0645\u062A\u062C\u0627\u0648\u0628"],
+      featuresEn: ["Product catalog management", "Payment gateway", "Cart & customer accounts", "Basic order management", "Responsive design"]
+    },
+    business: {
+      price: "$2,499",
+      featuresAr: ["\u0645\u0646\u062A\u062C\u0627\u062A \u063A\u064A\u0631 \u0645\u062D\u062F\u0648\u062F\u0629", "\u0628\u0648\u0627\u0628\u0627\u062A \u062F\u0641\u0639 \u0648\u0634\u062D\u0646 \u0645\u062A\u0639\u062F\u062F\u0629", "\u0643\u0648\u0628\u0648\u0646\u0627\u062A \u0648\u0639\u0631\u0648\u0636", "\u062A\u0642\u0627\u0631\u064A\u0631 \u0645\u0628\u064A\u0639\u0627\u062A", "\u062A\u0643\u0627\u0645\u0644 \u0645\u062E\u0632\u0648\u0646 + SEO"],
+      featuresEn: ["Unlimited products", "Multiple payment & shipping", "Coupons & offers", "Sales reports", "Inventory sync + SEO"]
+    }
+  },
+  {
+    id: "landing",
+    group: "web",
+    icon: LayoutTemplate,
+    nameAr: "\u0635\u0641\u062D\u0629 \u0647\u0628\u0648\u0637",
+    nameEn: "Landing Page",
+    descAr: "\u0635\u0641\u062D\u0629 \u0645\u0631\u0643\u0651\u0632\u0629 \u0644\u062D\u0645\u0644\u0627\u062A\u0643 \u0627\u0644\u062A\u0633\u0648\u064A\u0642\u064A\u0629 \u062A\u062D\u0648\u0651\u0644 \u0627\u0644\u0632\u0648\u0627\u0631 \u0644\u0639\u0645\u0644\u0627\u0621.",
+    descEn: "A focused page for campaigns that turns visitors into leads.",
+    startup: {
+      price: "$299",
+      featuresAr: ["\u0635\u0641\u062D\u0629 \u0647\u0628\u0648\u0637 \u0639\u0627\u0644\u064A\u0629 \u0627\u0644\u062A\u062D\u0648\u064A\u0644", "\u062A\u0635\u0645\u064A\u0645 \u0645\u0646 \u0642\u0627\u0644\u0628", "\u0646\u0645\u0648\u0630\u062C \u062A\u062C\u0645\u064A\u0639 \u0628\u064A\u0627\u0646\u0627\u062A", "\u0645\u062A\u062C\u0627\u0648\u0628 \u0645\u0639 \u0627\u0644\u062C\u0648\u0627\u0644"],
+      featuresEn: ["High-converting landing page", "Template design", "Lead capture form", "Mobile responsive"]
+    },
+    business: {
+      price: "$599",
+      featuresAr: ["\u062A\u0635\u0645\u064A\u0645 \u0645\u062E\u0635\u0651\u0635 \u0628\u0627\u0644\u0643\u0627\u0645\u0644", "\u062C\u0627\u0647\u0632\u0629 \u0644\u0627\u062E\u062A\u0628\u0627\u0631 A/B + \u062A\u062A\u0628\u0639 \u0627\u0644\u062A\u062D\u0648\u064A\u0644\u0627\u062A", "\u0631\u0628\u0637 \u0623\u062F\u0648\u0627\u062A \u0627\u0644\u062A\u0633\u0648\u064A\u0642", "\u0633\u0631\u0639\u0629 \u062A\u062D\u0645\u064A\u0644 \u0645\u064F\u062D\u0633\u0651\u0646\u0629", "SEO \u0623\u0633\u0627\u0633\u064A"],
+      featuresEn: ["Fully custom design", "A/B ready + conversion tracking", "Marketing tools integration", "Optimized load speed", "Basic SEO"]
+    }
+  },
+  // ─────────────── Mobile Apps ───────────────
+  {
+    id: "mobile-single",
+    group: "apps",
+    icon: Smartphone,
+    nameAr: "\u062A\u0637\u0628\u064A\u0642 \u062C\u0648\u0627\u0644 (Android \u0623\u0648 iOS)",
+    nameEn: "Mobile App (Android or iOS)",
+    descAr: "\u062A\u0637\u0628\u064A\u0642 \u0623\u0635\u0644\u064A \u0644\u0646\u0638\u0627\u0645 Android \u0623\u0648 iOS \u0628\u0623\u062F\u0627\u0621 \u0639\u0627\u0644\u064D \u0648\u062A\u062C\u0631\u0628\u0629 \u0633\u0644\u0633\u0629.",
+    descEn: "A native Android or iOS app with high performance.",
+    startup: {
+      price: "$2,499",
+      featuresAr: ["\u0645\u0646\u0635\u0651\u0629 Android \u0623\u0648 iOS", "\u0627\u0644\u0634\u0627\u0634\u0627\u062A \u0627\u0644\u0623\u0633\u0627\u0633\u064A\u0629", "\u062A\u0635\u0645\u064A\u0645 UI \u062C\u0627\u0647\u0632", "\u0644\u0648\u062D\u0629 \u062A\u062D\u0643\u0645 \u0645\u0628\u0633\u0651\u0637\u0629", "\u0646\u0634\u0631 \u0639\u0644\u0649 \u0627\u0644\u0645\u062A\u062C\u0631"],
+      featuresEn: ["Android or iOS platform", "Core screens", "Ready UI design", "Basic admin panel", "Store publishing"]
+    },
+    business: {
+      price: "$4,499",
+      featuresAr: ["\u0634\u0627\u0634\u0627\u062A \u063A\u064A\u0631 \u0645\u062D\u062F\u0648\u062F\u0629", "\u062A\u0635\u0645\u064A\u0645 UX \u0645\u062E\u0635\u0651\u0635", "\u0625\u0634\u0639\u0627\u0631\u0627\u062A Push", "\u0631\u0628\u0637 API \u0648\u0628\u0648\u0627\u0628\u0627\u062A \u062F\u0641\u0639", "\u0644\u0648\u062D\u0629 \u062A\u062D\u0643\u0645 \u0643\u0627\u0645\u0644\u0629"],
+      featuresEn: ["Unlimited screens", "Custom UX design", "Push notifications", "API & payment integration", "Full admin panel"]
+    }
+  },
+  {
+    id: "mobile-dual",
+    group: "apps",
+    icon: TabletSmartphone,
+    nameAr: "\u062A\u0637\u0628\u064A\u0642 \u062C\u0648\u0627\u0644 (Android + iOS)",
+    nameEn: "Mobile App (Android + iOS)",
+    descAr: "\u062A\u0637\u0628\u064A\u0642 \u064A\u0639\u0645\u0644 \u0639\u0644\u0649 \u0627\u0644\u0645\u0646\u0635\u0651\u062A\u064A\u0646 \u0645\u0639\u064B\u0627 \u0628\u0643\u0641\u0627\u0621\u0629 \u0648\u062A\u0643\u0644\u0641\u0629 \u0623\u0648\u0641\u0631.",
+    descEn: "An app running on both platforms efficiently.",
+    startup: {
+      price: "$3,499",
+      featuresAr: ["Android + iOS \u0645\u0639\u064B\u0627", "\u0627\u0644\u0634\u0627\u0634\u0627\u062A \u0627\u0644\u0623\u0633\u0627\u0633\u064A\u0629", "\u062A\u0635\u0645\u064A\u0645 \u0645\u0648\u062D\u0651\u062F", "\u0625\u0634\u0639\u0627\u0631\u0627\u062A \u0623\u0633\u0627\u0633\u064A\u0629", "\u0646\u0634\u0631 \u0639\u0644\u0649 \u0627\u0644\u0645\u062A\u062C\u0631\u064A\u0646"],
+      featuresEn: ["Android + iOS together", "Core screens", "Unified design", "Basic notifications", "Publish to both stores"]
+    },
+    business: {
+      price: "$5,999",
+      featuresAr: ["\u0634\u0627\u0634\u0627\u062A \u063A\u064A\u0631 \u0645\u062D\u062F\u0648\u062F\u0629", "\u062A\u0635\u0645\u064A\u0645 UX \u0645\u062E\u0635\u0651\u0635", "\u0625\u0634\u0639\u0627\u0631\u0627\u062A Push \u0645\u062A\u0642\u062F\u0651\u0645\u0629", "\u062A\u0643\u0627\u0645\u0644\u0627\u062A \u062F\u0641\u0639 \u0648 API", "\u0644\u0648\u062D\u0629 \u062A\u062D\u0643\u0645 + \u062A\u062D\u0644\u064A\u0644\u0627\u062A"],
+      featuresEn: ["Unlimited screens", "Custom UX design", "Advanced push notifications", "Payments & API integrations", "Admin panel + analytics"]
+    }
+  },
+  // ─────────────── Systems & Platforms ───────────────
+  {
+    id: "dashboard",
+    group: "systems",
+    icon: LayoutDashboard,
+    nameAr: "\u0644\u0648\u062D\u0629 \u062A\u062D\u0643\u0645 / Admin Panel",
+    nameEn: "Dashboard / Admin Panel",
+    descAr: "\u0644\u0648\u062D\u0629 \u0645\u0648\u062D\u0651\u062F\u0629 \u0644\u0625\u062F\u0627\u0631\u0629 \u0628\u064A\u0627\u0646\u0627\u062A\u0643 \u0648\u0639\u0645\u0644\u064A\u0627\u062A\u0643 \u0641\u064A \u0645\u0643\u0627\u0646 \u0645\u0631\u0643\u0632\u064A.",
+    descEn: "A unified dashboard to manage all your data and operations centrally.",
+    startup: {
+      price: "$799",
+      featuresAr: ["\u0627\u0644\u0648\u062D\u062F\u0627\u062A \u0627\u0644\u0625\u062F\u0627\u0631\u064A\u0629 \u0627\u0644\u0623\u0633\u0627\u0633\u064A\u0629", "\u0645\u0635\u0627\u062F\u0642\u0629 \u0648\u0635\u0644\u0627\u062D\u064A\u0627\u062A \u0623\u0633\u0627\u0633\u064A\u0629", "\u062C\u062F\u0627\u0648\u0644 \u0648\u0628\u062D\u062B \u0648\u0641\u0644\u062A\u0631\u0629", "\u062A\u0635\u0645\u064A\u0645 \u0645\u062A\u062C\u0627\u0648\u0628"],
+      featuresEn: ["Core management modules", "Basic auth & roles", "Tables, search & filter", "Responsive design"]
+    },
+    business: {
+      price: "$1,799",
+      featuresAr: ["\u0648\u062D\u062F\u0627\u062A \u063A\u064A\u0631 \u0645\u062D\u062F\u0648\u062F\u0629", "\u0635\u0644\u0627\u062D\u064A\u0627\u062A \u0645\u062A\u0642\u062F\u0651\u0645\u0629 \u0628\u0627\u0644\u0623\u062F\u0648\u0627\u0631", "\u0631\u0633\u0648\u0645 \u0628\u064A\u0627\u0646\u064A\u0629 \u0648\u062A\u0642\u0627\u0631\u064A\u0631", "\u062A\u0635\u062F\u064A\u0631 Excel/PDF", "\u0633\u062C\u0644 \u0646\u0634\u0627\u0637"],
+      featuresEn: ["Unlimited modules", "Advanced role permissions", "Charts & reports", "Excel/PDF export", "Activity log"]
+    }
+  },
+  {
+    id: "crm",
+    group: "systems",
+    icon: Users,
+    nameAr: "\u0646\u0638\u0627\u0645 CRM",
+    nameEn: "CRM System",
+    descAr: "\u0646\u0638\u0651\u0645 \u0639\u0645\u0644\u0627\u0621\u0643 \u0648\u0645\u0628\u064A\u0639\u0627\u062A\u0643 \u0648\u0645\u062A\u0627\u0628\u0639\u0627\u062A\u0643 \u0648\u0632\u0648\u0651\u062F \u0625\u063A\u0644\u0627\u0642 \u0627\u0644\u0635\u0641\u0642\u0627\u062A.",
+    descEn: "Organize clients, sales and follow-ups to close more deals.",
+    startup: {
+      price: "$2,999",
+      featuresAr: ["\u0625\u062F\u0627\u0631\u0629 \u0627\u0644\u0639\u0645\u0644\u0627\u0621 \u0648\u062C\u0647\u0627\u062A \u0627\u0644\u0627\u062A\u0635\u0627\u0644", "Pipeline \u0645\u0628\u064A\u0639\u0627\u062A \u0623\u0633\u0627\u0633\u064A", "\u0635\u0644\u0627\u062D\u064A\u0627\u062A \u0644\u0644\u0641\u0631\u064A\u0642", "\u062A\u0642\u0627\u0631\u064A\u0631 \u0645\u0628\u064A\u0639\u0627\u062A \u0623\u0633\u0627\u0633\u064A\u0629"],
+      featuresEn: ["Contacts & client management", "Basic sales pipeline", "Team access", "Basic sales reports"]
+    },
+    business: {
+      price: "$5,999",
+      featuresAr: ["\u0623\u062A\u0645\u062A\u0629 \u0627\u0644\u0645\u062A\u0627\u0628\u0639\u0627\u062A", "\u0631\u0628\u0637 \u0648\u0627\u062A\u0633\u0627\u0628/\u0628\u0631\u064A\u062F/\u0645\u0643\u0627\u0644\u0645\u0627\u062A", "\u0644\u0648\u062D\u0627\u062A \u0623\u062F\u0627\u0621 \u0627\u0644\u0641\u0631\u064A\u0642", "\u0645\u0633\u062A\u062E\u062F\u0645\u0648\u0646 \u063A\u064A\u0631 \u0645\u062D\u062F\u0648\u062F\u064A\u0646", "\u0635\u0644\u0627\u062D\u064A\u0627\u062A \u062F\u0642\u064A\u0642\u0629"],
+      featuresEn: ["Follow-up automation", "WhatsApp/email/calls integration", "Team performance dashboards", "Unlimited users", "Granular permissions"]
+    }
+  },
+  {
+    id: "erp",
+    group: "systems",
+    icon: Building2,
+    nameAr: "\u0646\u0638\u0627\u0645 ERP",
+    nameEn: "ERP System",
+    descAr: "\u0627\u0631\u0628\u0637 \u0643\u0644 \u0623\u0642\u0633\u0627\u0645\u0643 (\u0645\u062E\u0632\u0648\u0646/\u0645\u0628\u064A\u0639\u0627\u062A/\u0645\u062D\u0627\u0633\u0628\u0629) \u0641\u064A \u0646\u0638\u0627\u0645 \u0645\u0648\u062D\u0651\u062F.",
+    descEn: "Connect all departments (inventory/sales/accounting) into a unified system.",
+    startup: {
+      price: "$4,999",
+      featuresAr: ["\u0627\u0644\u0648\u062D\u062F\u0627\u062A \u0627\u0644\u0623\u0633\u0627\u0633\u064A\u0629", "\u0635\u0644\u0627\u062D\u064A\u0627\u062A \u0644\u0644\u0641\u0631\u064A\u0642", "\u062A\u0642\u0627\u0631\u064A\u0631 \u062C\u0627\u0647\u0632\u0629", "\u0627\u0633\u062A\u0636\u0627\u0641\u0629 \u0633\u062D\u0627\u0628\u064A\u0629"],
+      featuresEn: ["Core modules", "Team access", "Ready-made reports", "Cloud hosting"]
+    },
+    business: {
+      price: "$5,999",
+      featuresAr: ["\u0648\u062D\u062F\u0627\u062A \u063A\u064A\u0631 \u0645\u062D\u062F\u0648\u062F\u0629", "\u0645\u0633\u062A\u062E\u062F\u0645\u0648\u0646 \u0648\u0635\u0644\u0627\u062D\u064A\u0627\u062A \u063A\u064A\u0631 \u0645\u062D\u062F\u0648\u062F\u0629", "\u0644\u0648\u062D\u0627\u062A \u062A\u062D\u0644\u064A\u0644\u064A\u0629 \u0645\u062E\u0635\u0651\u0635\u0629", "\u062A\u0643\u0627\u0645\u0644 \u0641\u0648\u062A\u0631\u0629 \u0648\u062F\u0641\u0639", "\u062A\u062F\u0631\u064A\u0628 \u0627\u0644\u0641\u0631\u0642"],
+      featuresEn: ["Unlimited modules", "Unlimited users & roles", "Custom analytics dashboards", "Invoicing & payment integration", "Team training"]
+    }
+  },
+  {
+    id: "hr",
+    group: "systems",
+    icon: UserCog,
+    nameAr: "\u0646\u0638\u0627\u0645 \u0645\u0648\u0627\u0631\u062F \u0628\u0634\u0631\u064A\u0629 HR",
+    nameEn: "HR System",
+    descAr: "\u0625\u062F\u0627\u0631\u0629 \u0627\u0644\u0645\u0648\u0638\u0641\u064A\u0646 \u0648\u0627\u0644\u062D\u0636\u0648\u0631 \u0648\u0627\u0644\u0631\u0648\u0627\u062A\u0628 \u0648\u0627\u0644\u0625\u062C\u0627\u0632\u0627\u062A \u0628\u0633\u0647\u0648\u0644\u0629.",
+    descEn: "Manage employees, attendance, payroll and leaves easily.",
+    startup: {
+      price: "$1,999",
+      featuresAr: ["\u0645\u0644\u0641\u0627\u062A \u0627\u0644\u0645\u0648\u0638\u0641\u064A\u0646", "\u062D\u0636\u0648\u0631 \u0648\u0627\u0646\u0635\u0631\u0627\u0641", "\u0637\u0644\u0628\u0627\u062A \u0627\u0644\u0625\u062C\u0627\u0632\u0627\u062A", "\u0645\u0646\u0627\u0633\u0628 \u0644\u0644\u0641\u0631\u0642 \u0627\u0644\u0635\u063A\u064A\u0631\u0629"],
+      featuresEn: ["Employee profiles", "Attendance tracking", "Leave requests", "Great for small teams"]
+    },
+    business: {
+      price: "$3,999",
+      featuresAr: ["\u0631\u0648\u0627\u062A\u0628 \u0648\u0645\u0633\u064A\u0651\u0631\u0627\u062A", "\u062A\u0642\u064A\u064A\u0645 \u0627\u0644\u0623\u062F\u0627\u0621", "\u062A\u0643\u0627\u0645\u0644 \u0628\u0635\u0645\u0629/\u062D\u0636\u0648\u0631", "\u062A\u0642\u0627\u0631\u064A\u0631 HR", "\u0645\u0648\u0638\u0641\u0648\u0646 \u063A\u064A\u0631 \u0645\u062D\u062F\u0648\u062F\u064A\u0646"],
+      featuresEn: ["Payroll & payslips", "Performance reviews", "Biometric/attendance integration", "HR reports", "Unlimited employees"]
+    }
+  },
+  {
+    id: "pos",
+    group: "systems",
+    icon: CreditCard,
+    nameAr: "\u0646\u0638\u0627\u0645 \u0646\u0642\u0627\u0637 \u0628\u064A\u0639 POS",
+    nameEn: "POS System",
+    descAr: "\u0646\u0642\u0637\u0629 \u0628\u064A\u0639 \u0633\u0631\u064A\u0639\u0629 \u0645\u0631\u0628\u0648\u0637\u0629 \u0628\u0627\u0644\u0645\u062E\u0632\u0648\u0646 \u0644\u0625\u062F\u0627\u0631\u0629 \u0645\u062A\u062C\u0631\u0643.",
+    descEn: "A fast point-of-sale linked to inventory for your store.",
+    startup: {
+      price: "$1,499",
+      featuresAr: ["\u0648\u0627\u062C\u0647\u0629 \u0628\u064A\u0639 \u0633\u0631\u064A\u0639\u0629", "\u0625\u062F\u0627\u0631\u0629 \u0645\u0646\u062A\u062C\u0627\u062A \u0648\u0645\u062E\u0632\u0648\u0646", "\u0637\u0628\u0627\u0639\u0629 \u0641\u0648\u0627\u062A\u064A\u0631", "\u0625\u0639\u062F\u0627\u062F \u0641\u0631\u0639 \u0623\u0633\u0627\u0633\u064A"],
+      featuresEn: ["Fast sales interface", "Products & inventory", "Receipt printing", "Basic branch setup"]
+    },
+    business: {
+      price: "$3,499",
+      featuresAr: ["\u0641\u0631\u0648\u0639 \u0648\u0623\u062C\u0647\u0632\u0629 \u0645\u062A\u0639\u062F\u062F\u0629", "\u062A\u0642\u0627\u0631\u064A\u0631 \u0645\u0628\u064A\u0639\u0627\u062A \u0648\u0623\u0631\u0628\u0627\u062D", "\u0625\u062F\u0627\u0631\u0629 \u0648\u0631\u062F\u064A\u0627\u062A \u0648\u0643\u0627\u0634\u064A\u0631", "\u0628\u0631\u0646\u0627\u0645\u062C \u0648\u0644\u0627\u0621", "\u062A\u0643\u0627\u0645\u0644 \u0645\u062D\u0627\u0633\u0628\u0629"],
+      featuresEn: ["Multi-branch & devices", "Sales & profit reports", "Shifts & cashier management", "Loyalty program", "Accounting integration"]
+    }
+  },
+  {
+    id: "booking",
+    group: "systems",
+    icon: CalendarCheck,
+    nameAr: "\u0646\u0638\u0627\u0645 \u062D\u062C\u0648\u0632\u0627\u062A",
+    nameEn: "Booking System",
+    descAr: "\u0646\u0638\u0627\u0645 \u062D\u062C\u0632 \u0645\u0648\u0627\u0639\u064A\u062F \u0630\u0627\u062A\u064A \u064A\u0642\u0644\u0651\u0644 \u0627\u0644\u0645\u0643\u0627\u0644\u0645\u0627\u062A \u0648\u0627\u0644\u062A\u063A\u064A\u0651\u0628.",
+    descEn: "A self-service booking system that cuts calls and no-shows.",
+    startup: {
+      price: "$1,299",
+      featuresAr: ["\u062D\u062C\u0632 \u0645\u0648\u0627\u0639\u064A\u062F \u0623\u0648\u0646\u0644\u0627\u064A\u0646", "\u062A\u0642\u0648\u064A\u0645 \u0648\u0625\u062F\u0627\u0631\u0629 \u0623\u0648\u0642\u0627\u062A", "\u062A\u0623\u0643\u064A\u062F \u0648\u062A\u0630\u0643\u064A\u0631 \u0623\u0633\u0627\u0633\u064A", "\u0625\u0639\u062F\u0627\u062F \u0623\u0633\u0627\u0633\u064A \u0644\u0644\u062E\u062F\u0645\u0627\u062A"],
+      featuresEn: ["Online appointment booking", "Calendar & time management", "Basic confirm & reminders", "Basic services setup"]
+    },
+    business: {
+      price: "$2,999",
+      featuresAr: ["\u062E\u062F\u0645\u0627\u062A \u0648\u0645\u0648\u0638\u0641\u0648\u0646 \u0645\u062A\u0639\u062F\u062F\u0648\u0646", "\u062A\u0630\u0643\u064A\u0631\u0627\u062A \u062A\u0644\u0642\u0627\u0626\u064A\u0629 (SMS/\u0648\u0627\u062A\u0633\u0627\u0628)", "\u062F\u0641\u0639 \u0645\u0642\u062F\u0651\u0645 \u0623\u0648\u0646\u0644\u0627\u064A\u0646", "\u062A\u0642\u0627\u0631\u064A\u0631 \u062D\u062C\u0648\u0632\u0627\u062A", "\u062A\u0643\u0627\u0645\u0644 \u062A\u0642\u0648\u064A\u0645"],
+      featuresEn: ["Multiple services & staff", "Auto reminders (SMS/WhatsApp)", "Online prepayment", "Booking reports", "Calendar integration"]
+    }
+  },
+  {
+    id: "lms",
+    group: "systems",
+    icon: GraduationCap,
+    nameAr: "\u0645\u0646\u0635\u0651\u0629 \u062A\u0639\u0644\u064A\u0645 LMS",
+    nameEn: "LMS Platform",
+    descAr: "\u0645\u0646\u0635\u0651\u0629 \u062A\u0639\u0644\u064A\u0645 \u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A \u0644\u0625\u062F\u0627\u0631\u0629 \u0627\u0644\u0643\u0648\u0631\u0633\u0627\u062A \u0648\u0627\u0644\u0637\u0644\u0627\u0628.",
+    descEn: "An e-learning platform to manage courses and students.",
+    startup: {
+      price: "$2,499",
+      featuresAr: ["\u0625\u062F\u0627\u0631\u0629 \u0643\u0648\u0631\u0633\u0627\u062A \u0648\u062F\u0631\u0648\u0633", "\u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u0637\u0644\u0627\u0628", "\u0641\u064A\u062F\u064A\u0648 \u0648\u0645\u062D\u062A\u0648\u0649", "\u0627\u062E\u062A\u0628\u0627\u0631\u0627\u062A \u0623\u0633\u0627\u0633\u064A\u0629"],
+      featuresEn: ["Courses & lessons", "Student enrollment", "Video & content", "Basic quizzes"]
+    },
+    business: {
+      price: "$4,999",
+      featuresAr: ["\u0634\u0647\u0627\u062F\u0627\u062A \u0648\u0645\u0633\u0627\u0631\u0627\u062A \u062A\u0639\u0644\u0651\u0645", "\u0628\u0648\u0627\u0628\u0627\u062A \u062F\u0641\u0639 \u0644\u0644\u0627\u0634\u062A\u0631\u0627\u0643\u0627\u062A", "\u062A\u062A\u0628\u0651\u0639 \u062A\u0642\u062F\u0651\u0645 \u0645\u062A\u0642\u062F\u0651\u0645", "\u0645\u0646\u062A\u062F\u064A\u0627\u062A / \u062A\u0641\u0627\u0639\u0644", "\u062A\u0642\u0627\u0631\u064A\u0631 \u0648\u062A\u062D\u0644\u064A\u0644\u0627\u062A"],
+      featuresEn: ["Certificates & learning paths", "Subscription payments", "Advanced progress tracking", "Forums / engagement", "Reports & analytics"]
+    }
+  },
+  {
+    id: "marketplace",
+    group: "systems",
+    icon: Store,
+    nameAr: "\u0633\u0648\u0642 \u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A Marketplace",
+    nameEn: "Marketplace",
+    descAr: "\u0645\u0646\u0635\u0651\u0629 \u062A\u062C\u0645\u0639 \u0628\u0627\u0626\u0639\u064A\u0646 \u0645\u062A\u0639\u062F\u062F\u064A\u0646 \u0645\u0639 \u0639\u0645\u0648\u0644\u0627\u062A \u0648\u0625\u062F\u0627\u0631\u0629 \u0643\u0627\u0645\u0644\u0629.",
+    descEn: "A multi-vendor platform with commissions and full management.",
+    startup: {
+      price: "$3,999",
+      featuresAr: ["\u0628\u0627\u0626\u0639\u0648\u0646 \u0645\u062A\u0639\u062F\u062F\u0648\u0646", "\u0644\u0648\u062D\u0629 \u0628\u0627\u0626\u0639 \u0623\u0633\u0627\u0633\u064A\u0629", "\u0646\u0638\u0627\u0645 \u0639\u0645\u0648\u0644\u0627\u062A", "\u0628\u0648\u0627\u0628\u0629 \u062F\u0641\u0639"],
+      featuresEn: ["Multiple vendors", "Basic vendor panel", "Commission system", "Payment gateway"]
+    },
+    business: {
+      price: "$5,999",
+      featuresAr: ["\u0645\u062D\u0627\u0641\u0638 \u0648\u062A\u0633\u0648\u064A\u0627\u062A \u0628\u0627\u0626\u0639\u064A\u0646", "\u062A\u0642\u064A\u064A\u0645\u0627\u062A \u0648\u0645\u0631\u0627\u062C\u0639\u0627\u062A", "\u0634\u062D\u0646 \u0648\u062A\u062A\u0628\u0651\u0639", "\u062A\u0642\u0627\u0631\u064A\u0631 \u0648\u0644\u0648\u062D\u0627\u062A", "\u062A\u0637\u0628\u064A\u0642 (\u0627\u062E\u062A\u064A\u0627\u0631\u064A)"],
+      featuresEn: ["Vendor wallets & payouts", "Ratings & reviews", "Shipping & tracking", "Reports & dashboards", "App (optional)"]
+    }
+  },
+  {
+    id: "saas",
+    group: "systems",
+    icon: Boxes,
+    nameAr: "\u0645\u0646\u0635\u0651\u0629 SaaS",
+    nameEn: "SaaS Platform",
+    descAr: "\u0645\u0646\u0635\u0651\u0629 \u0627\u0634\u062A\u0631\u0627\u0643\u0627\u062A \u0645\u062A\u0639\u062F\u062F\u0629 \u0627\u0644\u0645\u0633\u062A\u0623\u062C\u0631\u064A\u0646 \u062C\u0627\u0647\u0632\u0629 \u0644\u0644\u062A\u0648\u0633\u0651\u0639.",
+    descEn: "A multi-tenant subscription platform ready to scale.",
+    startup: {
+      price: "$4,499",
+      featuresAr: ["\u0628\u0646\u064A\u0629 Multi-tenant", "\u062E\u0637\u0637 \u0627\u0634\u062A\u0631\u0627\u0643", "\u0644\u0648\u062D\u0629 \u062A\u062D\u0643\u0645 \u0644\u0644\u0639\u0645\u0644\u0627\u0621", "\u0645\u0635\u0627\u062F\u0642\u0629 \u0648\u0635\u0644\u0627\u062D\u064A\u0627\u062A"],
+      featuresEn: ["Multi-tenant architecture", "Subscription plans", "Customer dashboard", "Auth & roles"]
+    },
+    business: {
+      price: "$5,999",
+      featuresAr: ["\u0641\u0648\u062A\u0631\u0629 \u0627\u0634\u062A\u0631\u0627\u0643\u0627\u062A \u062A\u0644\u0642\u0627\u0626\u064A\u0629", "\u0644\u0648\u062D\u0629 \u0645\u0627\u0644\u0643 (Admin)", "\u062A\u0643\u0627\u0645\u0644\u0627\u062A \u0648 Webhooks", "\u062A\u062D\u0644\u064A\u0644\u0627\u062A \u0627\u0633\u062A\u062E\u062F\u0627\u0645", "API \u0639\u0627\u0645"],
+      featuresEn: ["Automated subscription billing", "Owner admin panel", "Integrations & webhooks", "Usage analytics", "Public API"]
+    }
+  },
+  // ─────────────── AI & Tech ───────────────
+  {
+    id: "ai",
+    group: "ai",
+    icon: Brain,
+    nameAr: "\u062D\u0644\u0648\u0644 \u0627\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0627\u0635\u0637\u0646\u0627\u0639\u064A",
+    nameEn: "AI Solutions",
+    descAr: "\u062D\u0644\u0648\u0644 \u0630\u0643\u0627\u0621 \u0627\u0635\u0637\u0646\u0627\u0639\u064A \u0639\u0645\u0644\u064A\u0629: chatbots \u0648\u062A\u062D\u0644\u064A\u0644 \u0648\u0623\u062A\u0645\u062A\u0629.",
+    descEn: "Practical AI: chatbots, analysis and automation.",
+    startup: {
+      price: "$2,999",
+      featuresAr: ["Chatbot \u0623\u0648 \u0646\u0645\u0648\u0630\u062C AI", "\u0631\u0628\u0637 \u0628\u0645\u0635\u062F\u0631 \u0628\u064A\u0627\u0646\u0627\u062A", "\u062A\u062F\u0631\u064A\u0628 \u0623\u0648\u0644\u064A", "\u062A\u0643\u0627\u0645\u0644 \u0628\u0633\u064A\u0637"],
+      featuresEn: ["Chatbot or AI model", "Data source connection", "Initial training", "Simple integration"]
+    },
+    business: {
+      price: "$5,999",
+      featuresAr: ["\u062D\u0644\u0648\u0644 AI \u0645\u062A\u0639\u062F\u062F\u0629", "\u062A\u0643\u0627\u0645\u0644 \u0645\u0639 \u0623\u0646\u0638\u0645\u062A\u0643", "\u062A\u062D\u0644\u064A\u0644\u0627\u062A \u0648\u062A\u0646\u0628\u0651\u0624", "\u0623\u062A\u0645\u062A\u0629 \u0633\u064A\u0631 \u0627\u0644\u0639\u0645\u0644", "\u0644\u0648\u062D\u0629 \u062A\u062D\u0643\u0645"],
+      featuresEn: ["Multiple AI solutions", "Integration with your systems", "Analytics & forecasting", "Workflow automation", "Dashboard"]
+    }
+  },
+  {
+    id: "api",
+    group: "ai",
+    icon: Plug,
+    nameAr: "\u062A\u0643\u0627\u0645\u0644 API",
+    nameEn: "API Integration",
+    descAr: "\u0631\u0628\u0637 \u0623\u0646\u0638\u0645\u062A\u0643 \u0648\u062E\u062F\u0645\u0627\u062A\u0643 \u0627\u0644\u062E\u0627\u0631\u062C\u064A\u0629 \u0628\u0633\u0644\u0627\u0633\u0629 \u0648\u0623\u0645\u0627\u0646.",
+    descEn: "Connect your systems and third-party services smoothly.",
+    startup: {
+      price: "$399",
+      featuresAr: ["\u0631\u0628\u0637 \u0627\u0644\u062E\u062F\u0645\u0627\u062A \u0627\u0644\u0623\u0633\u0627\u0633\u064A\u0629", "\u0645\u0635\u0627\u062F\u0642\u0629 \u0622\u0645\u0646\u0629", "\u062A\u0648\u062B\u064A\u0642 \u0623\u0633\u0627\u0633\u064A", "\u0627\u062E\u062A\u0628\u0627\u0631 \u0648\u062A\u0634\u063A\u064A\u0644"],
+      featuresEn: ["Core service connections", "Secure authentication", "Basic docs", "Testing & go-live"]
+    },
+    business: {
+      price: "$999",
+      featuresAr: ["\u062A\u0643\u0627\u0645\u0644\u0627\u062A \u0645\u062A\u0639\u062F\u062F\u0629", "Webhooks \u0648\u0645\u0632\u0627\u0645\u0646\u0629", "\u0645\u0639\u0627\u0644\u062C\u0629 \u0623\u062E\u0637\u0627\u0621 \u0648\u0625\u0639\u0627\u062F\u0629 \u0645\u062D\u0627\u0648\u0644\u0629", "\u062A\u0648\u062B\u064A\u0642 \u0643\u0627\u0645\u0644", "\u0645\u0631\u0627\u0642\u0628\u0629"],
+      featuresEn: ["Multiple integrations", "Webhooks & sync", "Error handling & retries", "Full documentation", "Monitoring"]
+    }
+  },
+  {
+    id: "cloud",
+    group: "ai",
+    icon: Cloud,
+    nameAr: "\u0627\u0644\u0646\u0634\u0631 \u0627\u0644\u0633\u062D\u0627\u0628\u064A",
+    nameEn: "Cloud Deployment",
+    descAr: "\u0646\u0634\u0631 \u0648\u0645\u0631\u0627\u0642\u0628\u0629 \u062A\u0637\u0628\u064A\u0642\u0643 \u0639\u0644\u0649 \u0627\u0644\u0633\u062D\u0627\u0628\u0629 \u0628\u0623\u062F\u0627\u0621 \u0648\u0627\u0633\u062A\u0642\u0631\u0627\u0631.",
+    descEn: "Deploy and monitor your app on the cloud reliably.",
+    startup: {
+      price: "$299",
+      featuresAr: ["\u0625\u0639\u062F\u0627\u062F \u0627\u0644\u062E\u0627\u062F\u0645", "\u0646\u0634\u0631 \u0627\u0644\u062A\u0637\u0628\u064A\u0642", "SSL \u0648\u0646\u0637\u0627\u0642", "\u0646\u0633\u062E \u0627\u062D\u062A\u064A\u0627\u0637\u064A \u0623\u0633\u0627\u0633\u064A"],
+      featuresEn: ["Server setup", "App deployment", "SSL & domain", "Basic backups"]
+    },
+    business: {
+      price: "$999",
+      featuresAr: ["\u0628\u0646\u064A\u0629 \u0642\u0627\u0628\u0644\u0629 \u0644\u0644\u062A\u0648\u0633\u0651\u0639", "CI/CD", "\u0645\u0631\u0627\u0642\u0628\u0629 \u0648\u062A\u0646\u0628\u064A\u0647\u0627\u062A", "\u0646\u0633\u062E \u0627\u062D\u062A\u064A\u0627\u0637\u064A \u062A\u0644\u0642\u0627\u0626\u064A", "\u0645\u0648\u0627\u0632\u0646\u0629 \u062D\u0650\u0645\u0644"],
+      featuresEn: ["Scalable infrastructure", "CI/CD", "Monitoring & alerts", "Automated backups", "Load balancing"]
+    }
+  },
+  {
+    id: "security",
+    group: "ai",
+    icon: ShieldCheck,
+    nameAr: "\u0645\u0631\u0627\u062C\u0639\u0629 \u0627\u0644\u0623\u0645\u0646 \u0627\u0644\u0633\u064A\u0628\u0631\u0627\u0646\u064A",
+    nameEn: "Cyber Security Audit",
+    descAr: "\u0641\u062D\u0635 \u0623\u0645\u0646\u064A \u064A\u0643\u0634\u0641 \u0627\u0644\u062B\u063A\u0631\u0627\u062A \u0648\u064A\u062D\u0645\u064A \u0646\u0638\u0627\u0645\u0643 \u0642\u0628\u0644 \u0627\u0644\u0627\u062E\u062A\u0631\u0627\u0642.",
+    descEn: "A security audit that finds vulnerabilities before attackers do.",
+    startup: {
+      price: "$999",
+      featuresAr: ["\u0641\u062D\u0635 \u062B\u063A\u0631\u0627\u062A \u0623\u0633\u0627\u0633\u064A", "\u0645\u0631\u0627\u062C\u0639\u0629 \u0635\u0644\u0627\u062D\u064A\u0627\u062A", "\u062A\u0642\u0631\u064A\u0631 \u0628\u0627\u0644\u0646\u062A\u0627\u0626\u062C", "\u062A\u0648\u0635\u064A\u0627\u062A \u0625\u0635\u0644\u0627\u062D"],
+      featuresEn: ["Basic vulnerability scan", "Access review", "Findings report", "Fix recommendations"]
+    },
+    business: {
+      price: "$2,999",
+      featuresAr: ["\u0627\u062E\u062A\u0628\u0627\u0631 \u0627\u062E\u062A\u0631\u0627\u0642 \u0634\u0627\u0645\u0644", "\u0645\u0631\u0627\u062C\u0639\u0629 \u0643\u0648\u062F \u0648\u0628\u0646\u064A\u0629", "\u0641\u062D\u0635 \u0645\u062A\u0648\u0627\u0641\u0642 \u0645\u0639 \u0627\u0644\u0645\u0639\u0627\u064A\u064A\u0631", "\u062E\u0637\u0629 \u0645\u0639\u0627\u0644\u062C\u0629", "\u0625\u0639\u0627\u062F\u0629 \u0641\u062D\u0635"],
+      featuresEn: ["Full penetration testing", "Code & architecture review", "Standards-compliant audit", "Remediation plan", "Re-scan"]
+    }
+  },
+  // ─────────────── Design & Branding ───────────────
+  {
+    id: "uiux",
+    group: "design",
+    icon: Sparkles,
+    nameAr: "\u062A\u0635\u0645\u064A\u0645 UI/UX",
+    nameEn: "UI/UX Design",
+    descAr: "\u062A\u0635\u0645\u064A\u0645 \u0648\u0627\u062C\u0647\u0627\u062A \u062C\u0630\u0651\u0627\u0628\u0629 \u0648\u062A\u062C\u0631\u0628\u0629 \u0627\u0633\u062A\u062E\u062F\u0627\u0645 \u0633\u0644\u0633\u0629 \u062A\u0628\u064A\u0639.",
+    descEn: "Attractive interfaces and smooth UX that converts.",
+    startup: {
+      price: "$399",
+      featuresAr: ["\u0627\u0644\u0634\u0627\u0634\u0627\u062A \u0627\u0644\u0623\u0633\u0627\u0633\u064A\u0629", "Wireframes", "\u062A\u0635\u0645\u064A\u0645 \u0645\u0646 \u0646\u0638\u0627\u0645 \u062C\u0627\u0647\u0632", "\u062C\u0648\u0644\u0629 \u0645\u0631\u0627\u062C\u0639\u0629"],
+      featuresEn: ["Core screens", "Wireframes", "Design from a ready system", "Revision round"]
+    },
+    business: {
+      price: "$999",
+      featuresAr: ["\u0634\u0627\u0634\u0627\u062A \u063A\u064A\u0631 \u0645\u062D\u062F\u0648\u062F\u0629", "\u0628\u062D\u062B \u0648\u062A\u062C\u0631\u0628\u0629 \u0645\u0633\u062A\u062E\u062F\u0645", "Design System \u0645\u062E\u0635\u0651\u0635", "\u0646\u0645\u0648\u0630\u062C \u062A\u0641\u0627\u0639\u0644\u064A (Prototype)", "\u0645\u0631\u0627\u062C\u0639\u0627\u062A \u0645\u062A\u0639\u062F\u062F\u0629"],
+      featuresEn: ["Unlimited screens", "UX research", "Custom design system", "Interactive prototype", "Multiple revisions"]
+    }
+  },
+  {
+    id: "branding",
+    group: "design",
+    icon: Palette,
+    nameAr: "\u0627\u0644\u0647\u0648\u064A\u0629 \u0627\u0644\u0628\u0635\u0631\u064A\u0629 Branding",
+    nameEn: "Branding",
+    descAr: "\u0647\u0648\u064A\u0629 \u0628\u0635\u0631\u064A\u0629 \u0645\u062A\u0643\u0627\u0645\u0644\u0629 \u062A\u0645\u064A\u0651\u0632 \u0639\u0644\u0627\u0645\u062A\u0643 \u0648\u062A\u0628\u0646\u064A \u0627\u0644\u062B\u0642\u0629.",
+    descEn: "A complete visual identity that sets your brand apart.",
+    startup: {
+      price: "$499",
+      featuresAr: ["\u0634\u0639\u0627\u0631 \u0627\u062D\u062A\u0631\u0627\u0641\u064A", "\u0623\u0644\u0648\u0627\u0646 \u0648\u062E\u0637\u0648\u0637", "\u0646\u0633\u062E \u0627\u0644\u0634\u0639\u0627\u0631", "\u062F\u0644\u064A\u0644 \u0645\u0628\u0633\u0651\u0637"],
+      featuresEn: ["Professional logo", "Colors & fonts", "Logo variations", "Mini guidelines"]
+    },
+    business: {
+      price: "$1,299",
+      featuresAr: ["\u0647\u0648\u064A\u0629 \u0643\u0627\u0645\u0644\u0629", "\u062F\u0644\u064A\u0644 \u0647\u0648\u064A\u0629 (Brand Book)", "\u0642\u0648\u0627\u0644\u0628 \u0633\u0648\u0634\u064A\u0627\u0644 + \u0645\u0637\u0628\u0648\u0639\u0627\u062A", "\u0628\u0637\u0627\u0642\u0627\u062A \u0648\u0648\u062B\u0627\u0626\u0642", "\u0645\u0648\u0643 \u0623\u0628 \u062A\u0637\u0628\u064A\u0642\u064A"],
+      featuresEn: ["Full identity", "Brand book", "Social + print templates", "Cards & stationery", "Applied mockups"]
+    }
+  },
+  // ─────────────── Digital Marketing ───────────────
+  {
+    id: "social",
+    group: "marketing",
+    icon: Share2,
+    nameAr: "\u0625\u062F\u0627\u0631\u0629 \u0627\u0644\u0633\u0648\u0634\u064A\u0627\u0644 \u0645\u064A\u062F\u064A\u0627",
+    nameEn: "Social Media Management",
+    descAr: "\u0625\u062F\u0627\u0631\u0629 \u0635\u0641\u062D\u0627\u062A\u0643 \u0639\u0644\u0649 \u0627\u0644\u0633\u0648\u0634\u064A\u0627\u0644 \u0645\u064A\u062F\u064A\u0627: \u0645\u062D\u062A\u0648\u0649 \u0648\u062A\u0635\u0645\u064A\u0645 \u0648\u0646\u0634\u0631 \u0648\u062A\u0641\u0627\u0639\u0644.",
+    descEn: "Managing your social pages: content, design, posting and engagement.",
+    noteAr: "/\u0634\u0647\u0631\u064A\u064B\u0627",
+    noteEn: "/mo",
+    startup: {
+      price: "$199",
+      featuresAr: ["\u0625\u062F\u0627\u0631\u0629 \u0635\u0641\u062D\u062A\u064A\u0646 (\u0641\u064A\u0633\u0628\u0648\u0643 + \u0625\u0646\u0633\u062A\u062C\u0631\u0627\u0645)", "\u0639\u062F\u062F 12 \u0645\u0646\u0634\u0648\u0631 \u0634\u0647\u0631\u064A\u064B\u0627", "\u0639\u062F\u062F 2 \u0641\u064A\u062F\u064A\u0648 \u0631\u064A\u0644\u0632 \u0634\u0647\u0631\u064A\u064B\u0627", "\u062A\u0635\u0645\u064A\u0645 \u0627\u0644\u0645\u0646\u0634\u0648\u0631\u0627\u062A", "\u0627\u0644\u0631\u062F \u0639\u0644\u0649 \u0627\u0644\u062A\u0639\u0644\u064A\u0642\u0627\u062A \u0648\u0627\u0644\u0631\u0633\u0627\u0626\u0644", "\u062A\u0642\u0631\u064A\u0631 \u0623\u062F\u0627\u0621 \u0634\u0647\u0631\u064A"],
+      featuresEn: ["Two pages (Facebook + Instagram)", "12 posts / month", "2 reel videos / month", "Post designs", "Comments & messages replies", "Monthly performance report"]
+    },
+    business: {
+      price: "$399",
+      featuresAr: ["\u0625\u062F\u0627\u0631\u0629 3 \u0645\u0646\u0635\u0651\u0627\u062A (\u0641\u064A\u0633\u0628\u0648\u0643 + \u0625\u0646\u0633\u062A\u062C\u0631\u0627\u0645 + \u062A\u064A\u0643 \u062A\u0648\u0643)", "\u0639\u062F\u062F 20 \u0645\u0646\u0634\u0648\u0631 \u0634\u0647\u0631\u064A\u064B\u0627", "\u0639\u062F\u062F 4 \u0641\u064A\u062F\u064A\u0648 \u0631\u064A\u0644\u0632 \u0634\u0647\u0631\u064A\u064B\u0627", "\u062E\u0637\u0629 \u0645\u062D\u062A\u0648\u0649 \u0634\u0647\u0631\u064A\u0629", "\u0625\u062F\u0627\u0631\u0629 \u0627\u0644\u0645\u062C\u062A\u0645\u0639 \u0648\u0627\u0644\u062A\u0641\u0627\u0639\u0644", "\u062A\u0642\u0627\u0631\u064A\u0631 \u0648\u062A\u062D\u0644\u064A\u0644\u0627\u062A \u062F\u0648\u0631\u064A\u0629"],
+      featuresEn: ["3 platforms (Facebook + Instagram + TikTok)", "20 posts / month", "4 reel videos / month", "Monthly content plan", "Community management", "Periodic reports & analytics"]
+    }
+  },
+  {
+    id: "ads",
+    group: "marketing",
+    icon: Target,
+    nameAr: "\u0627\u0644\u062A\u0633\u0648\u064A\u0642 \u0627\u0644\u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A \u0648\u0625\u062F\u0627\u0631\u0629 \u0627\u0644\u0625\u0639\u0644\u0627\u0646\u0627\u062A",
+    nameEn: "Digital Marketing & Ads",
+    descAr: "\u0625\u062F\u0627\u0631\u0629 \u062D\u0645\u0644\u0627\u062A\u0643 \u0627\u0644\u0625\u0639\u0644\u0627\u0646\u064A\u0629 \u0639\u0644\u0649 Meta \u0648 Google \u0644\u062C\u0644\u0628 \u0639\u0645\u0644\u0627\u0621 \u062D\u0642\u064A\u0642\u064A\u064A\u0646.",
+    descEn: "Managing your ad campaigns on Meta and Google to bring real customers.",
+    noteAr: "/\u0634\u0647\u0631\u064A\u064B\u0627",
+    noteEn: "/mo",
+    startup: {
+      price: "$249",
+      featuresAr: ["\u062D\u0645\u0644\u0627\u062A \u0639\u0644\u0649 \u0645\u0646\u0635\u0651\u0629 (Meta \u0623\u0648 Google)", "\u0625\u0639\u062F\u0627\u062F \u0627\u0644\u062D\u0645\u0644\u0629 \u0648\u0627\u0644\u0627\u0633\u062A\u0647\u062F\u0627\u0641", "\u0639\u062F\u062F 3 \u062A\u0635\u0627\u0645\u064A\u0645 \u0625\u0639\u0644\u0627\u0646\u064A\u0629", "\u062A\u062D\u0633\u064A\u0646 \u0623\u0633\u0628\u0648\u0639\u064A", "\u062A\u0642\u0631\u064A\u0631 \u0634\u0647\u0631\u064A", "\u0645\u064A\u0632\u0627\u0646\u064A\u0629 \u0627\u0644\u0625\u0639\u0644\u0627\u0646 \u063A\u064A\u0631 \u0645\u0634\u0645\u0648\u0644\u0629"],
+      featuresEn: ["Campaigns on one platform (Meta or Google)", "Campaign setup & targeting", "3 ad creatives", "Weekly optimization", "Monthly report", "Ad budget not included"]
+    },
+    business: {
+      price: "$499",
+      featuresAr: ["\u062D\u0645\u0644\u0627\u062A \u0639\u0644\u0649 Meta + Google", "\u0627\u0633\u062A\u0647\u062F\u0627\u0641 \u0645\u062A\u0642\u062F\u0651\u0645 \u0648\u0631\u064A\u062A\u0627\u0631\u062C\u064A\u062A\u0646\u062C", "\u0639\u062F\u062F 6 \u062A\u0635\u0627\u0645\u064A\u0645 \u0625\u0639\u0644\u0627\u0646\u064A\u0629", "\u0635\u0641\u062D\u0629 \u0647\u0628\u0648\u0637 \u0644\u0644\u062D\u0645\u0644\u0629", "\u062A\u062D\u0633\u064A\u0646 \u0645\u0633\u062A\u0645\u0631", "\u062A\u0642\u0627\u0631\u064A\u0631 \u062F\u0648\u0631\u064A\u0629 \u0645\u0641\u0635\u0651\u0644\u0629"],
+      featuresEn: ["Campaigns on Meta + Google", "Advanced targeting & retargeting", "6 ad creatives", "Campaign landing page", "Continuous optimization", "Detailed periodic reports"]
+    }
+  },
+  {
+    id: "content",
+    group: "marketing",
+    icon: Clapperboard,
+    nameAr: "\u0635\u0646\u0627\u0639\u0629 \u0627\u0644\u0645\u062D\u062A\u0648\u0649 \u0648\u0627\u0644\u0641\u064A\u062F\u064A\u0648",
+    nameEn: "Content & Video Production",
+    descAr: "\u062A\u0635\u0645\u064A\u0645\u0627\u062A \u0648\u0641\u064A\u062F\u064A\u0648\u0647\u0627\u062A \u0627\u062D\u062A\u0631\u0627\u0641\u064A\u0629 \u062A\u0642\u0648\u0651\u064A \u062D\u0636\u0648\u0631\u0643 \u0648\u062A\u0632\u0648\u0651\u062F \u062A\u0641\u0627\u0639\u0644\u0643.",
+    descEn: "Professional designs and videos that boost your presence and engagement.",
+    noteAr: "/\u0634\u0647\u0631\u064A\u064B\u0627",
+    noteEn: "/mo",
+    startup: {
+      price: "$299",
+      featuresAr: ["\u0639\u062F\u062F 8 \u062A\u0635\u0627\u0645\u064A\u0645 \u0634\u0647\u0631\u064A\u064B\u0627", "\u0639\u062F\u062F 2 \u0641\u064A\u062F\u064A\u0648 \u0645\u0648\u0634\u0646 / \u0631\u064A\u0644\u0632", "\u0643\u062A\u0627\u0628\u0629 \u0627\u0644\u0645\u062D\u062A\u0648\u0649 (Copywriting)", "\u0647\u0648\u064A\u0629 \u0645\u0648\u062D\u0651\u062F\u0629 \u0644\u0644\u0645\u0646\u0634\u0648\u0631\u0627\u062A"],
+      featuresEn: ["8 designs / month", "2 motion / reel videos", "Copywriting", "Consistent post identity"]
+    },
+    business: {
+      price: "$599",
+      featuresAr: ["\u0639\u062F\u062F 16 \u062A\u0635\u0645\u064A\u0645 \u0634\u0647\u0631\u064A\u064B\u0627", "\u0639\u062F\u062F 4 \u0641\u064A\u062F\u064A\u0648 \u0627\u062D\u062A\u0631\u0627\u0641\u064A", "\u0633\u064A\u0646\u0627\u0631\u064A\u0648 \u0648\u0643\u062A\u0627\u0628\u0629 \u0627\u0644\u0645\u062D\u062A\u0648\u0649", "\u0645\u0648\u0646\u062A\u0627\u062C \u0648\u0645\u0624\u062B\u0631\u0627\u062A \u0645\u062A\u0642\u062F\u0651\u0645\u0629", "\u062A\u062E\u0637\u064A\u0637 \u0645\u062D\u062A\u0648\u0649 \u0634\u0647\u0631\u064A"],
+      featuresEn: ["16 designs / month", "4 professional videos", "Scripting & copywriting", "Advanced editing & effects", "Monthly content planning"]
+    }
+  },
+  // ─────────────── Support & Maintenance ───────────────
+  {
+    id: "maintenance",
+    group: "support",
+    icon: Wrench,
+    nameAr: "\u0627\u0644\u0635\u064A\u0627\u0646\u0629 \u0648\u0627\u0644\u062F\u0639\u0645",
+    nameEn: "Maintenance",
+    descAr: "\u062F\u0639\u0645 \u0648\u0635\u064A\u0627\u0646\u0629 \u0634\u0647\u0631\u064A\u0629 \u062A\u0628\u0642\u064A \u0645\u0646\u062A\u062C\u0643 \u064A\u0639\u0645\u0644 \u0628\u0623\u0645\u0627\u0646 \u0648\u0627\u0633\u062A\u0642\u0631\u0627\u0631.",
+    descEn: "Monthly support and maintenance to keep your product running safely.",
+    noteAr: "/\u0634\u0647\u0631\u064A\u064B\u0627",
+    noteEn: "/mo",
+    startup: {
+      price: "$99",
+      featuresAr: ["\u062A\u062D\u062F\u064A\u062B\u0627\u062A \u0623\u0645\u0627\u0646 \u062F\u0648\u0631\u064A\u0629", "\u0646\u0633\u062E \u0627\u062D\u062A\u064A\u0627\u0637\u064A \u0623\u0633\u0628\u0648\u0639\u064A", "\u0625\u0635\u0644\u0627\u062D \u0627\u0644\u0623\u0639\u0637\u0627\u0644 \u0627\u0644\u062D\u0631\u062C\u0629", "\u062F\u0639\u0645 \u0628\u0631\u064A\u062F/\u0648\u0627\u062A\u0633\u0627\u0628"],
+      featuresEn: ["Regular security updates", "Weekly backups", "Critical bug fixes", "Email/WhatsApp support"]
+    },
+    business: {
+      price: "$299",
+      featuresAr: ["\u0646\u0633\u062E \u0627\u062D\u062A\u064A\u0627\u0637\u064A \u064A\u0648\u0645\u064A", "\u062A\u062D\u0633\u064A\u0646\u0627\u062A \u0623\u062F\u0627\u0621", "\u062A\u0639\u062F\u064A\u0644\u0627\u062A \u0635\u063A\u064A\u0631\u0629 \u0634\u0647\u0631\u064A\u0629", "\u062A\u0642\u0627\u0631\u064A\u0631 \u0634\u0647\u0631\u064A\u0629", "\u0623\u0648\u0644\u0648\u064A\u0629 \u062F\u0639\u0645"],
+      featuresEn: ["Daily backups", "Performance tuning", "Monthly minor changes", "Monthly reports", "Priority support"]
+    }
+  }
+];
+export const pricingServices = cmsCollection('pricingServices',original_pricingServices);
+const original_includedInEveryProject = [
+  { ar: "\u062A\u062D\u0644\u064A\u0644 \u0627\u0644\u0623\u0639\u0645\u0627\u0644 (Business Analysis)", en: "Business Analysis" },
+  { ar: "\u062A\u0635\u0645\u064A\u0645 \u0648\u0627\u062C\u0647\u0629 \u0648\u062A\u062C\u0631\u0628\u0629 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 UI/UX", en: "UI/UX Design" },
+  { ar: "\u062A\u0635\u0645\u064A\u0645 \u0645\u062A\u062C\u0627\u0648\u0628 \u0645\u0639 \u0643\u0644 \u0627\u0644\u0623\u062C\u0647\u0632\u0629", en: "Responsive Design" },
+  { ar: "\u062A\u0637\u0648\u064A\u0631 \u0627\u0644\u0648\u0627\u062C\u0647\u0629 \u0627\u0644\u062E\u0644\u0641\u064A\u0629 (Backend)", en: "Backend Development" },
+  { ar: "\u062A\u0637\u0648\u064A\u0631 \u0627\u0644\u0648\u0627\u062C\u0647\u0629 \u0627\u0644\u0623\u0645\u0627\u0645\u064A\u0629 (Frontend)", en: "Frontend Development" },
+  { ar: "\u062A\u0635\u0645\u064A\u0645 \u0642\u0627\u0639\u062F\u0629 \u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A", en: "Database Design" },
+  { ar: "\u062A\u0643\u0627\u0645\u0644 \u0648\u0627\u062C\u0647\u0627\u062A API", en: "API Integration" },
+  { ar: "\u0627\u0644\u0627\u062E\u062A\u0628\u0627\u0631 \u0648\u0636\u0645\u0627\u0646 \u0627\u0644\u062C\u0648\u062F\u0629 (QA)", en: "Testing & Quality Assurance" },
+  { ar: "\u0623\u0641\u0636\u0644 \u0645\u0645\u0627\u0631\u0633\u0627\u062A \u0627\u0644\u0623\u0645\u0627\u0646", en: "Security Best Practices" },
+  { ar: "\u0627\u0644\u0646\u0634\u0631 \u0648\u0627\u0644\u0625\u0637\u0644\u0627\u0642 (Deployment)", en: "Deployment" },
+  { ar: "\u062A\u062D\u0633\u064A\u0646 \u0623\u0633\u0627\u0633\u064A \u0644\u0645\u062D\u0631\u0643\u0627\u062A \u0627\u0644\u0628\u062D\u062B (\u0644\u0644\u0645\u0648\u0627\u0642\u0639)", en: "Basic SEO (for websites)" },
+  { ar: "\u062A\u0648\u062B\u064A\u0642 \u0627\u0644\u0645\u0634\u0631\u0648\u0639 (Documentation)", en: "Documentation" },
+  { ar: "\u062A\u062F\u0631\u064A\u0628 \u0641\u0631\u064A\u0642 \u0627\u0644\u0639\u0645\u064A\u0644", en: "Client team training" },
+  { ar: "\u062A\u0633\u0644\u064A\u0645 \u0627\u0644\u0633\u0648\u0631\u0633 \u0643\u0648\u062F \u0639\u0646\u062F \u0633\u062F\u0627\u062F \u0643\u0627\u0645\u0644 \u0642\u064A\u0645\u0629 \u0627\u0644\u0645\u0634\u0631\u0648\u0639", en: "Source code handover on full payment" }
+];
+export const includedInEveryProject = cmsCollection('includedInEveryProject',original_includedInEveryProject);
+const original_guarantees = [
+  {
+    titleAr: "\u0636\u0645\u0627\u0646 90 \u064A\u0648\u0645\u064B\u0627",
+    titleEn: "90-day warranty",
+    descAr: "\u0625\u0635\u0644\u0627\u062D \u0623\u064A \u0623\u062E\u0637\u0627\u0621 \u0628\u0631\u0645\u062C\u064A\u0629 \u0645\u062C\u0627\u0646\u064B\u0627 \u0644\u0645\u062F\u0629 90 \u064A\u0648\u0645\u064B\u0627 \u0628\u0639\u062F \u0627\u0644\u062A\u0633\u0644\u064A\u0645.",
+    descEn: "Free bug fixing for 90 days after delivery."
+  },
+  {
+    titleAr: "\u062F\u0639\u0645 \u0645\u062C\u0627\u0646\u064A 30 \u064A\u0648\u0645\u064B\u0627",
+    titleEn: "30-day free support",
+    descAr: "\u062F\u0639\u0645 \u0641\u0646\u064A \u0644\u0644\u0625\u062C\u0627\u0628\u0629 \u0639\u0644\u0649 \u0627\u0633\u062A\u0641\u0633\u0627\u0631\u0627\u062A\u0643 \u0627\u0644\u062A\u0634\u063A\u064A\u0644\u064A\u0629 \u0644\u0645\u062F\u0629 30 \u064A\u0648\u0645\u064B\u0627.",
+    descEn: "Technical support for your operational questions for 30 days."
+  },
+  {
+    titleAr: "\u0645\u0644\u0643\u064A\u0629 \u0643\u0627\u0645\u0644\u0629",
+    titleEn: "Full ownership",
+    descAr: "\u0646\u0642\u0644 \u0643\u0627\u0645\u0644 \u0645\u0644\u0643\u064A\u0629 \u0627\u0644\u0645\u0634\u0631\u0648\u0639 \u0644\u0643 \u0628\u0639\u062F \u0633\u062F\u0627\u062F \u062C\u0645\u064A\u0639 \u0627\u0644\u0645\u0633\u062A\u062D\u0642\u0627\u062A.",
+    descEn: "Full project ownership transferred to you after full payment."
+  },
+  {
+    titleAr: "\u0627\u062A\u0641\u0627\u0642\u064A\u0629 \u0633\u0631\u064A\u0629 (NDA)",
+    titleEn: "NDA on request",
+    descAr: "\u0646\u0648\u0642\u0651\u0639 \u0627\u062A\u0641\u0627\u0642\u064A\u0629 \u0639\u062F\u0645 \u0625\u0641\u0635\u0627\u062D \u0644\u062D\u0645\u0627\u064A\u0629 \u0623\u0641\u0643\u0627\u0631\u0643 \u0648\u0628\u064A\u0627\u0646\u0627\u062A\u0643 \u0639\u0646\u062F \u0627\u0644\u0637\u0644\u0628.",
+    descEn: "We sign a non-disclosure agreement to protect your ideas and data on request."
+  },
+  {
+    titleAr: "\u0646\u0633\u062E \u0627\u062D\u062A\u064A\u0627\u0637\u064A\u0629 \u0642\u0628\u0644 \u0627\u0644\u062A\u0633\u0644\u064A\u0645",
+    titleEn: "Backups before delivery",
+    descAr: "\u0646\u0623\u062E\u0630 \u0646\u0633\u062E\u064B\u0627 \u0627\u062D\u062A\u064A\u0627\u0637\u064A\u0629 \u0643\u0627\u0645\u0644\u0629 \u0642\u0628\u0644 \u0627\u0644\u062A\u0633\u0644\u064A\u0645 \u0627\u0644\u0646\u0647\u0627\u0626\u064A.",
+    descEn: "Full backups are taken before final delivery."
+  },
+  {
+    titleAr: "\u0645\u0631\u0627\u062C\u0639\u0629 \u0623\u0645\u0646\u064A\u0629 \u0642\u0628\u0644 \u0627\u0644\u0625\u0637\u0644\u0627\u0642",
+    titleEn: "Pre-launch security review",
+    descAr: "\u0641\u062D\u0635 \u0623\u0645\u0646\u064A \u0644\u0644\u0645\u0634\u0631\u0648\u0639 \u0642\u0628\u0644 \u0625\u0637\u0644\u0627\u0642\u0647 \u0644\u0644\u062C\u0645\u0647\u0648\u0631.",
+    descEn: "A security review of the project before it goes live."
+  }
+];
+export const guarantees = cmsCollection('guarantees',original_guarantees);

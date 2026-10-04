@@ -1,0 +1,16 @@
+#!/bin/bash
+set -euo pipefail
+PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd -P)"
+SERVICES_ROOT="$(dirname "$PROJECT_ROOT")/local-services"
+if [ -f "$SERVICES_ROOT/web.pid" ]; then
+  PID="$(cat "$SERVICES_ROOT/web.pid")"
+  if ps -p "$PID" -o command= | /usr/bin/grep -q '127.0.0.1:8080'; then kill "$PID"; echo 'Local web server stopped.'; fi
+fi
+if [ -f "$SERVICES_ROOT/scheduler.pid" ]; then
+  SCHEDULER_PID="$(cat "$SERVICES_ROOT/scheduler.pid")"
+  if ps -p "$SCHEDULER_PID" -o command= | /usr/bin/grep -q 'artisan schedule:work'; then kill "$SCHEDULER_PID"; echo 'Local scheduler stopped.'; fi
+fi
+if [ "${1:-}" = '--all' ]; then
+  /opt/homebrew/bin/redis-cli -h 127.0.0.1 -p 56389 shutdown
+  /opt/homebrew/opt/postgresql@17/bin/pg_ctl -D "$SERVICES_ROOT/postgres" stop -m fast
+fi

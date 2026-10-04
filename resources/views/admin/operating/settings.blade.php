@@ -1,0 +1,7 @@
+@extends('admin.layout')
+@section('title',__('قواعد التشغيل والمعايرة'))
+@section('content')
+<div class="page-heading"><div><h1>{{ __('قواعد التشغيل والمعايرة') }}</h1><p class="muted">{{ __('قيم البداية من الملف مقترحة. الإدارة تعتمد تاريخ السريان وتراجع القيم بعد جمع خط الأساس.') }}</p></div></div>
+<form method="post" class="card">@csrf<input name="version" type="hidden" value="{{ $saved?->version??0 }}"><div class="field-grid">@foreach($rules['thresholds'] as $key=>$value)<label>{{ __(str_replace('_',' ',$key)) }}<input type="number" name="thresholds[{{ $key }}]" value="{{ $value }}" min="1" max="100" required></label>@endforeach</div><h2>{{ __('أوزان بطاقات التقييم') }}</h2>@foreach($rules['scorecards'] as $role=>$weights)<details><summary>{{ $catalog->label(config('operating.roles.'.$role,$role)) }}</summary><div class="field-grid">@foreach($weights as $key=>$value)<label>{{ __(str_replace('_',' ',$key)) }} %<input name="scorecards[{{ $role }}][{{ $key }}]" type="number" min="1" max="100" value="{{ $value }}" required></label>@endforeach</div></details>@endforeach<label>{{ __('تاريخ السريان') }}<input type="date" name="effective_date" value="{{ $rules['effective_date']??'' }}" required></label><label>{{ __('سبب الاعتماد / المعايرة') }}<textarea name="reason" required rows="3"></textarea></label><button class="button">{{ __('اعتماد قواعد التشغيل') }}</button></form>
+<div class="notice">{{ __('إعدادات جديدة لا تعيد احتساب تقييمات قديمة ولا تغيّر مواعيد سابقة. كل اعتماد له سجل تدقيق.') }}</div>
+@endsection

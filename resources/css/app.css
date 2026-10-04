@@ -1,0 +1,31 @@
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme) prefix(fg);
+@import "tailwindcss/utilities.css" layer(utilities) prefix(fg);
+@source "../views";
+/* Preserve the original release's design tokens and reset during migration. */
+[data-dropdown] > .absolute { display: none; }
+[data-dropdown]:hover > .absolute, [data-dropdown]:focus-within > .absolute { display: block; }
+[data-mobile-panel] { display: none; }
+[data-mobile-panel].is-open { display: block; }
+@media (min-width:1024px) { [data-mobile-panel].is-open { display:none; } }
+summary::-webkit-details-marker { display:none; }
+details[open] > summary svg:last-child { transform: rotate(180deg); }
+html { scroll-behavior:smooth; }
+[hidden] { display:none !important; }
+#findo-toast { position:fixed; bottom:90px; left:50%; transform:translateX(-50%); max-width:90vw; z-index:9999; background:#20272b; color:white; border:1px solid #fd802e; border-radius:14px; padding:14px 22px; text-align:center; }
+html.dark [style*="bg-texture-light"] { background-image:url('/wp-content/themes/findo-wordpress-theme/react-build/assets/bg-texture-dark.jpg') !important; }
+[data-filter][aria-pressed=true] { border-color:#fd802e; color:#fd802e; }
+@media (prefers-reduced-motion: reduce) { html {scroll-behavior:auto;} *,*::before,*::after { animation-duration:.01ms!important; transition-duration:.01ms!important; } }
+/* Enhancement hosts must not change the original layout or sticky-header containing block. */
+[data-island] { display: contents; }
+
+.cms-custom-block{max-width:1280px;margin:2rem auto;padding:2rem 1.5rem}.cms-custom-block h2{font-size:2rem;font-weight:700;margin-bottom:1rem}.cms-custom-block p{line-height:1.9}.cms-custom-block img{max-width:100%}
+
+/* Text uses accessible shades independently of the original brand fills. */
+:root { --primary-text: 24 90% 32%; --success-text: 160 84% 24%; }
+.dark { --primary-text: 24 98% 59%; --success-text: 160 84% 55%; }
+.text-primary, .text-primary\/80 { color: hsl(var(--primary-text)); }
+.hover\:text-primary:hover, .hover\:text-primary\/80:hover,
+.group:hover .group-hover\:text-primary { color: hsl(var(--primary-text)); }
+.text-success, .hover\:text-success:hover { color: hsl(var(--success-text)); }
+.text-muted-foreground\/60, .text-muted-foreground\/70 { color: hsl(var(--muted-foreground)); }

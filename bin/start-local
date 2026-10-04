@@ -1,0 +1,48 @@
+#!/bin/bash
+set -euo pipefail
+PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd -P)"
+SERVICES_ROOT="$(dirname "$PROJECT_ROOT")/local-services"
+PHP_BIN="${FINDO_PHP_BIN:-/Users/mrx/.config/herd-lite/bin/php}"
+PG_BIN="${FINDO_PG_BIN:-/opt/homebrew/opt/postgresql@17/bin}"
+REDIS_BIN="${FINDO_REDIS_BIN:-/opt/homebrew/bin}"
+export TMPDIR="$(dirname "$PROJECT_ROOT")/tmp"
+mkdir -p "$TMPDIR"
+export PATH="/opt/homebrew/bin:/usr/bin:/bin:$PATH"
+if [ ! -f "$PROJECT_ROOT/.env" ]; then echo 'Missing .env. Follow README before starting.' >&2; exit 1; fi
+if ! "$PG_BIN/pg_isready" -h 127.0.0.1 -p 55439 >/dev/null 2>&1; then
+  "$PG_BIN/pg_ctl" -D "$SERVICES_ROOT/postgres" -l "$SERVICES_ROOT/postgres.log" -o '-p 55439 -h 127.0.0.1' start
+fi
+if ! "$REDIS_BIN/redis-cli" -h 127.0.0.1 -p 56389 ping 2>/dev/null | /usr/bin/grep -q PONG; then
+  "$REDIS_BIN/redis-server" --bind 127.0.0.1 --port 56389 --daemonize yes --dir "$SERVICES_ROOT" --pidfile "$SERVICES_ROOT/redis.pid" --logfile "$SERVICES_ROOT/redis.log"
+fi
+python3 - "$PHP_BIN" "$PROJECT_ROOT" "$SERVICES_ROOT" <<'PYTHON'
+import pathlib,subprocess,sys,os
+php,project,services=sys.argv[1:]
+pidfile=pathlib.Path(services)/'scheduler.pid'
+alive=False
+if pidfile.exists():
+    try:
+        pid=int(pidfile.read_text());os.kill(pid,0)
+        alive='artisan schedule:work' in subprocess.check_output(['/bin/ps','-p',str(pid),'-o','command='],text=True)
+    except (OSError,ValueError,subprocess.CalledProcessError):pass
+if not alive:
+    with open(pathlib.Path(services)/'scheduler.log','ab',buffering=0) as log:
+        process=subprocess.Popen([php,'-d','memory_limit=512M',project+'/artisan','schedule:work'],cwd=project,stdin=subprocess.DEVNULL,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
+    pidfile.write_text(str(process.pid)+'\n')
+PYTHON
+if curl --fail --silent http://127.0.0.1:8080/up >/dev/null 2>&1; then
+  echo 'Local server is already running: http://127.0.0.1:8080'; exit 0
+fi
+cd "$PROJECT_ROOT/public"
+python3 - "$PHP_BIN" "$PROJECT_ROOT" "$SERVICES_ROOT" <<'PYTHON'
+import pathlib,subprocess,sys
+php,project,services=sys.argv[1:]
+with open(pathlib.Path(services)/'web.log','ab',buffering=0) as log:
+    process=subprocess.Popen([php,'-d','memory_limit=512M','-d','upload_max_filesize=100M','-d','post_max_size=110M','-d','max_execution_time=180','-d','upload_tmp_dir='+str(pathlib.Path(services).parent/'tmp'),'-S','127.0.0.1:8080',project+'/vendor/laravel/framework/src/Illuminate/Foundation/resources/server.php'],cwd=project+'/public',stdin=subprocess.DEVNULL,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
+pathlib.Path(services,'web.pid').write_text(str(process.pid)+'\n')
+PYTHON
+for attempt in 1 2 3 4 5; do
+  if curl --fail --silent http://127.0.0.1:8080/up >/dev/null; then echo 'Findo Group is running: http://127.0.0.1:8080'; exit 0; fi
+  sleep 1
+done
+echo "Server did not become healthy. See $SERVICES_ROOT/web.log" >&2; exit 1

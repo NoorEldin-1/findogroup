@@ -1,0 +1,311 @@
+import {cmsCollection} from '@/adapters/cms.js';
+import {
+  Smartphone,
+  TrendingUp,
+  CalendarDays,
+  Award,
+  MonitorPlay,
+  Clock,
+  BookOpen,
+  Users
+} from "lucide-react";
+const original_trainingProgram = {
+  /* ── التعريف العام ── */
+  titleAr: "\u0627\u0644\u0628\u0631\u0646\u0627\u0645\u062C \u0627\u0644\u062A\u062F\u0631\u064A\u0628\u064A \u0627\u0644\u0635\u064A\u0641\u064A 2026",
+  titleEn: "Summer Training Program 2026",
+  programEn: "Summer Internship & Mobile Development Program",
+  academyAr: "\u0627\u0644\u0623\u0643\u0627\u062F\u064A\u0645\u064A\u0629 \u0627\u0644\u0639\u0631\u0628\u064A\u0629 \u0644\u0644\u0639\u0644\u0648\u0645 \u0648\u0627\u0644\u062A\u0643\u0646\u0648\u0644\u0648\u062C\u064A\u0627 \u0648\u0627\u0644\u0646\u0642\u0644 \u0627\u0644\u0628\u062D\u0631\u064A",
+  academyEn: "Arab Academy for Science, Technology & Maritime Transport",
+  partnerAr: "\u0628\u0627\u0644\u062A\u0639\u0627\u0648\u0646 \u0645\u0639 Findo Group",
+  partnerEn: "In collaboration with Findo Group",
+  seasonAr: "\u064A\u0628\u062F\u0623 \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0642\u0627\u062F\u0645 \u2014 \u0628\u0639\u062F\u062F \u0645\u062D\u062F\u0648\u062F \u0645\u0646 \u0627\u0644\u0645\u0642\u0627\u0639\u062F",
+  seasonEn: "Starting next month \u2014 limited seats available",
+  introAr: "\u062A\u0642\u062F\u0651\u0645 \u0634\u0631\u0643\u0629 Findo Group \u0628\u0631\u0646\u0627\u0645\u062C\u064B\u0627 \u062A\u062F\u0631\u064A\u0628\u064A\u064B\u0627 \u0627\u062D\u062A\u0631\u0627\u0641\u064A\u064B\u0627 \u0644\u0637\u0644\u0627\u0628 \u0627\u0644\u0623\u0643\u0627\u062F\u064A\u0645\u064A\u0629 \u0627\u0644\u0639\u0631\u0628\u064A\u0629 \u0644\u0644\u0639\u0644\u0648\u0645 \u0648\u0627\u0644\u062A\u0643\u0646\u0648\u0644\u0648\u062C\u064A\u0627 \u0648\u0627\u0644\u0646\u0642\u0644 \u0627\u0644\u0628\u062D\u0631\u064A\u060C \u0628\u0647\u062F\u0641 \u0625\u0639\u062F\u0627\u062F \u0627\u0644\u0637\u0644\u0627\u0628 \u0644\u0633\u0648\u0642 \u0627\u0644\u0639\u0645\u0644 \u0641\u064A \u0645\u062C\u0627\u0644 \u062A\u0637\u0648\u064A\u0631 \u062A\u0637\u0628\u064A\u0642\u0627\u062A \u0627\u0644\u0647\u0648\u0627\u062A\u0641 \u0627\u0644\u0630\u0643\u064A\u0629 \u0628\u0627\u0633\u062A\u062E\u062F\u0627\u0645 Flutter\u060C \u0628\u0627\u0644\u0625\u0636\u0627\u0641\u0629 \u0625\u0644\u0649 \u062A\u0646\u0645\u064A\u0629 \u0627\u0644\u0645\u0647\u0627\u0631\u0627\u062A \u0627\u0644\u0645\u0647\u0646\u064A\u0629 \u0648\u0627\u0644\u062A\u0633\u0648\u064A\u0642\u064A\u0629 \u0627\u0644\u0644\u0627\u0632\u0645\u0629 \u0644\u0644\u0639\u0645\u0644 \u062F\u0627\u062E\u0644 \u0634\u0631\u0643\u0627\u062A \u0627\u0644\u0628\u0631\u0645\u062C\u064A\u0627\u062A \u0623\u0648 \u0643\u0645\u0633\u062A\u0642\u0644\u064A\u0646. \u064A\u0639\u062A\u0645\u062F \u0627\u0644\u0628\u0631\u0646\u0627\u0645\u062C \u0639\u0644\u0649 \u0627\u0644\u062A\u062F\u0631\u064A\u0628 \u0627\u0644\u0639\u0645\u0644\u064A \u0628\u0646\u0633\u0628\u0629 \u0643\u0628\u064A\u0631\u0629\u060C \u0645\u0639 \u0645\u0634\u0631\u0648\u0639 \u062A\u0637\u0628\u064A\u0642\u064A\u060C \u0648\u0643\u062A\u064A\u0628 \u062A\u062F\u0631\u064A\u0628\u064A \u0645\u0639\u062A\u0645\u062F\u060C \u0648\u0645\u0646\u0635\u0629 \u062A\u0639\u0644\u064A\u0645\u064A\u0629 \u0645\u062A\u0643\u0627\u0645\u0644\u0629 \u0644\u0625\u062F\u0627\u0631\u0629 \u0627\u0644\u062A\u062F\u0631\u064A\u0628.",
+  introEn: "Findo Group offers a professional training program for the students of the Arab Academy for Science, Technology & Maritime Transport, designed to prepare them for the job market in mobile app development with Flutter, while building the professional and marketing skills needed to work inside software companies or as freelancers. The program is heavily hands-on, with a real applied project, an accredited training handbook, and a complete learning platform to manage the training.",
+  /* ── حقائق سريعة للهيرو ── */
+  quickFacts: [
+    { icon: Clock, valueAr: "\u0634\u0647\u0631 \u0643\u0627\u0645\u0644", valueEn: "One month", labelAr: "\u0645\u062F\u0629 \u0627\u0644\u0628\u0631\u0646\u0627\u0645\u062C", labelEn: "Duration" },
+    { icon: CalendarDays, valueAr: "8 \u0645\u062D\u0627\u0636\u0631\u0627\u062A", valueEn: "8 lectures", labelAr: "\u0628\u062B \u0645\u0628\u0627\u0634\u0631 \u0623\u0648\u0646\u0644\u0627\u064A\u0646", labelEn: "Live online" },
+    { icon: Smartphone, valueAr: "\u0645\u0634\u0631\u0648\u0639 \u0643\u0627\u0645\u0644", valueEn: "Full project", labelAr: "\u062A\u0637\u0628\u064A\u0642 Flutter \u0639\u0645\u0644\u064A", labelEn: "Real Flutter app" },
+    { icon: Award, valueAr: "\u0634\u0647\u0627\u062F\u062A\u0627\u0646", valueEn: "2 certificates", labelAr: "\u0645\u0639\u062A\u0645\u062F\u062A\u0627\u0646 \u0645\u0646 Findo Group", labelEn: "Accredited by Findo Group" }
+  ],
+  /* ── مدة البرنامج ── */
+  duration: [
+    { ar: "\u0634\u0647\u0631 \u0643\u0627\u0645\u0644", en: "One full month" },
+    { ar: "8 \u0645\u062D\u0627\u0636\u0631\u0627\u062A \u0645\u0628\u0627\u0634\u0631\u0629", en: "8 live lectures" },
+    { ar: "\u0645\u062D\u0627\u0636\u0631\u062A\u0627\u0646 \u0623\u0633\u0628\u0648\u0639\u064A\u064B\u0627", en: "Two lectures per week" },
+    { ar: "\u064A\u0648\u0645\u0627\u0646 \u0623\u0633\u0628\u0648\u0639\u064A\u064B\u0627: \u0627\u0644\u0633\u0628\u062A \u0648\u0627\u0644\u0623\u0631\u0628\u0639\u0627\u0621", en: "Two days a week: Saturday & Wednesday" }
+  ],
+  /* ── طريقة التدريب ── */
+  methodAr: "\u064A\u064F\u0646\u0641\u064E\u0651\u0630 \u0627\u0644\u0628\u0631\u0646\u0627\u0645\u062C \u0628\u0627\u0644\u0643\u0627\u0645\u0644 Online \u0645\u0646 \u062E\u0644\u0627\u0644 \u0645\u0646\u0635\u0629 Findo Group Academy. \u0628\u0639\u062F \u0642\u0628\u0648\u0644 \u0627\u0644\u0637\u0627\u0644\u0628 \u064A\u062A\u0645 \u062A\u0641\u0639\u064A\u0644 \u062D\u0633\u0627\u0628\u0647 \u0639\u0644\u0649 \u0627\u0644\u0645\u0646\u0635\u0629 \u0627\u0644\u062A\u064A \u062A\u0648\u0641\u0651\u0631 \u0643\u0644 \u0645\u0627 \u064A\u062D\u062A\u0627\u062C\u0647 \u0644\u0625\u062F\u0627\u0631\u0629 \u062A\u062F\u0631\u064A\u0628\u0647. \u0648\u0644\u0646 \u064A\u062A\u0645\u0643\u0646 \u0645\u0646 \u062D\u0636\u0648\u0631 \u0627\u0644\u062A\u062F\u0631\u064A\u0628 \u0625\u0644\u0627 \u0627\u0644\u0637\u0644\u0627\u0628 \u0627\u0644\u0645\u0633\u062C\u0644\u0648\u0646 \u0639\u0628\u0631 \u0627\u0644\u0645\u0646\u0635\u0629 \u0627\u0644\u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A\u0629.",
+  methodEn: "The program runs entirely online through the Findo Group Academy platform. Once a student is accepted, their account is activated on the platform, which provides everything they need to manage the training. Only students registered on the platform can attend the training.",
+  platformFeatures: [
+    { ar: "\u062D\u0636\u0648\u0631 \u0627\u0644\u0645\u062D\u0627\u0636\u0631\u0627\u062A \u0627\u0644\u0645\u0628\u0627\u0634\u0631\u0629", en: "Attend live lectures" },
+    { ar: "\u0631\u0648\u0627\u0628\u0637 Google Meet \u0648 Zoom \u0627\u0644\u062E\u0627\u0635\u0629 \u0628\u0643\u0644 \u0645\u062D\u0627\u0636\u0631\u0629", en: "Google Meet & Zoom links for each lecture" },
+    { ar: "\u062C\u062F\u0648\u0644 \u0627\u0644\u062A\u062F\u0631\u064A\u0628", en: "Training schedule" },
+    { ar: "\u0627\u0644\u0645\u0644\u0641\u0627\u062A \u0627\u0644\u062A\u0639\u0644\u064A\u0645\u064A\u0629", en: "Learning materials" },
+    { ar: "\u0627\u0644\u0625\u0639\u0644\u0627\u0646\u0627\u062A \u0648\u0627\u0644\u062A\u0646\u0628\u064A\u0647\u0627\u062A", en: "Announcements & alerts" },
+    { ar: "\u0645\u062A\u0627\u0628\u0639\u0629 \u0627\u0644\u0648\u0627\u062C\u0628\u0627\u062A", en: "Assignment tracking" },
+    { ar: "\u0645\u062A\u0627\u0628\u0639\u0629 \u0627\u0644\u0645\u0634\u0631\u0648\u0639 \u0627\u0644\u0646\u0647\u0627\u0626\u064A", en: "Final project tracking" }
+  ],
+  /* ── التسجيل ── */
+  registrationNoteAr: "\u064A\u062A\u0645 \u0627\u0644\u062A\u0633\u062C\u064A\u0644 \u0645\u0646 \u062E\u0644\u0627\u0644 \u0627\u0644\u0645\u0648\u0642\u0639 \u0627\u0644\u0631\u0633\u0645\u064A \u0644\u0634\u0631\u0643\u0629 Findo Group. \u0628\u0639\u062F \u0645\u0631\u0627\u062C\u0639\u0629 \u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A \u064A\u062A\u0645 \u0625\u0631\u0633\u0627\u0644 \u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u062F\u062E\u0648\u0644 \u0625\u0644\u0649 \u0627\u0644\u0645\u0646\u0635\u0629.",
+  registrationNoteEn: "Registration is done through Findo Group's official website. After your details are reviewed, your platform login credentials are sent to you.",
+  registrationFields: [
+    { ar: "\u0627\u0644\u0627\u0633\u0645 \u0628\u0627\u0644\u0643\u0627\u0645\u0644", en: "Full name" },
+    { ar: "\u0627\u0644\u0628\u0631\u064A\u062F \u0627\u0644\u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A", en: "Email" },
+    { ar: "\u0631\u0642\u0645 \u0627\u0644\u0647\u0627\u062A\u0641", en: "Phone number" },
+    { ar: "\u0631\u0642\u0645 \u0627\u0644\u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062C\u0627\u0645\u0639\u064A", en: "University registration number" },
+    { ar: "\u0627\u0644\u0642\u0633\u0645", en: "Department" }
+  ],
+  /* ── الكتيب التدريبي ── */
+  handbookAr: "\u064A\u062D\u0635\u0644 \u0643\u0644 \u0637\u0627\u0644\u0628 \u0645\u0642\u0628\u0648\u0644 \u0639\u0644\u0649 \u0627\u0644\u0643\u062A\u064A\u0628 \u0627\u0644\u062A\u062F\u0631\u064A\u0628\u064A \u0627\u0644\u0631\u0633\u0645\u064A \u0627\u0644\u062E\u0627\u0635 \u0628\u0627\u0644\u0628\u0631\u0646\u0627\u0645\u062C\u060C \u0648\u064A\u064F\u0639\u062A\u0628\u0631 \u0627\u0644\u0645\u0631\u062C\u0639 \u0627\u0644\u0623\u0633\u0627\u0633\u064A \u0637\u0648\u0627\u0644 \u0641\u062A\u0631\u0629 \u0627\u0644\u062A\u062F\u0631\u064A\u0628\u060C \u0648\u0633\u062A\u0639\u062A\u0645\u062F \u062C\u0645\u064A\u0639 \u0627\u0644\u0645\u062D\u0627\u0636\u0631\u0627\u062A \u0639\u0644\u0649 \u0645\u062D\u062A\u0648\u0627\u0647.",
+  handbookEn: "Every accepted student receives the program's official training handbook. It is the main reference throughout the training, and all lectures build on its content.",
+  handbookContents: [
+    { ar: "\u0623\u0633\u0627\u0633\u064A\u0627\u062A \u0627\u0644\u0628\u0631\u0645\u062C\u0629", en: "Programming fundamentals" },
+    { ar: "\u0644\u063A\u0629 Dart", en: "The Dart language" },
+    { ar: "Flutter", en: "Flutter" },
+    { ar: "\u0627\u0644\u0623\u0645\u062B\u0644\u0629 \u0627\u0644\u0639\u0645\u0644\u064A\u0629", en: "Practical examples" },
+    { ar: "\u0627\u0644\u062A\u0645\u0627\u0631\u064A\u0646", en: "Exercises" },
+    { ar: "\u0627\u0644\u0645\u0634\u0627\u0631\u064A\u0639", en: "Projects" },
+    { ar: "Roadmap", en: "Roadmap" },
+    { ar: "\u0623\u0647\u0645 \u0627\u0644\u0645\u0635\u0627\u062F\u0631 \u0627\u0644\u062A\u0639\u0644\u064A\u0645\u064A\u0629", en: "Key learning resources" }
+  ],
+  handbookPickupAr: "\u064A\u062A\u0645 \u0627\u0633\u062A\u0644\u0627\u0645 \u0627\u0644\u0643\u062A\u064A\u0628 \u0645\u0646 \u0645\u0642\u0631 \u0634\u0631\u0643\u0629 Findo Group \u0628\u0639\u062F \u0627\u0644\u0627\u0646\u062A\u0647\u0627\u0621 \u0645\u0646 \u0627\u0644\u062A\u0633\u062C\u064A\u0644 \u0648\u0642\u0628\u0648\u0644 \u0627\u0644\u0637\u0627\u0644\u0628 \u0628\u0627\u0644\u0628\u0631\u0646\u0627\u0645\u062C.",
+  handbookPickupEn: "The handbook is collected from Findo Group's office after registration is complete and the student is accepted.",
+  /* ── خطة البرنامج ── */
+  stages: [
+    {
+      key: "flutter",
+      icon: Smartphone,
+      titleAr: "\u0627\u0644\u0645\u0631\u062D\u0644\u0629 \u0627\u0644\u0623\u0648\u0644\u0649 \u2014 \u062A\u0637\u0648\u064A\u0631 \u062A\u0637\u0628\u064A\u0642\u0627\u062A Flutter",
+      titleEn: "Stage One \u2014 Flutter Mobile Development",
+      countAr: "5 \u0645\u062D\u0627\u0636\u0631\u0627\u062A",
+      countEn: "5 lectures",
+      lectures: [
+        {
+          no: 1,
+          titleAr: "\u0645\u0642\u062F\u0645\u0629 \u0648\u0625\u0639\u062F\u0627\u062F \u0628\u064A\u0626\u0629 \u0627\u0644\u0639\u0645\u0644",
+          titleEn: "Introduction & environment setup",
+          topics: [
+            { ar: "\u0645\u0642\u062F\u0645\u0629 \u0639\u0646 \u0627\u0644\u0628\u0631\u0645\u062C\u0629", en: "Intro to programming" },
+            { ar: "Flutter", en: "Flutter" },
+            { ar: "Dart", en: "Dart" },
+            { ar: "\u0625\u0639\u062F\u0627\u062F \u0628\u064A\u0626\u0629 \u0627\u0644\u0639\u0645\u0644", en: "Dev environment setup" },
+            { ar: "Android Studio", en: "Android Studio" },
+            { ar: "VS Code", en: "VS Code" },
+            { ar: "\u0625\u0646\u0634\u0627\u0621 \u0623\u0648\u0644 \u0645\u0634\u0631\u0648\u0639", en: "Create your first project" }
+          ]
+        },
+        {
+          no: 2,
+          titleAr: "\u0627\u0644\u0648\u0627\u062C\u0647\u0627\u062A \u0648 Widgets",
+          titleEn: "UI & Widgets",
+          topics: [
+            { ar: "Widgets", en: "Widgets" },
+            { ar: "Material Design", en: "Material Design" },
+            { ar: "Scaffold", en: "Scaffold" },
+            { ar: "Text", en: "Text" },
+            { ar: "Container", en: "Container" },
+            { ar: "Row & Column", en: "Row & Column" },
+            { ar: "Colors & Icons", en: "Colors & Icons" }
+          ]
+        },
+        {
+          no: 3,
+          titleAr: "\u0627\u0644\u062A\u062E\u0637\u064A\u0637 \u0648\u0627\u0644\u062A\u0646\u0642\u0651\u0644",
+          titleEn: "Layout & navigation",
+          topics: [
+            { ar: "Layout", en: "Layout" },
+            { ar: "Navigation & Routes", en: "Navigation & Routes" },
+            { ar: "Buttons", en: "Buttons" },
+            { ar: "Images", en: "Images" },
+            { ar: "ListView & GridView", en: "ListView & GridView" },
+            { ar: "Stateful & Stateless Widget", en: "Stateful & Stateless Widget" }
+          ]
+        },
+        {
+          no: 4,
+          titleAr: "\u0623\u0633\u0627\u0633\u064A\u0627\u062A \u0644\u063A\u0629 Dart",
+          titleEn: "Dart language fundamentals",
+          topics: [
+            { ar: "Variables", en: "Variables" },
+            { ar: "Functions", en: "Functions" },
+            { ar: "Loops & Conditions", en: "Loops & Conditions" },
+            { ar: "Classes & Objects", en: "Classes & Objects" },
+            { ar: "Constructors", en: "Constructors" },
+            { ar: "Lists & Maps", en: "Lists & Maps" }
+          ]
+        },
+        {
+          no: 5,
+          titleAr: "\u0628\u0646\u0627\u0621 \u0623\u0648\u0644 \u062A\u0637\u0628\u064A\u0642 \u0645\u062A\u0643\u0627\u0645\u0644",
+          titleEn: "Build your first mobile app",
+          topics: [
+            { ar: "\u064A\u0628\u0646\u064A \u0643\u0644 \u0637\u0627\u0644\u0628 \u0623\u0648\u0644 \u062A\u0637\u0628\u064A\u0642 Flutter \u0645\u062A\u0643\u0627\u0645\u0644", en: "Each student builds a complete first Flutter app" }
+          ]
+        }
+      ]
+    },
+    {
+      key: "marketing",
+      icon: TrendingUp,
+      titleAr: "\u0627\u0644\u0645\u0631\u062D\u0644\u0629 \u0627\u0644\u062B\u0627\u0646\u064A\u0629 \u2014 \u0627\u0644\u062A\u0633\u0648\u064A\u0642 \u0627\u0644\u0631\u0642\u0645\u064A",
+      titleEn: "Stage Two \u2014 Digital Marketing",
+      countAr: "3 \u0645\u062D\u0627\u0636\u0631\u0627\u062A",
+      countEn: "3 lectures",
+      lectures: [
+        {
+          no: 6,
+          titleAr: "\u0645\u0642\u062F\u0645\u0629 \u0641\u064A \u0627\u0644\u062A\u0633\u0648\u064A\u0642 \u0627\u0644\u0631\u0642\u0645\u064A",
+          titleEn: "Introduction to digital marketing",
+          topics: [
+            { ar: "\u0645\u0642\u062F\u0645\u0629 \u0641\u064A \u0627\u0644\u062A\u0633\u0648\u064A\u0642 \u0627\u0644\u0631\u0642\u0645\u064A", en: "Intro to digital marketing" },
+            { ar: "Branding", en: "Branding" },
+            { ar: "Personal Branding", en: "Personal Branding" },
+            { ar: "Customer Journey", en: "Customer Journey" },
+            { ar: "Digital Business", en: "Digital Business" }
+          ]
+        },
+        {
+          no: 7,
+          titleAr: "\u0627\u0644\u062A\u0633\u0648\u064A\u0642 \u0644\u0644\u0645\u0628\u0631\u0645\u062C\u064A\u0646",
+          titleEn: "Marketing for developers",
+          topics: [
+            { ar: "\u0627\u0644\u062A\u0633\u0648\u064A\u0642 \u0644\u0644\u0645\u0628\u0631\u0645\u062C\u064A\u0646", en: "Marketing for developers" },
+            { ar: "\u0628\u0646\u0627\u0621 Portfolio", en: "Building a portfolio" },
+            { ar: "LinkedIn", en: "LinkedIn" },
+            { ar: "GitHub", en: "GitHub" },
+            { ar: "Freelancing", en: "Freelancing" },
+            { ar: "\u0643\u064A\u0641\u064A\u0629 \u0627\u0644\u062D\u0635\u0648\u0644 \u0639\u0644\u0649 \u0623\u0648\u0644 \u0639\u0645\u064A\u0644", en: "Landing your first client" }
+          ]
+        },
+        {
+          no: 8,
+          titleAr: "\u0627\u0644\u0627\u0633\u062A\u0639\u062F\u0627\u062F \u0644\u0633\u0648\u0642 \u0627\u0644\u0639\u0645\u0644",
+          titleEn: "Career readiness",
+          topics: [
+            { ar: "\u0627\u0644\u0627\u0633\u062A\u0639\u062F\u0627\u062F \u0644\u0633\u0648\u0642 \u0627\u0644\u0639\u0645\u0644", en: "Preparing for the job market" },
+            { ar: "\u0643\u062A\u0627\u0628\u0629 \u0627\u0644\u0633\u064A\u0631\u0629 \u0627\u0644\u0630\u0627\u062A\u064A\u0629", en: "CV writing" },
+            { ar: "\u0645\u0642\u0627\u0628\u0644\u0627\u062A \u0627\u0644\u0639\u0645\u0644", en: "Job interviews" },
+            { ar: "\u0639\u0631\u0636 \u0627\u0644\u0645\u0634\u0627\u0631\u064A\u0639", en: "Project presentation" },
+            { ar: "\u062A\u0642\u064A\u064A\u0645 \u0646\u0647\u0627\u0626\u064A \u0648\u062E\u062A\u0627\u0645 \u0627\u0644\u0628\u0631\u0646\u0627\u0645\u062C", en: "Final assessment & program closing" }
+          ]
+        }
+      ]
+    }
+  ],
+  /* ── الجدول الزمني ── */
+  schedule: [
+    { weekAr: "\u0627\u0644\u0623\u0633\u0628\u0648\u0639 \u0627\u0644\u0623\u0648\u0644", weekEn: "Week 1", satAr: "\u0627\u0644\u0645\u062D\u0627\u0636\u0631\u0629 \u0627\u0644\u0623\u0648\u0644\u0649", satEn: "Lecture 1", wedAr: "\u0627\u0644\u0645\u062D\u0627\u0636\u0631\u0629 \u0627\u0644\u062B\u0627\u0646\u064A\u0629", wedEn: "Lecture 2" },
+    { weekAr: "\u0627\u0644\u0623\u0633\u0628\u0648\u0639 \u0627\u0644\u062B\u0627\u0646\u064A", weekEn: "Week 2", satAr: "\u0627\u0644\u0645\u062D\u0627\u0636\u0631\u0629 \u0627\u0644\u062B\u0627\u0644\u062B\u0629", satEn: "Lecture 3", wedAr: "\u0627\u0644\u0645\u062D\u0627\u0636\u0631\u0629 \u0627\u0644\u0631\u0627\u0628\u0639\u0629", wedEn: "Lecture 4" },
+    { weekAr: "\u0627\u0644\u0623\u0633\u0628\u0648\u0639 \u0627\u0644\u062B\u0627\u0644\u062B", weekEn: "Week 3", satAr: "\u0627\u0644\u0645\u062D\u0627\u0636\u0631\u0629 \u0627\u0644\u062E\u0627\u0645\u0633\u0629", satEn: "Lecture 5", wedAr: "\u0627\u0644\u0645\u062D\u0627\u0636\u0631\u0629 \u0627\u0644\u0633\u0627\u062F\u0633\u0629", wedEn: "Lecture 6" },
+    { weekAr: "\u0627\u0644\u0623\u0633\u0628\u0648\u0639 \u0627\u0644\u0631\u0627\u0628\u0639", weekEn: "Week 4", satAr: "\u0627\u0644\u0645\u062D\u0627\u0636\u0631\u0629 \u0627\u0644\u0633\u0627\u0628\u0639\u0629", satEn: "Lecture 7", wedAr: "\u0627\u0644\u0645\u062D\u0627\u0636\u0631\u0629 \u0627\u0644\u062B\u0627\u0645\u0646\u0629 + \u0627\u0644\u062A\u0642\u064A\u064A\u0645 \u0627\u0644\u0646\u0647\u0627\u0626\u064A", wedEn: "Lecture 8 + final assessment" }
+  ],
+  /* ── آلية التدريب ── */
+  mechanism: [
+    { ar: "\u0628\u062B \u0645\u0628\u0627\u0634\u0631 Online", en: "Live online streaming" },
+    { ar: "\u062A\u0637\u0628\u064A\u0642 \u0639\u0645\u0644\u064A \u0623\u062B\u0646\u0627\u0621 \u0643\u0644 \u0645\u062D\u0627\u0636\u0631\u0629", en: "Hands-on practice every lecture" },
+    { ar: "\u0648\u0627\u062C\u0628\u0627\u062A \u0623\u0633\u0628\u0648\u0639\u064A\u0629", en: "Weekly assignments" },
+    { ar: "\u0645\u0631\u0627\u062C\u0639\u0629 \u0645\u0633\u062A\u0645\u0631\u0629", en: "Continuous review" },
+    { ar: "\u0645\u0634\u0631\u0648\u0639 \u0646\u0647\u0627\u0626\u064A", en: "A final project" },
+    { ar: "\u062A\u0642\u064A\u064A\u0645 \u0644\u0643\u0644 \u0637\u0627\u0644\u0628", en: "Per-student evaluation" },
+    { ar: "\u0645\u062A\u0627\u0628\u0639\u0629 \u0627\u0644\u0623\u062F\u0627\u0621 \u0637\u0648\u0627\u0644 \u0627\u0644\u0628\u0631\u0646\u0627\u0645\u062C", en: "Performance tracking throughout" }
+  ],
+  /* ── المشروع النهائي ── */
+  finalProjectAr: "\u064A\u064F\u0646\u0641\u0651\u0630 \u0643\u0644 \u0637\u0627\u0644\u0628 \u0645\u0634\u0631\u0648\u0639 Flutter \u0645\u062A\u0643\u0627\u0645\u0644 \u064A\u064F\u0639\u0631\u0636 \u0641\u064A \u0646\u0647\u0627\u064A\u0629 \u0627\u0644\u0628\u0631\u0646\u0627\u0645\u062C\u060C \u0648\u064A\u0642\u064A\u0651\u0645\u0647 \u0641\u0631\u064A\u0642 \u0647\u0646\u062F\u0633\u064A \u0628\u0634\u0631\u0643\u0629 Findo Group \u0648\u0641\u0642 \u0645\u0639\u0627\u064A\u064A\u0631 \u0648\u0627\u0636\u062D\u0629.",
+  finalProjectEn: "Each student builds a complete Flutter project, presented at the end of the program and evaluated by a Findo Group engineering team against clear criteria.",
+  finalProjectCriteria: [
+    { ar: "\u062C\u0648\u062F\u0629 \u0627\u0644\u0643\u0648\u062F", en: "Code quality" },
+    { ar: "\u062A\u0635\u0645\u064A\u0645 \u0648\u0627\u062C\u0647\u0629 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645", en: "UI design" },
+    { ar: "\u062A\u0646\u0638\u064A\u0645 \u0627\u0644\u0645\u0634\u0631\u0648\u0639", en: "Project organization" },
+    { ar: "\u0627\u0644\u0623\u062F\u0627\u0621", en: "Performance" },
+    { ar: "\u0627\u0644\u0627\u0644\u062A\u0632\u0627\u0645 \u0628\u0627\u0644\u0645\u062A\u0637\u0644\u0628\u0627\u062A", en: "Meeting the requirements" }
+  ],
+  /* ── متطلبات الالتحاق ── */
+  requirements: [
+    { ar: "\u0627\u0644\u062A\u0633\u062C\u064A\u0644 \u0639\u0628\u0631 \u0627\u0644\u0645\u0646\u0635\u0629", en: "Register via the platform" },
+    { ar: "\u062C\u0647\u0627\u0632 Laptop \u0623\u0648 Desktop", en: "A laptop or desktop" },
+    { ar: "\u0627\u062A\u0635\u0627\u0644 \u0625\u0646\u062A\u0631\u0646\u062A \u062C\u064A\u062F", en: "A good internet connection" },
+    { ar: "\u062A\u062B\u0628\u064A\u062A \u0627\u0644\u0628\u0631\u0627\u0645\u062C \u0627\u0644\u0645\u0637\u0644\u0648\u0628\u0629", en: "Install the required software" },
+    { ar: "\u0627\u0633\u062A\u0644\u0627\u0645 \u0627\u0644\u0643\u062A\u064A\u0628 \u0627\u0644\u062A\u062F\u0631\u064A\u0628\u064A", en: "Receive the training handbook" }
+  ],
+  /* ── مميزات البرنامج ── */
+  features: [
+    { ar: "\u062A\u062F\u0631\u064A\u0628 \u0645\u0642\u062F\u064E\u0651\u0645 \u0628\u0648\u0627\u0633\u0637\u0629 \u0645\u0647\u0646\u062F\u0633\u064A Findo Group", en: "Training delivered by Findo Group engineers" },
+    { ar: "\u0645\u0646\u0635\u0629 \u062A\u0639\u0644\u064A\u0645\u064A\u0629 \u0645\u062A\u0643\u0627\u0645\u0644\u0629", en: "A complete learning platform" },
+    { ar: "\u0645\u062D\u0627\u0636\u0631\u0627\u062A \u0645\u0628\u0627\u0634\u0631\u0629", en: "Live lectures" },
+    { ar: "\u062A\u062F\u0631\u064A\u0628 \u0639\u0645\u0644\u064A \u0628\u0646\u0633\u0628\u0629 \u0639\u0627\u0644\u064A\u0629", en: "A high hands-on ratio" },
+    { ar: "\u0643\u062A\u064A\u0628 \u062A\u062F\u0631\u064A\u0628\u064A \u0627\u062D\u062A\u0631\u0627\u0641\u064A", en: "A professional training handbook" },
+    { ar: "\u0645\u0634\u0631\u0648\u0639 \u0639\u0645\u0644\u064A \u0645\u062A\u0643\u0627\u0645\u0644", en: "A complete practical project" },
+    { ar: "\u062A\u0642\u064A\u064A\u0645 \u0641\u0631\u062F\u064A \u0644\u0643\u0644 \u0637\u0627\u0644\u0628", en: "Individual evaluation per student" },
+    { ar: "\u0645\u0631\u0627\u062C\u0639\u0629 \u0623\u0643\u0648\u0627\u062F \u0627\u0644\u0645\u0634\u0627\u0631\u064A\u0639", en: "Project code reviews" },
+    { ar: "\u0645\u062D\u0627\u0643\u0627\u0629 \u062D\u0642\u064A\u0642\u064A\u0629 \u0644\u0633\u0648\u0642 \u0627\u0644\u0639\u0645\u0644", en: "A real job-market simulation" },
+    { ar: "\u062A\u0639\u0644\u0651\u0645 \u0623\u062D\u062F\u062B \u0645\u0645\u0627\u0631\u0633\u0627\u062A \u062A\u0637\u0648\u064A\u0631 \u062A\u0637\u0628\u064A\u0642\u0627\u062A Flutter", en: "Latest Flutter development practices" },
+    { ar: "\u0623\u0633\u0627\u0633\u064A\u0627\u062A \u0627\u0644\u062A\u0633\u0648\u064A\u0642 \u0627\u0644\u0631\u0642\u0645\u064A \u0644\u0644\u0645\u0637\u0648\u0631\u064A\u0646", en: "Digital marketing basics for developers" },
+    { ar: "\u0628\u0646\u0627\u0621 Portfolio \u0627\u062D\u062A\u0631\u0627\u0641\u064A", en: "Build a professional portfolio" },
+    { ar: "\u062A\u0623\u0647\u064A\u0644 \u0644\u0644\u0645\u0642\u0627\u0628\u0644\u0627\u062A \u0627\u0644\u0634\u062E\u0635\u064A\u0629", en: "Interview preparation" }
+  ],
+  /* ── الشهادات المعتمدة ── */
+  certificatesNoteAr: "\u0628\u0639\u062F \u0627\u062C\u062A\u064A\u0627\u0632 \u0627\u0644\u0628\u0631\u0646\u0627\u0645\u062C \u0628\u0646\u062C\u0627\u062D \u0648\u0627\u0633\u062A\u064A\u0641\u0627\u0621 \u0645\u062A\u0637\u0644\u0628\u0627\u062A \u0627\u0644\u062D\u0636\u0648\u0631 \u0648\u0627\u0644\u0645\u0634\u0631\u0648\u0639 \u0627\u0644\u0646\u0647\u0627\u0626\u064A\u060C \u064A\u062D\u0635\u0644 \u0627\u0644\u0637\u0627\u0644\u0628 \u0639\u0644\u0649 \u0634\u0647\u0627\u062F\u062A\u064A\u0646 \u0645\u0639\u062A\u0645\u062F\u062A\u064A\u0646 \u0645\u0646 \u0634\u0631\u0643\u0629 Findo Group.",
+  certificatesNoteEn: "After successfully completing the program and meeting the attendance and final-project requirements, the student receives two certificates accredited by Findo Group.",
+  certificates: [
+    {
+      titleAr: "\u0634\u0647\u0627\u062F\u0629 \u0645\u0639\u062A\u0645\u062F\u0629 \u0641\u064A \u062A\u0637\u0648\u064A\u0631 \u062A\u0637\u0628\u064A\u0642\u0627\u062A Flutter",
+      titleEn: "Certified Flutter Mobile Development",
+      credential: "Certified Flutter Mobile Developer",
+      descAr: "\u062A\u0634\u0647\u062F \u0628\u0623\u0646 \u0627\u0644\u0637\u0627\u0644\u0628 \u0623\u062A\u0645\u0651 \u0628\u0646\u062C\u0627\u062D \u0627\u0644\u0628\u0631\u0646\u0627\u0645\u062C \u0627\u0644\u062A\u062F\u0631\u064A\u0628\u064A \u0641\u064A \u062A\u0637\u0648\u064A\u0631 \u062A\u0637\u0628\u064A\u0642\u0627\u062A \u0627\u0644\u0647\u0648\u0627\u062A\u0641 \u0627\u0644\u0630\u0643\u064A\u0629 \u0628\u0627\u0633\u062A\u062E\u062F\u0627\u0645 Flutter\u060C \u0648\u0627\u062C\u062A\u0627\u0632 \u0627\u0644\u0645\u062A\u0637\u0644\u0628\u0627\u062A \u0627\u0644\u0639\u0645\u0644\u064A\u0629 \u0648\u0627\u0644\u0645\u0634\u0631\u0648\u0639 \u0627\u0644\u0646\u0647\u0627\u0626\u064A\u060C \u0648\u0623\u0635\u0628\u062D \u0645\u0624\u0647\u0644\u064B\u0627 \u0644\u062A\u0637\u0648\u064A\u0631 \u062A\u0637\u0628\u064A\u0642\u0627\u062A Mobile \u0628\u0627\u0633\u062A\u062E\u062F\u0627\u0645 Flutter \u0648Dart \u0648\u0641\u0642 \u0623\u0633\u0627\u0633\u064A\u0627\u062A \u0627\u0644\u062A\u0637\u0648\u064A\u0631 \u0627\u0644\u062D\u062F\u064A\u062B\u0629.",
+      descEn: "Certifies that the student successfully completed the mobile app development program using Flutter, passed the practical requirements and the final project, and is qualified to build mobile apps with Flutter and Dart following modern development practices."
+    },
+    {
+      titleAr: "\u0634\u0647\u0627\u062F\u0629 \u0645\u0639\u062A\u0645\u062F\u0629 \u0641\u064A \u0623\u0633\u0627\u0633\u064A\u0627\u062A \u0627\u0644\u062A\u0633\u0648\u064A\u0642 \u0627\u0644\u0631\u0642\u0645\u064A",
+      titleEn: "Certified Digital Marketing Fundamentals",
+      credential: "Certified Digital Marketing Fundamentals",
+      descAr: "\u062A\u0634\u0647\u062F \u0628\u0623\u0646 \u0627\u0644\u0637\u0627\u0644\u0628 \u0623\u062A\u0645\u0651 \u0627\u0644\u0628\u0631\u0646\u0627\u0645\u062C \u0627\u0644\u062A\u062F\u0631\u064A\u0628\u064A \u0641\u064A \u0623\u0633\u0627\u0633\u064A\u0627\u062A \u0627\u0644\u062A\u0633\u0648\u064A\u0642 \u0627\u0644\u0631\u0642\u0645\u064A\u060C \u0648\u0627\u0643\u062A\u0633\u0628 \u0627\u0644\u0645\u0647\u0627\u0631\u0627\u062A \u0627\u0644\u0623\u0633\u0627\u0633\u064A\u0629 \u0641\u064A \u0627\u0644\u062A\u0633\u0648\u064A\u0642 \u0627\u0644\u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A\u060C \u0648\u0628\u0646\u0627\u0621 \u0627\u0644\u0647\u0648\u064A\u0629 \u0627\u0644\u0645\u0647\u0646\u064A\u0629\u060C \u0648\u0627\u0644\u062A\u0633\u0648\u064A\u0642 \u0644\u0644\u062E\u062F\u0645\u0627\u062A \u0648\u0627\u0644\u0645\u0646\u062A\u062C\u0627\u062A \u0627\u0644\u0631\u0642\u0645\u064A\u0629.",
+      descEn: "Certifies that the student completed the digital marketing fundamentals program and gained core skills in online marketing, professional branding, and marketing digital services and products."
+    }
+  ],
+  certificateConditions: [
+    { ar: "\u062D\u0636\u0648\u0631 \u0645\u0627 \u0644\u0627 \u064A\u0642\u0644 \u0639\u0646 80% \u0645\u0646 \u0627\u0644\u0645\u062D\u0627\u0636\u0631\u0627\u062A", en: "Attend at least 80% of lectures" },
+    { ar: "\u062A\u0646\u0641\u064A\u0630 \u062C\u0645\u064A\u0639 \u0627\u0644\u0648\u0627\u062C\u0628\u0627\u062A \u0627\u0644\u0645\u0637\u0644\u0648\u0628\u0629", en: "Complete all required assignments" },
+    { ar: "\u062A\u0633\u0644\u064A\u0645 \u0627\u0644\u0645\u0634\u0631\u0648\u0639 \u0627\u0644\u0646\u0647\u0627\u0626\u064A", en: "Submit the final project" },
+    { ar: "\u0627\u062C\u062A\u064A\u0627\u0632 \u0627\u0644\u062A\u0642\u064A\u064A\u0645 \u0627\u0644\u0646\u0647\u0627\u0626\u064A", en: "Pass the final assessment" },
+    { ar: "\u0627\u0644\u0627\u0644\u062A\u0632\u0627\u0645 \u0628\u0644\u0648\u0627\u0626\u062D \u0627\u0644\u0628\u0631\u0646\u0627\u0645\u062C", en: "Comply with the program rules" }
+  ],
+  /* ── الامتيازات التي يحصل عليها الطالب ── */
+  benefits: [
+    { ar: "\u0634\u0647\u0627\u062F\u0629 \u0645\u0639\u062A\u0645\u062F\u0629 \u0641\u064A Flutter Mobile Development", en: "Certified Flutter Mobile Development" },
+    { ar: "\u0634\u0647\u0627\u062F\u0629 \u0645\u0639\u062A\u0645\u062F\u0629 \u0641\u064A Digital Marketing Fundamentals", en: "Certified Digital Marketing Fundamentals" },
+    { ar: "\u062A\u0642\u064A\u064A\u0645 \u0641\u0646\u064A \u0644\u0644\u0645\u0634\u0631\u0648\u0639 \u0627\u0644\u0646\u0647\u0627\u0626\u064A", en: "Technical evaluation of the final project" },
+    { ar: "\u0645\u0631\u0627\u062C\u0639\u0629 \u0627\u062D\u062A\u0631\u0627\u0641\u064A\u0629 \u0644\u0644\u0643\u0648\u062F \u0627\u0644\u0628\u0631\u0645\u062C\u064A", en: "Professional code review" },
+    { ar: "\u0645\u0644\u0641 \u0625\u0646\u062C\u0627\u0632 (Portfolio Project) \u064A\u064F\u0636\u0627\u0641 \u0625\u0644\u0649 \u0627\u0644\u0633\u064A\u0631\u0629 \u0627\u0644\u0630\u0627\u062A\u064A\u0629", en: "A portfolio project to add to your CV" },
+    { ar: "\u062E\u0628\u0631\u0629 \u0639\u0645\u0644\u064A\u0629 \u0641\u064A \u062A\u0646\u0641\u064A\u0630 \u0645\u0634\u0631\u0648\u0639 \u062D\u0642\u064A\u0642\u064A", en: "Hands-on experience delivering a real project" },
+    { ar: "\u0623\u0648\u0644\u0648\u064A\u0629 \u0644\u0644\u062A\u0631\u0634\u062D \u0644\u0628\u0631\u0627\u0645\u062C \u0627\u0644\u062A\u062F\u0631\u064A\u0628 \u0627\u0644\u0645\u062A\u0642\u062F\u0645\u0629 \u0645\u0646 Findo Group", en: "Priority for Findo Group's advanced training programs" },
+    { ar: "\u0625\u0645\u0643\u0627\u0646\u064A\u0629 \u062A\u0631\u0634\u064A\u062D \u0627\u0644\u0645\u062A\u0645\u064A\u0651\u0632\u064A\u0646 \u0644\u0641\u0631\u0635 \u062A\u062F\u0631\u064A\u0628 \u0623\u0648 \u062A\u0639\u0627\u0648\u0646 \u0645\u0633\u062A\u0642\u0628\u0644\u064A \u0645\u0639 \u0627\u0644\u0634\u0631\u0643\u0629", en: "Top performers may be nominated for future internships or collaboration" },
+    { ar: "\u0627\u0644\u0627\u0646\u0636\u0645\u0627\u0645 \u0625\u0644\u0649 \u0645\u062C\u062A\u0645\u0639 \u0645\u0637\u0648\u0631\u064A Findo Group", en: "Join the Findo Group developer community" }
+  ],
+  /* ── النتيجة المتوقعة ── */
+  outcomes: [
+    { ar: "\u0625\u0646\u0634\u0627\u0621 \u062A\u0637\u0628\u064A\u0642 Flutter \u0645\u0646 \u0627\u0644\u0635\u0641\u0631", en: "Build a Flutter app from scratch" },
+    { ar: "\u062A\u0635\u0645\u064A\u0645 \u0648\u0627\u062C\u0647\u0627\u062A \u0627\u062D\u062A\u0631\u0627\u0641\u064A\u0629", en: "Design professional interfaces" },
+    { ar: "\u0643\u062A\u0627\u0628\u0629 \u0643\u0648\u062F \u0645\u0646\u0638\u0651\u0645 \u0648\u0642\u0627\u0628\u0644 \u0644\u0644\u062A\u0637\u0648\u064A\u0631", en: "Write clean, scalable code" },
+    { ar: "\u0627\u0644\u062A\u0639\u0627\u0645\u0644 \u0645\u0639 \u0623\u0633\u0627\u0633\u064A\u0627\u062A \u0644\u063A\u0629 Dart", en: "Work with Dart fundamentals" },
+    { ar: "\u0628\u0646\u0627\u0621 \u0645\u0634\u0631\u0648\u0639 \u0645\u062A\u0643\u0627\u0645\u0644 \u0642\u0627\u0628\u0644 \u0644\u0644\u062A\u0637\u0648\u064A\u0631", en: "Build a complete, scalable project" },
+    { ar: "\u0641\u0647\u0645 \u062F\u0648\u0631\u0629 \u062D\u064A\u0627\u0629 \u062A\u0637\u0648\u064A\u0631 \u0627\u0644\u062A\u0637\u0628\u064A\u0642\u0627\u062A", en: "Understand the app development lifecycle" },
+    { ar: "\u0625\u0646\u0634\u0627\u0621 Portfolio \u0627\u062D\u062A\u0631\u0627\u0641\u064A", en: "Build a professional portfolio" },
+    { ar: "\u062A\u0633\u0648\u064A\u0642 \u0645\u0647\u0627\u0631\u0627\u062A\u0647 \u0627\u0644\u062A\u0642\u0646\u064A\u0629 \u0628\u0627\u062D\u062A\u0631\u0627\u0641\u064A\u0629", en: "Market technical skills professionally" },
+    { ar: "\u0627\u0644\u0627\u0633\u062A\u0639\u062F\u0627\u062F \u0644\u0644\u062A\u062F\u0631\u064A\u0628 \u0627\u0644\u0639\u0645\u0644\u064A \u0623\u0648 \u0623\u0648\u0644 \u0641\u0631\u0635\u0629 \u0639\u0645\u0644 \u0641\u064A \u062A\u0637\u0648\u064A\u0631 \u0627\u0644\u062A\u0637\u0628\u064A\u0642\u0627\u062A", en: "Be ready for an internship or first job in app development" }
+  ]
+};
+export const trainingProgram = cmsCollection('trainingProgram',original_trainingProgram);
+const original_trainingDepartments = [
+  { ar: "\u0639\u0644\u0648\u0645 \u0627\u0644\u062D\u0627\u0633\u0628", en: "Computer Science" },
+  { ar: "\u0647\u0646\u062F\u0633\u0629 \u0627\u0644\u062D\u0627\u0633\u0628", en: "Computer Engineering" },
+  { ar: "\u0646\u0638\u0645 \u0627\u0644\u0645\u0639\u0644\u0648\u0645\u0627\u062A", en: "Information Systems" },
+  { ar: "\u0627\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0627\u0635\u0637\u0646\u0627\u0639\u064A", en: "Artificial Intelligence" },
+  { ar: "\u0627\u0644\u0647\u0646\u062F\u0633\u0629", en: "Engineering" },
+  { ar: "\u0625\u062F\u0627\u0631\u0629 \u0627\u0644\u0623\u0639\u0645\u0627\u0644", en: "Business Administration" },
+  { ar: "\u0623\u062E\u0631\u0649", en: "Other" }
+];
+export const trainingDepartments = cmsCollection('trainingDepartments',original_trainingDepartments);
+export const trainingIcons = { MonitorPlay, BookOpen, Users, Award, CalendarDays };

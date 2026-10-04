@@ -1,0 +1,8 @@
+@extends('admin.layout')
+@section('title',__('تقارير التشغيل'))
+@section('content')
+<div class="page-heading"><div><h1>{{ __('تقارير التشغيل') }}</h1><p class="muted">{{ __('الأعداد من السجلات المتاحة لك. لا توجد مقارنة أداء أو نتائج مفترضة عند غياب خط الأساس.') }}</p></div></div>
+<div class="stats-grid">@foreach($metrics as $label=>$value)<div class="stat"><span>{{ $label }}</span><strong class="smaller">{{ $value }}</strong></div>@endforeach</div>
+@if($access->can(auth()->user(),'costs'))<section class="card table-card"><table><thead><tr><th>{{ __('المشروع') }}</th><th>{{ __('الفعلية') }}</th><th>{{ __('المتبقية') }}</th><th>{{ __('توقع الإكمال') }}</th><th>{{ __('الميزانية') }}</th><th>{{ __('الهامش المباشر') }}</th></tr></thead><tbody>@forelse($financial as $row)<tr><td><a href="/admin/operations/record/{{ $row['project']->id }}">{{ $row['project']->title }}</a></td><td>{{ number_format($row['actual'],2) }}</td><td>{{ number_format($row['remaining'],2) }}</td><td>{{ number_format($row['forecast'],2) }}</td><td>{{ $row['budget']===null?'—':number_format($row['budget'],2) }}</td><td>{{ $row['margin']===null?'—':$row['margin'].'%' }}</td></tr>@empty<tr><td colspan="6">{{ __('لا توجد بيانات مالية فعلية بعد.') }}</td></tr>@endforelse</tbody></table></section><div class="notice">{{ __('الهامش المباشر لا يساوي صافي ربح الشركة. تكلفة الإكمال = الفعلية + المتبقية المتوقعة.') }}</div>@endif
+<section class="card"><h2>{{ __('تقرير الإدارة الأسبوعي') }}</h2><p>{{ __('سجل الاجتماع الأسبوعي يجمع المقبول بروابطه، الفعلي والمتبقي والتوقع، أهم المخاطر، وقرار مطلوب مع بدائل ومسؤول وموعد.') }}</p><a class="button secondary" href="/admin/operations/meetings">{{ __('الاجتماعات والتقارير') }}</a></section>
+@endsection

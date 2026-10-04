@@ -1,0 +1,13 @@
+#!/bin/bash
+set -euo pipefail
+PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd -P)"
+SERVICES_ROOT="$(dirname "$PROJECT_ROOT")/local-services"
+DESTINATION="$PROJECT_ROOT/storage/backups/findo-$(date +%Y%m%d-%H%M%S).dump"
+mkdir -p "$PROJECT_ROOT/storage/backups"
+PGPASSWORD="$(cat "$SERVICES_ROOT/pg-password")" /opt/homebrew/opt/postgresql@17/bin/pg_dump -h 127.0.0.1 -p 55439 -U findo_local -d findo_local -Fc -f "$DESTINATION"
+chmod 600 "$DESTINATION"
+if [ -d "$PROJECT_ROOT/storage/app/private/operating" ]; then
+    tar -czf "${DESTINATION%.dump}-evidence.tar.gz" -C "$PROJECT_ROOT/storage/app/private" operating
+    chmod 600 "${DESTINATION%.dump}-evidence.tar.gz"
+fi
+echo "Database backup: $DESTINATION"
