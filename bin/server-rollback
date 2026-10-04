@@ -29,6 +29,8 @@ BACKUP="$STATE/backups/$STAMP-before.tgz"
 [[ -f "$BACKUP" ]] || { echo "No backup $BACKUP" >&2; exit 1; }
 exec 9>"$STATE/deploy.lock"
 flock -n 9 || { echo "A deploy is running." >&2; exit 1; }
+assert_no_symlinks "$APP"
+assert_safe_archive "$BACKUP"
 
 # Remove code files that did not exist before the deploy, then restore.
 comm -23 <(scope_files "$APP") <(tar -tzf "$BACKUP" | grep -v '/$' | LC_ALL=C sort) \

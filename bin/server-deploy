@@ -72,6 +72,9 @@ install_script() {
 REL="$STATE/releases/$STAMP"
 exec 9>"$STATE/deploy.lock"
 flock -n 9 || { echo "Another deploy is running." >&2; exit 1; }
+assert_no_symlinks "$APP"
+assert_safe_archive "$REL/code.tgz"
+assert_safe_archive "$REL/build.tgz"
 
 echo "  backup → $STATE/backups/$STAMP-before.tgz"
 { scope_files "$APP"; (cd "$APP" && find public/build -type f); } \

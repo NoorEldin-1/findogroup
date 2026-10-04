@@ -20,6 +20,7 @@ info "Downloading code from $FINDO_SSH_HOST:$REMOTE_APP"
 remote > "$tmp/code.tgz" <<'EOF'
 scope_files "$APP" | tar -C "$APP" -czf - --verbatim-files-from -T -
 EOF
+assert_safe_archive "$tmp/code.tgz" || die "Refusing to extract the server archive."
 mkdir "$tmp/tree"
 tar -xzf "$tmp/code.tgz" -C "$tmp/tree"
 

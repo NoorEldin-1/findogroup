@@ -12,7 +12,8 @@ set -euo pipefail
 
 FINDO_SSH_HOST="${FINDO_SSH_HOST:-findo}"
 REMOTE_APP="/home/findogroup.com/app"
-REMOTE_STATE="/home/findogroup.com/.deploy"
+# Root-only. Must not live under /home/findogroup.com, which the `findo` user owns.
+REMOTE_STATE="/var/lib/findo-deploy"
 REMOTE_PHP="/usr/local/lsws/lsphp84/bin/php"
 PRODUCTION_BRANCH="production"
 SITE_URL="https://findogroup.com/"
@@ -39,6 +40,23 @@ scope_files() {
         -o -name '*.log' -o -name '*.sqlite*' -o -name .DS_Store -o -name Thumbs.db -o -name .phpunit.result.cache \
     \) -prune -o \( -type f -o -type l \) -print | sed 's|^\./||' | LC_ALL=C sort )
 }
+# Refuse archives with links, absolute paths or "..": extracting one could write
+# outside the target directory.
+assert_safe_archive() {
+    local bad
+    bad="$(tar -tvzf "$1" | awk '$1 ~ /^[lh]/ { print; next }
+        { n = $6; for (i = 7; i <= NF; i++) n = n " " $i
+          if (n ~ /^\// || n ~ /(^|\/)\.\.(\/|$)/) print }')"
+    [[ -z "$bad" ]] || { printf 'Unsafe archive entries in %s:\n%s\n' "$1" "$bad" >&2; return 1; }
+}
+# Refuse to write into the app as root if any directory in the code area is a
+# symlink: root following it could overwrite files outside the app.
+assert_no_symlinks() {
+    local links
+    links="$(find "$1" \( -path "$1/vendor" -o -path "$1/node_modules" -o -path "$1/storage" \
+        -o -path "$1/public/wp-content" \) -prune -o -type l -print)"
+    [[ -z "$links" ]] || { printf 'Symlinks found in the app, refusing:\n%s\n' "$links" >&2; return 1; }
+}
 # "<sha256><2 chars><path>" lines; the separator differs per platform, so
 # readers use substr(line, 1, 64) / substr(line, 67).
 scope_hashes() { scope_files "$1" | (cd "$1" && xargs -r -d '\n' sha256sum); }
@@ -53,7 +71,7 @@ remote() {
         printf 'set -euo pipefail\nAPP=%q\nSTATE=%q\nPHP=%q\nSITE_URL=%q\n' \
             "$REMOTE_APP" "$REMOTE_STATE" "$REMOTE_PHP" "$SITE_URL"
         printf '%s\n' "$SCOPE_FN"
-        printf 'as_findo() { runuser -u findo -- env HOME=/home/findogroup.com "$@"; }\n'
+        printf 'as_findo() { runuser -u findo -- env -i PATH=/usr/local/bin:/usr/bin:/bin HOME=/home/findogroup.com "$@"; }\n'
         cat
     } | ssh -o BatchMode=yes -o LogLevel=ERROR "$FINDO_SSH_HOST" 'bash -s'
 }

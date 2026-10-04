@@ -47,9 +47,9 @@ Host findo
 
 1. يرفض النشر لو فيه تعديلات غير محفوظة في git، أو لو السيرفر عليه تعديلات لم تُسحب بعد (شغّل `bin/server-pull` أولًا).
 2. يبني الـassets على جهازك (`npm run build`)، لأن `public/build` غير موجود في git.
-3. يرفع الكود (`git archive HEAD`) ونسخة الـbuild إلى `/home/findogroup.com/.deploy/releases/<stamp>`.
+3. يرفع الكود (`git archive HEAD`) ونسخة الـbuild إلى `/var/lib/findo-deploy/releases/<stamp>`.
 4. على السيرفر، بالترتيب:
-   - ياخد نسخة احتياطية من الكود الحالي في `.deploy/backups/<stamp>-before.tgz`.
+   - ياخد نسخة احتياطية من الكود الحالي في `/var/lib/findo-deploy/backups/<stamp>-before.tgz`.
    - ينسخ الملفات ويحذف الملفات اللي اتشالت من git.
    - يرجّع ملكية الملفات للمستخدم `findo`.
    - يشغّل `composer install --no-dev`، ثم `migrate --force`، ثم `optimize`، ثم `queue:restart`.

@@ -13,11 +13,16 @@ cd "$REPO_ROOT"
 
 pull_tree() {
     local paths="$1"
+    local archive=".server-data/download.tgz"
+    mkdir -p .server-data
     info "Downloading $paths"
     printf 'PATHS=%q\n' "$paths" | cat - <(cat <<'EOF'
 cd "$APP" && tar -czf - $PATHS
 EOF
-) | remote | tar -xzf - -C "$REPO_ROOT"
+) | remote > "$archive"
+    assert_safe_archive "$archive" || { rm -f "$archive"; die "Refusing to extract $paths."; }
+    tar -xzf "$archive" -C "$REPO_ROOT"
+    rm -f "$archive"
     ok "Extracted $paths"
 }
 
