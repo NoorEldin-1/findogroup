@@ -235,11 +235,12 @@ class OperatingAttendance
     public function board(User $viewer, CarbonImmutable $date): array
     {
         $records = $this->access->query($viewer, 'attendance')->where('data->work_date', $date->toDateString())->where('status', '!=', 'archived')->get()->keyBy(fn (object $record): int => (int) $this->catalog->data($record)['assignee_id']);
-        $managerId = $viewer->role === 'delivery' ? $this->access->employeeId($viewer) : null;
-        $employees = DB::table('operating_records')->where('type', 'employees')->where('status', 'active')->orderBy('title')->get()->filter(function (object $employee) use ($viewer, $managerId): bool {
+        $scopedToTeam = ! in_array($viewer->role, ['owner', 'hr'], true);
+        $managerId = $scopedToTeam ? $this->access->employeeId($viewer) : null;
+        $employees = DB::table('operating_records')->where('type', 'employees')->where('status', 'active')->orderBy('title')->get()->filter(function (object $employee) use ($scopedToTeam, $managerId): bool {
             $data = $this->catalog->data($employee);
 
-            return ! empty($data['user_id']) && ($viewer->role !== 'delivery' || ($data['manager_id'] ?? null) == $managerId);
+            return ! empty($data['user_id']) && (! $scopedToTeam || ($managerId && (int) ($data['manager_id'] ?? 0) === $managerId));
         });
         $rows = [];
         $counts = ['present' => 0, 'late' => 0, 'absent' => 0, 'excused' => 0, 'pending' => 0, 'remote' => 0];

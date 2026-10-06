@@ -54,7 +54,7 @@ class AttendanceController extends Controller
                 fwrite($out, "\xEF\xBB\xBF");
                 fputcsv($out, ['Employee', 'Green', 'Black', 'Red', 'Excused', 'Late minutes', 'Early leave minutes', 'Overtime minutes', 'Worked hours', 'Remote days', 'Commitment %', 'Bonus', 'Eligible']);
                 foreach ($rows as $row) {
-                    fputcsv($out, [$row['name'], $row['green'], $row['black'], $row['red'], $row['excused'], $row['late_minutes'], $row['early_leave_minutes'], $row['overtime_minutes'], $row['worked_hours'], $row['remote_days'], $row['commitment'], $row['bonus'], $row['eligible'] ? 'yes' : 'no']);
+                    fputcsv($out, [preg_match('/^[=+\-@\t\r]/', $row['name']) ? "'".$row['name'] : $row['name'], $row['green'], $row['black'], $row['red'], $row['excused'], $row['late_minutes'], $row['early_leave_minutes'], $row['overtime_minutes'], $row['worked_hours'], $row['remote_days'], $row['commitment'], $row['bonus'], $row['eligible'] ? 'yes' : 'no']);
                 }
                 fclose($out);
             }, 'attendance-'.$month->format('Y-m').'.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);

@@ -4,6 +4,7 @@ namespace Tests\Feature\Operating;
 
 use App\Services\OperatingAttendance;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\Concerns\BuildsOperatingRecords;
 use Tests\TestCase;
 
@@ -64,6 +65,27 @@ class AttendanceReportsTest extends TestCase
 
         $this->actingAs($managerUser)->get('/admin/operations/attendance/board?date=2026-10-04')->assertOk()->assertSee($teamUser->name)->assertDontSee($otherUser->name);
         $this->actingAs($managerUser)->get('/admin/operations/attendance/monthly?month=2026-10')->assertOk()->assertSee($teamUser->name)->assertDontSee($otherUser->name);
+    }
+
+    public function test_manager_without_linked_employee_sees_no_one_on_the_board(): void
+    {
+        $unlinkedManager = $this->operatingUser('delivery');
+        $staffUser = $this->operatingUser('developer');
+        $this->day($this->employeeFor($staffUser), '2026-10-04', 'absent', 'red');
+
+        $this->actingAs($unlinkedManager)->get('/admin/operations/attendance/board?date=2026-10-04')->assertOk()->assertDontSee($staffUser->name);
+    }
+
+    public function test_csv_neutralises_formula_names(): void
+    {
+        $hr = $this->operatingUser('hr');
+        $employeeId = $this->employeeFor($this->operatingUser('developer'));
+        DB::table('operating_records')->where('id', $employeeId)->update(['title' => '=HYPERLINK("http://evil")']);
+        $this->day($employeeId, '2026-10-04', 'closed', 'green');
+
+        $csv = $this->actingAs($hr)->get('/admin/operations/attendance/monthly?month=2026-10&format=csv')->streamedContent();
+
+        $this->assertStringContainsString("\"'=HYPERLINK(", $csv);
     }
 
     public function test_monthly_report_exports_csv(): void

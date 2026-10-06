@@ -95,6 +95,9 @@ class OperatingWorkflow
         if ($type === 'employees' && ! empty($data['user_id']) && DB::table('operating_records')->where('type', 'employees')->where('data->user_id', $data['user_id'])->when($id, fn ($query) => $query->where('id', '!=', $id))->exists()) {
             $this->fail('الحساب مرتبط بالفعل بموظف آخر.', 'This account is already linked to another employee.');
         }
+        if ($type === 'employees' && ! in_array($user->role, ['owner', 'hr'], true) && (int) ($data['manager_id'] ?? 0) !== (int) (($existing ? $this->catalog->data($existing) : [])['manager_id'] ?? 0)) {
+            $this->fail('تعيين المدير المباشر للموظف من صلاحية الإدارة أو HR فقط.', 'Only owner or HR can assign an employee’s direct manager.');
+        }
         if ($type === 'employees' && $id && ($data['manager_id'] ?? null)) {
             $seen = [$id];
             $manager = $data['manager_id'];
