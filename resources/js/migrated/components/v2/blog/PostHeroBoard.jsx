@@ -87,7 +87,7 @@ const PostHeroBoard = ({ post, readingTime, views, commentsCount, onShare }) => 
         "img",
         {
           src: imageUrl,
-          alt: stripHtml(post.title.rendered),
+          alt: post._embedded?.['wp:featuredmedia']?.[0]?.alt_text || stripHtml(post.title.rendered),
           className: "aspect-[16/9] w-full object-cover"
         }
       ) })
