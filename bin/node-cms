@@ -1,0 +1,3 @@
+#!/bin/sh
+set -eu
+exec /usr/bin/node --disable-wasm-trap-handler --max-old-space-size=768 "$@"

@@ -63,12 +63,11 @@ const CrossfadeVideo = ({ src, poster, posterSrcSet, className, fade = 0.8 }) =>
     if (!handingOff.current && idx === active && visible.current) e.currentTarget.play().catch(() => {});
     handingOff.current = false;
   };
-  const videoPoster = poster?.replace(/\.jpg$/, "-optimized-1280.webp");
   const videoClass = "absolute inset-0 h-full w-full object-cover transition-opacity ease-linear";
   const fadeStyle = { transitionDuration: `${Math.round(fade * 1e3)}ms` };
-  return jsxs("div", { ref: containerRef, className: cn("relative overflow-hidden", className), children: [
-    jsx("img", { ref: posterRef, src: poster, srcSet: posterSrcSet, sizes: posterSrcSet ? "100vw" : undefined, alt: "", fetchPriority: "high", className: "absolute inset-0 h-full w-full object-cover" }),
-    jsx("video", { ref: aRef, src: enabled ? src : undefined, poster: videoPoster, muted: true, playsInline: true, preload: "none", onTimeUpdate: handleTimeUpdate(0), onEnded: handleEnded(0), style: fadeStyle, className: cn(videoClass, active === 0 ? "opacity-100" : "opacity-0") }),
+  return jsxs("div", { ref: containerRef, "data-crossfade-video": "", "data-video-src": src, className: cn("relative overflow-hidden", className), children: [
+    jsx("img", { ref: posterRef, src: poster, srcSet: posterSrcSet, sizes: posterSrcSet ? "100vw" : undefined, width: /hero-ai-/.test(poster || '') ? 1920 : undefined, height: /hero-ai-/.test(poster || '') ? 1097 : undefined, alt: "", fetchPriority: "high", className: "absolute inset-0 h-full w-full object-cover" }),
+    jsx("video", { ref: aRef, src: enabled ? src : undefined, muted: true, playsInline: true, preload: "none", onTimeUpdate: handleTimeUpdate(0), onEnded: handleEnded(0), style: fadeStyle, className: cn(videoClass, active === 0 ? "opacity-100" : "opacity-0") }),
     jsx("video", { ref: bRef, src: bufferReady ? src : undefined, muted: true, playsInline: true, preload: bufferReady ? "auto" : "none", onTimeUpdate: handleTimeUpdate(1), onEnded: handleEnded(1), style: fadeStyle, className: cn(videoClass, active === 1 ? "opacity-100" : "opacity-0") })
   ] });
 };

@@ -3,6 +3,9 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    @if($page['path'] === '/')
+    <link rel="preload" as="image" href="/wp-content/themes/findo-wordpress-theme/react-build/assets/hero-ai-light-optimized-1280.webp" imagesrcset="/wp-content/themes/findo-wordpress-theme/react-build/assets/hero-ai-light-optimized-640.webp 640w, /wp-content/themes/findo-wordpress-theme/react-build/assets/hero-ai-light-optimized-1280.webp 1280w, /wp-content/themes/findo-wordpress-theme/react-build/assets/hero-ai-light-optimized-1920.webp 1920w" imagesizes="100vw" fetchpriority="high">
+    @endif
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $page['seo']['title'] ?? $page['title'] }}</title>
     <meta name="description" content="{{ $page['seo']['description'] ?? '' }}">
@@ -26,9 +29,6 @@
     <script type="application/ld+json">{!! json_encode($schema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}</script>
     @endforeach
     <script>try{if(localStorage.getItem('findo-theme')==='dark')document.documentElement.classList.add('dark')}catch(e){}</script>
-    @if($page['path'] === '/')
-    <link rel="preload" as="image" href="/wp-content/themes/findo-wordpress-theme/react-build/assets/hero-ai-light-optimized-1280.webp" imagesrcset="/wp-content/themes/findo-wordpress-theme/react-build/assets/hero-ai-light-optimized-640.webp 640w, /wp-content/themes/findo-wordpress-theme/react-build/assets/hero-ai-light-optimized-1280.webp 1280w, /wp-content/themes/findo-wordpress-theme/react-build/assets/hero-ai-light-optimized-1920.webp 1920w" imagesizes="100vw" fetchpriority="high">
-    @endif
     @if($page['path'] === '/')
     <style data-findo-design>{!! file_get_contents(public_path('wp-content/themes/findo-wordpress-theme/react-build/assets/css/findo-app.css')) !!}</style>
     @else
