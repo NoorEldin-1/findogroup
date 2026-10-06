@@ -24,6 +24,12 @@ class OperatingAccess
         if ($user->role === 'owner') {
             return true;
         }
+        if (in_array($type, ['attendance', 'holidays'], true) && $action !== 'read') {
+            return $user->role === 'hr';
+        }
+        if ($type === 'attendance' && $this->employeeId($user)) {
+            return true;
+        }
         if ($type === 'onboarding' && $user->role !== 'hr') {
             return false;
         }

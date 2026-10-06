@@ -9,3 +9,5 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('website:publish-due')->everyMinute()->withoutOverlapping();
+Schedule::command('operating:attendance-close-day')->dailyAt('23:55')->withoutOverlapping();
+Schedule::command('operating:attendance-monthly-report')->monthlyOn(1, '08:00');

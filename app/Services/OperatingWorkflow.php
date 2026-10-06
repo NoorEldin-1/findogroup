@@ -51,6 +51,7 @@ class OperatingWorkflow
                 'user' => 'integer|exists:users,id',
                 'number' => 'numeric|min:0|max:1000000000',
                 'date', 'datetime-local' => 'date',
+                'time' => 'date_format:H:i',
                 'checkbox' => 'boolean',
                 'select' => 'in:'.implode(',', array_keys($field['options'])),
                 'url' => 'url:http,https|max:2048',
@@ -143,6 +144,18 @@ class OperatingWorkflow
         if ($type === 'data_batches' && ($data['valid_rows'] ?? 0) > ($data['sample_size'] ?? 0)) {
             $this->fail('السجلات الصحيحة تتجاوز حجم العينة.', 'Valid rows cannot exceed the sample size.');
         }
+        if ($type === 'attendance') {
+            if (DB::table('operating_records')->where('type', 'attendance')->where('data->assignee_id', (int) $data['assignee_id'])->where('data->work_date', $data['work_date'])->where('status', '!=', 'archived')->when($id, fn ($query) => $query->where('id', '!=', $id))->exists()) {
+                $this->fail('يوجد سجل حضور لهذا الموظف في هذا اليوم.', 'This employee already has an attendance record for that day.');
+            }
+            if (! empty($data['check_in']) && ! str_starts_with($data['check_in'], $data['work_date'])) {
+                $this->fail('وقت الحضور يجب أن يكون في نفس يوم العمل.', 'Check-in must fall on the work date.');
+            }
+            if (! empty($data['check_out']) && (empty($data['check_in']) || $data['check_out'] <= $data['check_in'])) {
+                $this->fail('وقت الانصراف يحتاج وقت حضور سابقًا له.', 'Check-out needs an earlier check-in.');
+            }
+            $data = app(OperatingAttendance::class)->derive($data, $existing?->status ?? app(OperatingAttendance::class)->initialStatus($data));
+        }
         if ($type === 'evaluations' && ! empty($data['ratings'])) {
             $data['calculated_score'] = $this->score($data['ratings']);
         }
@@ -195,6 +208,9 @@ class OperatingWorkflow
                     if (isset($resetStates[$type]) && in_array($locked->status, ['approved', 'running', 'passed', 'ready', 'finalized', 'scheduled', 'published', 'delivered', 'accepted'], true) && ! ($type === 'evaluations' && ! in_array($user->role, ['owner', 'hr', 'delivery'], true))) {
                         $nextStatus = $resetStates[$type];
                     }
+                    if ($type === 'attendance' && in_array($locked->status, ['open', 'closed', 'absent'], true)) {
+                        $nextStatus = app(OperatingAttendance::class)->initialStatus($data);
+                    }
                     if ($type === 'tasks' && in_array($locked->status, ['code_review', 'qa', 'ready_to_release'], true) && (($data['build_version'] ?? null) !== ($this->catalog->data($locked)['build_version'] ?? null) || ($data['implementation_url'] ?? null) !== ($this->catalog->data($locked)['implementation_url'] ?? null))) {
                         $nextStatus = 'in_progress';
                     }
@@ -203,7 +219,7 @@ class OperatingWorkflow
                 $id = $existing->id;
             } else {
                 $before = null;
-                $id = DB::table('operating_records')->insertGetId(['uuid' => Str::uuid()->toString(), 'type' => $type, 'title' => $validated['title'], 'status' => $entity['statuses'][0], 'owner_id' => $user->id, 'created_by' => $user->id, 'data' => json_encode($data, JSON_UNESCAPED_UNICODE), 'version' => 1, 'created_at' => now(), 'updated_at' => now()]);
+                $id = DB::table('operating_records')->insertGetId(['uuid' => Str::uuid()->toString(), 'type' => $type, 'title' => $validated['title'], 'status' => $type === 'attendance' ? app(OperatingAttendance::class)->initialStatus($data) : $entity['statuses'][0], 'owner_id' => $user->id, 'created_by' => $user->id, 'data' => json_encode($data, JSON_UNESCAPED_UNICODE), 'version' => 1, 'created_at' => now(), 'updated_at' => now()]);
             }
             $record = DB::table('operating_records')->find($id);
             DB::table('operating_links')->where('record_id', $id)->delete();
@@ -287,7 +303,11 @@ class OperatingWorkflow
             $employeeId = $this->access->employeeId($user);
             $this->gate($record, $data, $target, $user, $employeeId);
             $before = (array) $record;
-            DB::table('operating_records')->where('id', $record->id)->update(['status' => $target, 'version' => $record->version + 1, 'updated_at' => now()]);
+            $changes = ['status' => $target, 'version' => $record->version + 1, 'updated_at' => now()];
+            if ($record->type === 'attendance' && $target !== 'archived') {
+                $changes['data'] = json_encode(app(OperatingAttendance::class)->derive($data, $target), JSON_UNESCAPED_UNICODE);
+            }
+            DB::table('operating_records')->where('id', $record->id)->update($changes);
             $next = DB::table('operating_records')->find($record->id);
             $this->event($next, 'transition', $input['reason'], $before, (array) $next, $user->id);
 
@@ -547,6 +567,18 @@ class OperatingWorkflow
         if ($record->type === 'delegations' && $target === 'active') {
             if (! isset(config('operating.entities')[$data['entity_type']]) || $data['action'] !== 'approve' || $data['expires_at'] < $data['starts_at']) {
                 $this->fail('راجع نطاق التفويض وتواريخه.', 'Review delegation scope and dates.');
+            }
+        }
+        if ($record->type === 'attendance') {
+            abort_unless(in_array($user->role, ['owner', 'hr'], true), 403);
+            if ($target === 'excused') {
+                $this->requireFields($data, ['note']);
+            }
+            if ($target === 'closed') {
+                $this->requireFields($data, ['check_in', 'check_out']);
+            }
+            if ($target === 'open') {
+                $this->requireFields($data, ['check_in']);
             }
         }
         if ($record->type === 'seo_issues' && $target === 'verified') {

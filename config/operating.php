@@ -4323,6 +4323,24 @@ return json_decode(<<<'JSON'
           "required": false
         },
         {
+          "key": "shift_start",
+          "label": {
+            "ar": "بداية الوردية",
+            "en": "Shift start"
+          },
+          "type": "time",
+          "required": false
+        },
+        {
+          "key": "shift_end",
+          "label": {
+            "ar": "نهاية الوردية",
+            "en": "Shift end"
+          },
+          "type": "time",
+          "required": false
+        },
+        {
           "key": "conflict_disclosure",
           "label": {
             "ar": "إفصاح التعارض",
@@ -5059,6 +5077,139 @@ return json_decode(<<<'JSON'
         "archived"
       ],
       "private": true
+    },
+    "attendance": {
+      "label": {
+        "ar": "الحضور والانصراف",
+        "en": "Attendance"
+      },
+      "group": "people",
+      "pages": [],
+      "fields": [
+        {
+          "key": "assignee_id",
+          "label": {
+            "ar": "الموظف",
+            "en": "Employee"
+          },
+          "type": "relation",
+          "required": true,
+          "entity": "employees"
+        },
+        {
+          "key": "work_date",
+          "label": {
+            "ar": "يوم العمل",
+            "en": "Work date"
+          },
+          "type": "date",
+          "required": true
+        },
+        {
+          "key": "check_in",
+          "label": {
+            "ar": "وقت الحضور",
+            "en": "Check-in"
+          },
+          "type": "datetime-local",
+          "required": false
+        },
+        {
+          "key": "check_out",
+          "label": {
+            "ar": "وقت الانصراف",
+            "en": "Check-out"
+          },
+          "type": "datetime-local",
+          "required": false
+        },
+        {
+          "key": "mode",
+          "label": {
+            "ar": "مكان العمل",
+            "en": "Work mode"
+          },
+          "type": "select",
+          "required": true,
+          "options": {
+            "office": {
+              "ar": "من المقر",
+              "en": "Office"
+            },
+            "remote": {
+              "ar": "من المنزل",
+              "en": "Work from home"
+            }
+          }
+        },
+        {
+          "key": "source",
+          "label": {
+            "ar": "مصدر التسجيل",
+            "en": "Source"
+          },
+          "type": "select",
+          "required": true,
+          "options": {
+            "web": {
+              "ar": "النظام",
+              "en": "Web"
+            },
+            "device": {
+              "ar": "جهاز البصمة",
+              "en": "Device"
+            },
+            "manual": {
+              "ar": "تصحيح يدوي",
+              "en": "Manual correction"
+            },
+            "system": {
+              "ar": "تلقائي",
+              "en": "System"
+            }
+          }
+        },
+        {
+          "key": "note",
+          "label": {
+            "ar": "ملاحظة / سبب التصحيح",
+            "en": "Note / correction reason"
+          },
+          "type": "textarea",
+          "required": false
+        }
+      ],
+      "statuses": [
+        "open",
+        "closed",
+        "absent",
+        "excused",
+        "archived"
+      ],
+      "private": true
+    },
+    "holidays": {
+      "label": {
+        "ar": "العطلات الرسمية",
+        "en": "Public holidays"
+      },
+      "group": "people",
+      "pages": [],
+      "fields": [
+        {
+          "key": "holiday_date",
+          "label": {
+            "ar": "التاريخ",
+            "en": "Date"
+          },
+          "type": "date",
+          "required": true
+        }
+      ],
+      "statuses": [
+        "active",
+        "archived"
+      ]
     },
     "delegations": {
       "label": {
@@ -6333,6 +6484,14 @@ return json_decode(<<<'JSON'
     }
   },
   "statuses": {
+    "absent": {
+      "ar": "غياب / عدم تسجيل",
+      "en": "Absent / no check-in"
+    },
+    "excused": {
+      "ar": "غياب بعذر",
+      "en": "Excused"
+    },
     "draft": {
       "ar": "مسودة",
       "en": "Draft"
@@ -6740,6 +6899,17 @@ return json_decode(<<<'JSON'
       "evaluations",
       "release_decision"
     ]
+  },
+  "attendance": {
+    "work_start": "09:00",
+    "work_end": "17:00",
+    "work_days": [0, 1, 2, 3, 4],
+    "grace_minutes": 0,
+    "bonus_min": 25,
+    "bonus_max": 40,
+    "bonus_eligibility_percent": 80,
+    "absence_alert_days": 2,
+    "currency": "USD"
   }
 }
 JSON, true);

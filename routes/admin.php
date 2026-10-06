@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\AdminController as A;
+use App\Http\Controllers\AttendanceController as T;
+use App\Http\Controllers\NotificationController as N;
 use App\Http\Controllers\OperatingController as O;
 use App\Http\Middleware\AdminAccess;
 use App\Http\Middleware\AdminLocale;
@@ -14,6 +16,7 @@ Route::middleware(AdminLocale::class)->group(function () {
         Route::get('/website', [A::class, 'dashboard']);
         Route::get('/operations/settings', [O::class, 'settings']);
         Route::post('/operations/settings', [O::class, 'saveSettings']);
+        Route::post('/operations/settings/attendance', [O::class, 'saveAttendanceSettings']);
         Route::post('/operations/seo-audit', [O::class, 'seoAudit']);
         Route::get('/operations/reports', [O::class, 'reports']);
         Route::get('/operations/permissions', [O::class, 'permissions']);
@@ -28,6 +31,12 @@ Route::middleware(AdminLocale::class)->group(function () {
         Route::post('/operations/record/{id}/transition', [O::class, 'transition'])->whereNumber('id');
         Route::post('/operations/record/{id}/comments', [O::class, 'comment'])->whereNumber('id');
         Route::post('/operations/record/{id}/attachments', [O::class, 'attach'])->whereNumber('id');
+        Route::get('/operations/notifications', [N::class, 'index']);
+        Route::post('/operations/notifications/read', [N::class, 'markRead']);
+        Route::post('/operations/attendance/check-in', [T::class, 'checkIn'])->middleware('throttle:10,1');
+        Route::post('/operations/attendance/check-out', [T::class, 'checkOut'])->middleware('throttle:10,1');
+        Route::get('/operations/attendance/board', [T::class, 'board']);
+        Route::get('/operations/attendance/monthly', [T::class, 'monthly']);
         Route::get('/operations/{type}/create', [O::class, 'create']);
         Route::get('/operations/{type}', [O::class, 'listing']);
         Route::post('/operations/{type}', [O::class, 'store']);

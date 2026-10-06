@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\Cms;
 use App\Services\JiraSync;
 use App\Services\OperatingAccess;
+use App\Services\OperatingAttendance;
 use App\Services\OperatingCatalog;
 use App\Services\OperatingReports;
 use App\Services\OperatingWorkflow;
@@ -35,7 +36,7 @@ class OperatingController extends Controller
             $query = $this->access->query($request->user(), $type);
             $counts[$type] = (clone $query)->where('status', '!=', 'archived')->count();
             $groups[$entity['group']][$type] = $counts[$type];
-            foreach ((clone $query)->where('status', '!=', 'archived')->get() as $record) {
+            foreach ((clone $query)->when($type === 'attendance', fn ($scoped) => $scoped->where('status', 'open'), fn ($scoped) => $scoped->where('status', '!=', 'archived'))->get() as $record) {
                 foreach ($this->signals($record) as $signal) {
                     $alerts[] = ['record' => $record, 'signal' => $signal];
                 }
@@ -48,7 +49,7 @@ class OperatingController extends Controller
         }
         $groups = array_replace(array_intersect_key(array_fill_keys(array_keys(config('operating.groups')), []), $groups), $groups);
 
-        return $this->view('overview', ['groups' => $groups, 'counts' => $counts, 'alerts' => $alerts, 'decisions' => $decisions->sortByDesc('updated_at')->take(20)]);
+        return $this->view('overview', ['groups' => $groups, 'counts' => $counts, 'alerts' => $alerts, 'decisions' => $decisions->sortByDesc('updated_at')->take(20), 'attendanceToday' => app(OperatingAttendance::class)->today($request->user())]);
     }
 
     public function listing(string $type, Request $request): Response
@@ -192,7 +193,10 @@ class OperatingController extends Controller
         abort_unless(auth()->user()->role === 'owner', 403);
         $saved = DB::table('operating_settings')->where('key', 'rules')->first();
 
-        return $this->view('settings', ['saved' => $saved, 'rules' => $saved ? json_decode($saved->data, true) : ['thresholds' => config('operating.thresholds'), 'scorecards' => config('operating.scorecards')]]);
+        $attendanceSaved = DB::table('operating_settings')->where('key', 'attendance')->first();
+        $attendancePending = $attendanceSaved ? json_decode($attendanceSaved->data, true) : null;
+
+        return $this->view('settings', ['saved' => $saved, 'rules' => $saved ? json_decode($saved->data, true) : ['thresholds' => config('operating.thresholds'), 'scorecards' => config('operating.scorecards')], 'attendance' => app(OperatingAttendance::class)->rules(), 'attendanceVersion' => (int) ($attendanceSaved?->version ?? 0), 'attendancePending' => ($attendancePending['effective_date'] ?? '') > today()->toDateString() ? $attendancePending : null]);
     }
 
     public function saveSettings(Request $request): Response
@@ -224,6 +228,23 @@ class OperatingController extends Controller
         });
 
         return back()->with('success', __('تم اعتماد إعدادات التشغيل وتاريخ سريانها.'));
+    }
+
+    public function saveAttendanceSettings(Request $request): Response
+    {
+        abort_unless($request->user()->role === 'owner', 403);
+        $input = $request->validate(['version' => 'required|integer', 'work_start' => 'required|date_format:H:i', 'work_end' => 'required|date_format:H:i|after:work_start', 'work_days' => 'required|array|min:1', 'work_days.*' => 'integer|between:0,6', 'grace_minutes' => 'required|integer|min:0|max:120', 'bonus_min' => 'required|numeric|min:0|max:100000', 'bonus_max' => 'required|numeric|gte:bonus_min|max:100000', 'bonus_eligibility_percent' => 'required|numeric|min:1|max:100', 'absence_alert_days' => 'required|integer|min:1|max:10', 'effective_date' => 'required|date', 'reason' => 'required|string|max:2000']);
+        DB::transaction(function () use ($input): void {
+            $old = DB::table('operating_settings')->where('key', 'attendance')->lockForUpdate()->first();
+            if (($old?->version ?? 0) != $input['version']) {
+                $this->workflow->fail('الإعدادات تغيرت. حدّث الصفحة.', 'Settings changed. Refresh first.');
+            }
+            $data = ['work_start' => $input['work_start'], 'work_end' => $input['work_end'], 'work_days' => array_values(array_unique(array_map('intval', $input['work_days']))), 'grace_minutes' => (int) $input['grace_minutes'], 'bonus_min' => (float) $input['bonus_min'], 'bonus_max' => (float) $input['bonus_max'], 'bonus_eligibility_percent' => (float) $input['bonus_eligibility_percent'], 'absence_alert_days' => (int) $input['absence_alert_days'], 'effective_date' => $input['effective_date']];
+            DB::table('operating_settings')->updateOrInsert(['key' => 'attendance'], ['data' => json_encode($data), 'version' => ($old?->version ?? 0) + 1, 'created_at' => $old?->created_at ?? now(), 'updated_at' => now()]);
+            $this->workflow->event(null, 'configure_attendance', $input['reason'], $old ? json_decode($old->data, true) : null, $data);
+        });
+
+        return back()->with('success', __('تم اعتماد قواعد الحضور والبونص.'));
     }
 
     public function seoAudit(Request $request): Response
@@ -343,6 +364,9 @@ class OperatingController extends Controller
         }
         if ($record->type === 'blockers' && in_array($record->status, ['open', 'escalated'], true)) {
             $signals[] = __('عائق مفتوح يحتاج صاحب حل وموعد متابعة.');
+        }
+        if ($record->type === 'attendance' && $record->status === 'open' && ($data['work_date'] ?? '') < today()->toDateString()) {
+            $signals[] = __('حضور بدون انصراف مسجل. صحّح السجل.');
         }
 
         return $signals;
