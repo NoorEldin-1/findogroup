@@ -265,6 +265,20 @@ class OperatingWorkflow
                 }
             }
         }
+        if ($type === 'assets') {
+            if (! empty($data['purchase_date']) && ! empty($data['warranty_end']) && $data['warranty_end'] < $data['purchase_date']) {
+                $this->fail('انتهاء الضمان قبل تاريخ الشراء.', 'The warranty ends before the purchase date.');
+            }
+            if (! empty($data['asset_tag']) && app(OperatingAssets::class)->isTaken('assets', 'asset_tag', $data['asset_tag'], $id)) {
+                $this->fail('رقم الأصل مستخدم لأصل آخر.', 'This asset tag is already in use.');
+            }
+            if (! empty($data['serial_number']) && app(OperatingAssets::class)->isTaken('assets', 'serial_number', $data['serial_number'], $id)) {
+                $this->fail('الرقم التسلسلي مسجل لأصل آخر.', 'This serial number is already registered.');
+            }
+            if (empty($data['asset_tag']) && $existing) {
+                $data['asset_tag'] = $this->catalog->data($existing)['asset_tag'] ?? null;
+            }
+        }
         if ($type === 'supplier_payments') {
             $invoice = DB::table('operating_records')->find($data['supplier_invoice_id']);
             if (! in_array($invoice->status, ['approved', 'part_paid'], true)) {
@@ -404,6 +418,9 @@ class OperatingWorkflow
                 }
                 if ($type === 'purchase_orders') {
                     $data['po_number'] = app(OperatingProcurement::class)->nextOrderNumber();
+                }
+                if ($type === 'assets' && empty($data['asset_tag'])) {
+                    $data['asset_tag'] = app(OperatingAssets::class)->nextTag();
                 }
                 $id = DB::table('operating_records')->insertGetId(['uuid' => Str::uuid()->toString(), 'type' => $type, 'title' => $validated['title'], 'status' => $type === 'attendance' ? app(OperatingAttendance::class)->initialStatus($data) : $entity['statuses'][0], 'owner_id' => $user->id, 'created_by' => $user->id, 'data' => json_encode($data, JSON_UNESCAPED_UNICODE), 'version' => 1, 'created_at' => now(), 'updated_at' => now()]);
             }
@@ -796,6 +813,17 @@ class OperatingWorkflow
             }
             if ($target === 'received') {
                 $this->requireFields($data, ['delivered_at']);
+            }
+        }
+        if ($record->type === 'assets') {
+            if ($target === 'maintenance' || $record->status === 'maintenance') {
+                $this->fail('الدخول للصيانة والعودة منها بحركة صيانة على الأصل.', 'Use a maintenance movement to send an asset to or back from maintenance.');
+            }
+            if ($record->status === 'retired') {
+                $this->fail('الأصل المحال للتقاعد لا يعود للخدمة.', 'A retired asset does not return to service.');
+            }
+            if ($target === 'retired' && ! empty($data['assignee_id'])) {
+                $this->fail('استلم الأصل من الموظف بحركة إرجاع قبل إحالته للتقاعد.', 'Record a return from the employee before retiring the asset.');
             }
         }
         if ($record->type === 'supplier_invoices') {

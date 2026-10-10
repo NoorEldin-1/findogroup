@@ -28,6 +28,11 @@ class OperatingAccess
      */
     public const SUPPLIER_PRIVATE_FIELDS = ['bank_details', 'tax_number'];
 
+    /**
+     * What an employee sees of an asset in their custody: identification and condition, no cost or account details.
+     */
+    public const ASSET_CUSTODY_FIELDS = ['category', 'kind', 'asset_tag', 'serial_number', 'brand_model', 'condition', 'location', 'assignee_id'];
+
     public function __construct(private OperatingCatalog $catalog) {}
 
     public function employeeId(User $user): ?int
@@ -48,6 +53,9 @@ class OperatingAccess
             return $user->role === 'hr';
         }
         if ($type === 'attendance' && $this->employeeId($user)) {
+            return true;
+        }
+        if ($type === 'assets' && $action === 'read' && ! $this->managesAssets($user) && $this->employeeId($user)) {
             return true;
         }
         if ($type === 'onboarding' && $user->role !== 'hr') {
@@ -120,6 +128,14 @@ class OperatingAccess
         };
     }
 
+    /**
+     * Asset managers run the register; every other employee only sees the assets in their own custody.
+     */
+    public function managesAssets(User $user): bool
+    {
+        return in_array($user->role, config('operating.groups.assets.read', []), true);
+    }
+
     public function delegation(User $user, string $type): ?object
     {
         return DB::table('operating_records')->where('type', 'delegations')->where('status', 'active')->where('data->user_id', $user->id)->where('data->entity_type', $type)->where('data->action', 'approve')->where('data->starts_at', '<=', today()->toDateString())->where('data->expires_at', '>=', today()->toDateString())->first();
@@ -136,6 +152,9 @@ class OperatingAccess
         }
         if (in_array($user->role, ['owner', 'hr'], true)) {
             return $query;
+        }
+        if ($type === 'assets' && ! $this->managesAssets($user)) {
+            return $query->where('data->assignee_id', $this->employeeId($user) ?? 0);
         }
         $entity = $this->catalog->entity($type);
         $employeeId = $this->employeeId($user);
@@ -207,6 +226,9 @@ class OperatingAccess
         if ($record->type === 'suppliers' && ! in_array($user->role, self::PROCUREMENT_MANAGERS, true)) {
             return array_diff_key($data, array_flip(self::SUPPLIER_PRIVATE_FIELDS));
         }
+        if ($record->type === 'assets' && ! $this->managesAssets($user)) {
+            return array_intersect_key($data, array_flip(self::ASSET_CUSTODY_FIELDS));
+        }
 
         return $data;
     }
@@ -227,6 +249,9 @@ class OperatingAccess
         }
         if ($type === 'suppliers' && ! in_array($user->role, self::PROCUREMENT_MANAGERS, true)) {
             $fields = array_filter($fields, fn (array $field): bool => ! in_array($field['key'], self::SUPPLIER_PRIVATE_FIELDS, true));
+        }
+        if ($type === 'assets' && ! $this->managesAssets($user)) {
+            $fields = array_filter($fields, fn (array $field): bool => in_array($field['key'], self::ASSET_CUSTODY_FIELDS, true));
         }
         if ($type === 'team_tasks' && ! in_array($user->role, ['owner', 'marketing', 'media_buyer'], true)) {
             $fields = array_filter($fields, fn (array $field): bool => in_array($field['key'], ['deliverable_url', 'notes'], true));

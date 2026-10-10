@@ -7011,115 +7011,54 @@ return json_decode(<<<'JSON'
       ]
     },
     "assets": {
-      "label": {
-        "ar": "أصول الشركة والاشتراكات",
-        "en": "Company assets and subscriptions"
-      },
-      "group": "support",
-      "pages": [
-        9,
-        34
-      ],
+      "label": { "ar": "أصول الشركة والعهد", "en": "Company assets and custody" },
+      "group": "assets",
+      "pages": [9, 34],
       "fields": [
-        {
-          "key": "kind",
-          "label": {
-            "ar": "النوع",
-            "en": "Type"
-          },
-          "type": "text",
-          "required": true
-        },
-        {
-          "key": "primary_id",
-          "label": {
-            "ar": "المالك",
-            "en": "Owner"
-          },
-          "type": "relation",
-          "required": false,
-          "entity": "employees"
-        },
-        {
-          "key": "backup_id",
-          "label": {
-            "ar": "البديل",
-            "en": "Backup"
-          },
-          "type": "relation",
-          "required": false,
-          "entity": "employees"
-        },
-        {
-          "key": "cost",
-          "label": {
-            "ar": "التكلفة",
-            "en": "Cost"
-          },
-          "type": "number",
-          "required": false
-        },
-        {
-          "key": "renewal_date",
-          "label": {
-            "ar": "التجديد",
-            "en": "Renewal"
-          },
-          "type": "date",
-          "required": false
-        },
-        {
-          "key": "usage",
-          "label": {
-            "ar": "الاستخدام",
-            "en": "Usage"
-          },
-          "type": "text",
-          "required": false
-        },
-        {
-          "key": "reference_url",
-          "label": {
-            "ar": "مرجع الحساب / الأصل",
-            "en": "Account / asset reference"
-          },
-          "type": "url",
-          "required": false
-        },
-        {
-          "key": "vault_reference",
-          "label": {
-            "ar": "مرجع مخزن الأسرار (دون كلمات مرور)",
-            "en": "Secret vault reference (no passwords)"
-          },
-          "type": "text",
-          "required": false
-        },
-        {
-          "key": "license",
-          "label": {
-            "ar": "دليل الترخيص",
-            "en": "License evidence"
-          },
-          "type": "textarea",
-          "required": false
-        },
-        {
-          "key": "backup_evidence",
-          "label": {
-            "ar": "النسخ واختبار الاستعادة",
-            "en": "Backup and restore evidence"
-          },
-          "type": "textarea",
-          "required": false
-        }
+        { "key": "category", "label": { "ar": "فئة الأصل", "en": "Asset category" }, "type": "select", "required": true, "options": {
+          "laptop": { "ar": "لابتوب", "en": "Laptop" },
+          "desktop": { "ar": "كمبيوتر مكتبي", "en": "Desktop computer" },
+          "monitor": { "ar": "شاشة", "en": "Monitor" },
+          "phone": { "ar": "هاتف", "en": "Phone" },
+          "tablet": { "ar": "تابلت", "en": "Tablet" },
+          "network": { "ar": "معدات شبكة", "en": "Network equipment" },
+          "printer": { "ar": "طابعة", "en": "Printer" },
+          "accessory": { "ar": "ملحقات", "en": "Accessory" },
+          "furniture": { "ar": "أثاث", "en": "Furniture" },
+          "vehicle": { "ar": "مركبة", "en": "Vehicle" },
+          "software_license": { "ar": "رخصة برنامج", "en": "Software license" },
+          "subscription": { "ar": "اشتراك", "en": "Subscription" },
+          "hosting": { "ar": "استضافة", "en": "Hosting" },
+          "domain": { "ar": "نطاق", "en": "Domain" },
+          "other": { "ar": "أخرى", "en": "Other" }
+        } },
+        { "key": "kind", "label": { "ar": "تفاصيل النوع", "en": "Type details" }, "type": "text", "required": false },
+        { "key": "asset_tag", "label": { "ar": "رقم الأصل (يُولَّد تلقائيًا إن تُرك فارغًا)", "en": "Asset tag (generated when left empty)" }, "type": "text", "required": false },
+        { "key": "serial_number", "label": { "ar": "الرقم التسلسلي", "en": "Serial number" }, "type": "text", "required": false },
+        { "key": "brand_model", "label": { "ar": "الماركة والموديل", "en": "Brand and model" }, "type": "text", "required": false },
+        { "key": "primary_id", "label": { "ar": "المسؤول عن الأصل", "en": "Responsible owner" }, "type": "relation", "required": false, "entity": "employees" },
+        { "key": "backup_id", "label": { "ar": "البديل", "en": "Backup" }, "type": "relation", "required": false, "entity": "employees" },
+        { "key": "supplier_id", "label": { "ar": "المورد", "en": "Supplier" }, "type": "relation", "required": false, "entity": "suppliers" },
+        { "key": "purchase_order_id", "label": { "ar": "أمر الشراء", "en": "Purchase order" }, "type": "relation", "required": false, "entity": "purchase_orders" },
+        { "key": "purchase_date", "label": { "ar": "تاريخ الشراء", "en": "Purchase date" }, "type": "date", "required": false },
+        { "key": "cost", "label": { "ar": "التكلفة", "en": "Cost" }, "type": "number", "required": false },
+        { "key": "currency", "label": { "ar": "العملة", "en": "Currency" }, "type": "text", "required": false },
+        { "key": "warranty_end", "label": { "ar": "انتهاء الضمان", "en": "Warranty end" }, "type": "date", "required": false },
+        { "key": "condition", "label": { "ar": "الحالة الفنية", "en": "Condition" }, "type": "select", "required": false, "options": {
+          "new": { "ar": "جديد", "en": "New" },
+          "good": { "ar": "جيد", "en": "Good" },
+          "fair": { "ar": "مقبول", "en": "Fair" },
+          "damaged": { "ar": "تالف / يحتاج إصلاحًا", "en": "Damaged / needs repair" }
+        } },
+        { "key": "location", "label": { "ar": "الموقع", "en": "Location" }, "type": "text", "required": false },
+        { "key": "renewal_date", "label": { "ar": "التجديد (للاشتراكات)", "en": "Renewal (subscriptions)" }, "type": "date", "required": false },
+        { "key": "usage", "label": { "ar": "الاستخدام", "en": "Usage" }, "type": "text", "required": false },
+        { "key": "reference_url", "label": { "ar": "مرجع الحساب / الأصل", "en": "Account / asset reference" }, "type": "url", "required": false },
+        { "key": "vault_reference", "label": { "ar": "مرجع مخزن الأسرار (دون كلمات مرور)", "en": "Secret vault reference (no passwords)" }, "type": "text", "required": false },
+        { "key": "license", "label": { "ar": "دليل الترخيص", "en": "License evidence" }, "type": "textarea", "required": false },
+        { "key": "backup_evidence", "label": { "ar": "النسخ واختبار الاستعادة", "en": "Backup and restore evidence" }, "type": "textarea", "required": false }
       ],
-      "statuses": [
-        "draft",
-        "active",
-        "completed",
-        "archived"
-      ]
+      "statuses": ["draft", "active", "maintenance", "retired", "completed", "archived"]
     },
     "meetings": {
       "label": {
