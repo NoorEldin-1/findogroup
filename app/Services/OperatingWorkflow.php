@@ -328,7 +328,7 @@ class OperatingWorkflow
             $this->fail('لا يمكن إعادة فتح النسخة المعتمدة للتعديل.', 'An approved version cannot return to an editable state.');
         }
         if ($target === 'archived') {
-            abort_unless(in_array($user->role, ['owner', 'delivery', 'hr', 'marketing', 'sales', 'finance', 'seo'], true), 403);
+            abort_unless(in_array($user->role, ['owner', 'delivery', 'hr', 'marketing', 'sales', 'sales_manager', 'finance', 'seo'], true), 403);
             if ($record->type === 'receipts' && DB::table('operating_records')->where('id', $data['invoice_id'] ?? null)->value('status') === 'paid') {
                 $this->fail('صحح حالة الفاتورة أولًا قبل إلغاء تحصيلها.', 'Correct the invoice state before voiding its receipt.');
             }

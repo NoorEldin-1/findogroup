@@ -8,6 +8,11 @@ use Illuminate\Support\Facades\DB;
 
 class OperatingAccess
 {
+    /**
+     * Entity types a plain sales rep sees only when they created or are assigned to the record.
+     */
+    public const SALES_SCOPED = ['opportunities', 'activities'];
+
     public function __construct(private OperatingCatalog $catalog) {}
 
     public function employeeId(User $user): ?int
@@ -33,7 +38,7 @@ class OperatingAccess
         if ($type === 'onboarding' && $user->role !== 'hr') {
             return false;
         }
-        if ($action === 'read' && (($user->role === 'finance' && in_array($type, ['projects', 'clients'], true)) || ($user->role === 'sales' && in_array($type, ['projects', 'scopes'], true)))) {
+        if ($action === 'read' && (($user->role === 'finance' && in_array($type, ['projects', 'clients'], true)) || (in_array($user->role, ['sales', 'sales_manager'], true) && in_array($type, ['projects', 'scopes'], true)))) {
             return true;
         }
         if (in_array($type, ['delegations', 'exceptions', 'policies'], true) && $action !== 'read') {
@@ -102,7 +107,8 @@ class OperatingAccess
         if ($type === 'employees') {
             return $query;
         }
-        if (($entity['assigned'] ?? false) && ! in_array($user->role, ['delivery', 'tech_lead', 'marketing', 'sales', 'finance'], true)) {
+        $salesScoped = $user->role === 'sales' && in_array($type, self::SALES_SCOPED, true);
+        if ($salesScoped || (($entity['assigned'] ?? false) && ! in_array($user->role, ['delivery', 'tech_lead', 'marketing', 'sales', 'sales_manager', 'finance'], true))) {
             return $query->where(function (Builder $scope) use ($user, $employeeId): void {
                 $scope->where('owner_id', $user->id);
                 if ($employeeId) {
@@ -137,7 +143,7 @@ class OperatingAccess
         if ($record->type === 'employees' && ! in_array($user->role, ['owner', 'hr'], true) && $this->employeeId($user) !== $record->id) {
             return array_intersect_key($data, array_flip(['job_title', 'department', 'manager_id']));
         }
-        if ($record->type === 'projects' && $user->role === 'sales') {
+        if ($record->type === 'projects' && in_array($user->role, ['sales', 'sales_manager'], true)) {
             return array_intersect_key($data, array_flip(['client_id', 'outcome', 'original_due', 'approved_due', 'client_contact']));
         }
 
@@ -146,7 +152,7 @@ class OperatingAccess
 
     public function restrictedContext(User $user, object $record): bool
     {
-        return ($record->type === 'projects' && $user->role === 'sales') || ($record->type === 'employees' && ! in_array($user->role, ['owner', 'hr'], true) && $this->employeeId($user) !== $record->id);
+        return ($record->type === 'projects' && in_array($user->role, ['sales', 'sales_manager'], true)) || ($record->type === 'employees' && ! in_array($user->role, ['owner', 'hr'], true) && $this->employeeId($user) !== $record->id);
     }
 
     public function fields(User $user, string $type, ?object $record = null): array
@@ -155,7 +161,7 @@ class OperatingAccess
         if ($type === 'employees' && ! in_array($user->role, ['owner', 'hr'], true)) {
             $fields = array_filter($fields, fn (array $field): bool => in_array($field['key'], ['job_title', 'department', 'manager_id'], true));
         }
-        if ($type === 'projects' && $user->role === 'sales') {
+        if ($type === 'projects' && in_array($user->role, ['sales', 'sales_manager'], true)) {
             $fields = array_filter($fields, fn (array $field): bool => in_array($field['key'], ['client_id', 'outcome', 'original_due', 'approved_due', 'client_contact'], true));
         }
         if ($type === 'goals' && ! in_array($user->role, ['owner', 'hr', 'delivery'], true)) {

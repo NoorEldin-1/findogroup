@@ -119,7 +119,8 @@ return json_decode(<<<'JSON'
         "owner",
         "marketing",
         "media_buyer",
-        "sales"
+        "sales",
+        "sales_manager"
       ],
       "write": [
         "owner",
@@ -135,12 +136,14 @@ return json_decode(<<<'JSON'
         "owner",
         "delivery",
         "sales",
-        "data_entry"
+        "data_entry",
+        "sales_manager"
       ],
       "write": [
         "owner",
         "sales",
-        "data_entry"
+        "data_entry",
+        "sales_manager"
       ]
     },
     "people": {
@@ -162,7 +165,8 @@ return json_decode(<<<'JSON'
         "sales",
         "data_entry",
         "finance",
-        "employee"
+        "employee",
+        "sales_manager"
       ],
       "write": [
         "owner",
@@ -258,6 +262,10 @@ return json_decode(<<<'JSON'
     "sales": {
       "ar": "مبيعات",
       "en": "Sales"
+    },
+    "sales_manager": {
+      "ar": "مدير المبيعات",
+      "en": "Sales manager"
     },
     "data_entry": {
       "ar": "إدخال بيانات",
