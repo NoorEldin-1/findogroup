@@ -45,6 +45,8 @@ Route::middleware(AdminLocale::class)->group(function () {
         Route::get('/operations/clients/{id}/profile', [S::class, 'clientProfile'])->whereNumber('id');
         Route::get('/operations/quotes/{id}/print', [S::class, 'printQuote'])->whereNumber('id');
         Route::get('/operations/projects/portfolio', [P::class, 'portfolio']);
+        Route::get('/operations/projects/{id}/sprints', [P::class, 'sprints'])->whereNumber('id');
+        Route::post('/operations/projects/{id}/sprints/plan', [P::class, 'planSprint'])->whereNumber('id');
         Route::get('/operations/{type}/create', [O::class, 'create']);
         Route::get('/operations/{type}', [O::class, 'listing']);
         Route::post('/operations/{type}', [O::class, 'store']);

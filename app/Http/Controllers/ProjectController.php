@@ -6,12 +6,13 @@ use App\Services\Cms;
 use App\Services\OperatingAccess;
 use App\Services\OperatingCatalog;
 use App\Services\OperatingProjects;
+use App\Services\OperatingSprints;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class ProjectController extends Controller
 {
-    public function __construct(private OperatingProjects $projects, private OperatingAccess $access, private OperatingCatalog $catalog) {}
+    public function __construct(private OperatingProjects $projects, private OperatingSprints $sprints, private OperatingAccess $access, private OperatingCatalog $catalog) {}
 
     public function portfolio(Request $request): Response
     {
@@ -28,5 +29,32 @@ class ProjectController extends Controller
             'catalog' => $this->catalog,
             'access' => $this->access,
         ]);
+    }
+
+    public function sprints(int $id, Request $request): Response
+    {
+        $user = $request->user();
+        $project = $this->access->record($user, $id);
+        abort_unless($project->type === 'projects', 404);
+        abort_unless($this->access->can($user, 'tasks') && $this->access->can($user, 'sprints'), 403);
+
+        return response()->view('admin.operating.project-sprints', $this->sprints->board($user, $project) + [
+            'project' => $project,
+            'canPlan' => in_array($user->role, ['owner', 'delivery', 'tech_lead'], true),
+            'priorities' => collect($this->catalog->entity('tasks')['fields'])->firstWhere('key', 'priority')['options'],
+            'collections' => Cms::COLLECTIONS,
+            'catalog' => $this->catalog,
+            'access' => $this->access,
+        ]);
+    }
+
+    public function planSprint(int $id, Request $request): Response
+    {
+        $project = $this->access->record($request->user(), $id);
+        abort_unless($project->type === 'projects', 404);
+        $input = $request->validate(['sprint_id' => 'nullable|integer', 'task_ids' => 'required|array|min:1|max:100', 'task_ids.*' => 'integer', 'reason' => 'required|string|max:2000']);
+        $moved = $this->sprints->plan($request->user(), $project, $input['sprint_id'] ?? null, $input['task_ids'], $input['reason']);
+
+        return back()->with('success', __('تم نقل :count مهمة.', ['count' => $moved]));
     }
 }

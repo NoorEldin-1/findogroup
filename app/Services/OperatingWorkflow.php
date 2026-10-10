@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\User;
+use App\Notifications\OperatingAlert;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -10,7 +11,7 @@ use Illuminate\Validation\ValidationException;
 
 class OperatingWorkflow
 {
-    public function __construct(private OperatingCatalog $catalog, private OperatingAccess $access) {}
+    public function __construct(private OperatingCatalog $catalog, private OperatingAccess $access, private OperatingNotifier $notifier) {}
 
     public function fail(string $ar, string $en): never
     {
@@ -32,9 +33,7 @@ class OperatingWorkflow
         if ($existing && $existing->source !== 'findo') {
             $this->fail('هذه الحقول يملكها Jira. عدّلها في المصدر ثم أعد المزامنة.', 'Jira owns this record. Update the source, then sync.');
         }
-        if (! $existing && $type === 'tasks' && ! in_array($user->role, ['owner', 'delivery', 'tech_lead'], true)) {
-            abort(403);
-        }
+        abort_if(! $existing && ! $this->access->canCreate($user, $type), 403);
         $limitedEmployee = ! in_array($user->role, ['owner', 'hr', 'delivery'], true);
         if (! $existing && $limitedEmployee && in_array($type, ['evaluations', 'goals', 'improvement_plans'], true)) {
             abort(403);
@@ -246,7 +245,7 @@ class OperatingWorkflow
             }
         }
 
-        return DB::transaction(function () use ($type, $user, $data, $validated, $existing, $entity): object {
+        $record = DB::transaction(function () use ($type, $user, $data, $validated, $existing, $entity): object {
             if (DB::getDriverName() === 'pgsql') {
                 DB::select("SELECT pg_advisory_xact_lock(hashtext('findo-operating-gates'))");
             }
@@ -308,6 +307,33 @@ class OperatingWorkflow
 
             return $record;
         });
+        $this->notifyAssignees($type, $record, $existing ? $this->catalog->data($existing) : [], $user);
+
+        return $record;
+    }
+
+    /**
+     * Tell people when work newly lands on them; nobody is notified about an assignment they made to themselves.
+     *
+     * @param  array<string, mixed>  $before
+     */
+    private function notifyAssignees(string $type, object $record, array $before, User $user): void
+    {
+        $fields = ['tasks' => ['assignee_id', 'reviewer_id', 'tester_id'], 'team_tasks' => ['assignee_id']][$type] ?? [];
+        $after = $this->catalog->data($record);
+        $self = (int) $this->access->employeeId($user);
+        foreach ($fields as $field) {
+            $employee = (int) ($after[$field] ?? 0);
+            if (! $employee || $employee === (int) ($before[$field] ?? 0) || $employee === $self) {
+                continue;
+            }
+            $this->notifier->send([$this->notifier->employeeUser($employee)], new OperatingAlert(
+                'work_assigned',
+                ['ar' => 'عمل جديد مسند إليك', 'en' => 'New work assigned to you'],
+                ['ar' => 'أُسند إليك "'.$record->title.'".', 'en' => 'You were assigned "'.$record->title.'".'],
+                '/admin/operations/record/'.$record->id,
+            ));
+        }
     }
 
     public function score(string $ratings): float

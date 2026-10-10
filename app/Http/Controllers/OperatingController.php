@@ -9,6 +9,7 @@ use App\Services\OperatingAttendance;
 use App\Services\OperatingCatalog;
 use App\Services\OperatingQuotes;
 use App\Services\OperatingReports;
+use App\Services\OperatingSprints;
 use App\Services\OperatingWorkflow;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
@@ -81,7 +82,7 @@ class OperatingController extends Controller
 
     public function create(string $type, Request $request): Response
     {
-        abort_unless($this->access->can($request->user(), $type, 'write'), 403);
+        abort_unless($this->access->canCreate($request->user(), $type), 403);
         $initial = [];
         if ($request->filled('from')) {
             $source = $this->access->record($request->user(), $request->integer('from'));
@@ -95,6 +96,15 @@ class OperatingController extends Controller
                 if (array_key_exists($approval, $initial)) {
                     $initial[$approval] = null;
                 }
+            }
+        }
+
+        $relations = collect($this->catalog->entity($type)['fields'])->where('type', 'relation')->keyBy('key');
+        foreach ((array) $request->input('prefill', []) as $key => $value) {
+            if (isset($relations[$key]) && is_numeric($value)) {
+                $target = $this->access->record($request->user(), (int) $value);
+                abort_unless($target->type === $relations[$key]['entity'], 404);
+                $initial[$key] = (int) $value;
             }
         }
 
@@ -131,7 +141,7 @@ class OperatingController extends Controller
             $events = $comments = $attachments = collect();
         }
 
-        return $this->view('form', ['type' => $type, 'entity' => $this->catalog->entity($type), 'record' => $record, 'data' => $record ? $this->access->visibleData($request->user(), $record) : $initial, 'fields' => $fields, 'choices' => $choices, 'events' => $events, 'links' => $links, 'comments' => $comments, 'attachments' => $attachments, 'projectReport' => $record && $type === 'projects' ? app(OperatingReports::class)->project($record, $request->user()) : null, 'signals' => $record ? $this->signals($record) : [], 'initialTitle' => $initialTitle]);
+        return $this->view('form', ['type' => $type, 'entity' => $this->catalog->entity($type), 'record' => $record, 'data' => $record ? $this->access->visibleData($request->user(), $record) : $initial, 'fields' => $fields, 'choices' => $choices, 'events' => $events, 'links' => $links, 'comments' => $comments, 'attachments' => $attachments, 'projectReport' => $record && $type === 'projects' ? app(OperatingReports::class)->project($record, $request->user()) : null, 'signals' => $record ? $this->signals($record) : [], 'initialTitle' => $initialTitle, 'sprintProgress' => $record && $type === 'sprints' ? app(OperatingSprints::class)->progress($record) : null]);
     }
 
     public function show(int $id, Request $request): Response

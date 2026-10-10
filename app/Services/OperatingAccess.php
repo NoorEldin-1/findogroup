@@ -83,6 +83,22 @@ class OperatingAccess
         return in_array($user->role, config('operating.groups.'.$entity['group'].'.'.$action, []), true);
     }
 
+    /**
+     * Creating is narrower than editing for work queues: only leads open new development or marketing tasks.
+     */
+    public function canCreate(User $user, string $type): bool
+    {
+        if (! $this->can($user, $type, 'write')) {
+            return false;
+        }
+
+        return match ($type) {
+            'tasks' => in_array($user->role, ['owner', 'delivery', 'tech_lead'], true),
+            'team_tasks' => in_array($user->role, ['owner', 'marketing', 'media_buyer'], true),
+            default => true,
+        };
+    }
+
     public function delegation(User $user, string $type): ?object
     {
         return DB::table('operating_records')->where('type', 'delegations')->where('status', 'active')->where('data->user_id', $user->id)->where('data->entity_type', $type)->where('data->action', 'approve')->where('data->starts_at', '<=', today()->toDateString())->where('data->expires_at', '>=', today()->toDateString())->first();
