@@ -6,6 +6,7 @@ use App\Services\Cms;
 use App\Services\OperatingAccess;
 use App\Services\OperatingCatalog;
 use App\Services\OperatingFollowUps;
+use App\Services\OperatingQuotes;
 use App\Services\OperatingSales;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -13,7 +14,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 class SalesController extends Controller
 {
-    public function __construct(private OperatingSales $sales, private OperatingFollowUps $followUps, private OperatingAccess $access, private OperatingCatalog $catalog) {}
+    public function __construct(private OperatingSales $sales, private OperatingFollowUps $followUps, private OperatingQuotes $quotes, private OperatingAccess $access, private OperatingCatalog $catalog) {}
 
     public function pipeline(Request $request): Response
     {
@@ -41,6 +42,14 @@ class SalesController extends Controller
         abort_unless($client->type === 'clients', 404);
 
         return $this->view('client-profile', $this->sales->clientProfile($request->user(), $client));
+    }
+
+    public function printQuote(int $id, Request $request): Response
+    {
+        $quote = $this->access->record($request->user(), $id);
+        abort_unless($quote->type === 'quotes', 404);
+
+        return response()->view('admin.operating.quote-print', $this->quotes->document($request->user(), $quote) + ['catalog' => $this->catalog]);
     }
 
     public function followUps(Request $request): Response

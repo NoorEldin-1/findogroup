@@ -762,5 +762,19 @@
   "الضريبة": "Tax",
   "الخصم الإضافي": "Extra discount",
   "الإجمالي النهائي": "Grand total",
-  "الإجمالي النهائي يُحسب ويُحفظ على الخادم عند الحفظ. الصف بلا وصف يُتجاهل.": "The grand total is calculated and stored on the server when you save. Rows without a description are ignored."
+  "الإجمالي النهائي يُحسب ويُحفظ على الخادم عند الحفظ. الصف بلا وصف يُتجاهل.": "The grand total is calculated and stored on the server when you save. Rows without a description are ignored.",
+  "العودة للعرض": "Back to quote",
+  "تحميل PDF / طباعة": "Download PDF / Print",
+  "مسودة — غير معتمد": "Draft — not approved",
+  "عرض سعر": "Quotation",
+  "رقم العرض": "Quote number",
+  "صالح حتى": "Valid until",
+  "مقدم إلى": "Prepared for",
+  "الرقم الضريبي": "Tax number",
+  "شروط الدفع": "Payment terms",
+  "الشروط والملاحظات": "Terms and notes",
+  "مستند العرض / PDF": "Quote document / PDF",
+  "فتح المشروع المحوَّل": "Open converted project",
+  "تحويل إلى مشروع": "Convert to project",
+  "إنشاء عقد (أمر بيع)": "Create contract (sales order)"
 }

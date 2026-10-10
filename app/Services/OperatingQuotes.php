@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 class OperatingQuotes
@@ -53,6 +54,72 @@ class OperatingQuotes
         }
 
         return ['subtotal' => round($subtotal, 2), 'line_discount' => round($subtotal - $net, 2), 'net' => round($net, 2), 'tax' => round($tax, 2), 'discount' => round($discountAmount, 2), 'total' => round($net + $tax - $discountAmount, 2)];
+    }
+
+    /**
+     * @return array{quote: object, number: string, issued: string, valid_until: ?string, status: string, draft: bool, client: array{name: ?string, contact: ?string, email: ?string, phone: ?string, address: ?string, tax_number: ?string}, lines: list<array<string, mixed>>, totals: ?array<string, float>, price: float, currency: string, payment_terms: ?string, terms: ?string}
+     */
+    public function document(User $user, object $quote): array
+    {
+        $data = $this->catalog->data($quote);
+        $opportunity = ! empty($data['opportunity_id']) ? DB::table('operating_records')->find($data['opportunity_id']) : null;
+        $lead = $opportunity ? $this->catalog->data($opportunity) : [];
+        $client = ! empty($lead['client_id']) && $this->access->can($user, 'clients') ? DB::table('operating_records')->find($lead['client_id']) : null;
+        $clientData = $client ? $this->catalog->data($client) : [];
+
+        return [
+            'quote' => $quote,
+            'number' => $data['quote_number'] ?? 'Q-'.$quote->id,
+            'issued' => substr((string) $quote->created_at, 0, 10),
+            'valid_until' => $data['valid_until'] ?? null,
+            'status' => $quote->status,
+            'draft' => $quote->status !== 'approved',
+            'client' => [
+                'name' => $clientData['company'] ?? $client?->title ?? ($lead['lead_company'] ?? null),
+                'contact' => $clientData['contact'] ?? ($lead['lead_contact'] ?? null),
+                'email' => $clientData['email'] ?? ($lead['lead_email'] ?? null),
+                'phone' => $clientData['phone'] ?? ($lead['lead_phone'] ?? null),
+                'address' => $clientData['address'] ?? null,
+                'tax_number' => $clientData['tax_number'] ?? null,
+            ],
+            'lines' => $data['line_items'] ?? [],
+            'totals' => $data['totals'] ?? null,
+            'price' => (float) ($data['price'] ?? 0),
+            'currency' => strtoupper(trim((string) ($data['currency'] ?? ''))) ?: 'USD',
+            'payment_terms' => $data['payment_terms'] ?? null,
+            'terms' => $data['terms'] ?? null,
+        ];
+    }
+
+    /**
+     * Prefill a project or contract form from an approved quote; the user still reviews and saves it through the normal gates.
+     *
+     * @return array{title: string, data: array<string, mixed>}
+     */
+    public function draftFrom(User $user, int $quoteId, string $type): array
+    {
+        $quote = $this->access->record($user, $quoteId);
+        abort_unless($quote->type === 'quotes' && in_array($type, ['projects', 'contracts'], true), 404);
+        if ($quote->status !== 'approved') {
+            $this->workflow->fail('التحويل متاح للعروض المعتمدة فقط.', 'Only approved quotes can be converted.');
+        }
+        $data = $this->catalog->data($quote);
+        $opportunity = ! empty($data['opportunity_id']) ? DB::table('operating_records')->find($data['opportunity_id']) : null;
+        $lead = $opportunity ? $this->catalog->data($opportunity) : [];
+        $clientId = $lead['client_id'] ?? null;
+        $client = $clientId ? $this->catalog->data(DB::table('operating_records')->find($clientId)) : [];
+        $scope = implode("\n", array_map(fn (array $line): string => '- '.$line['description'].' × '.(float) $line['quantity'], $data['line_items'] ?? []));
+        if ($type === 'contracts') {
+            return ['title' => $quote->title, 'data' => ['client_id' => $clientId, 'quote_id' => $quote->id, 'scope_reference' => trim(($data['quote_number'] ?? '')."\n".$scope)]];
+        }
+        $contractId = DB::table('operating_records')->where('type', 'contracts')->where('status', 'approved')->where('data->quote_id', $quote->id)->value('id');
+
+        return ['title' => $quote->title, 'data' => ['client_id' => $clientId, 'quote_id' => $quote->id, 'contract_id' => $contractId, 'outcome' => trim(($lead['need'] ?? '')."\n".$scope), 'original_due' => $lead['requested_date'] ?? null, 'client_contact' => $client['contact'] ?? ($lead['lead_contact'] ?? null)]];
+    }
+
+    public function convertedProject(int $quoteId): ?object
+    {
+        return DB::table('operating_records')->where('type', 'projects')->where('status', '!=', 'archived')->where('data->quote_id', $quoteId)->first();
     }
 
     /**

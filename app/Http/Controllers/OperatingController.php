@@ -7,6 +7,7 @@ use App\Services\JiraSync;
 use App\Services\OperatingAccess;
 use App\Services\OperatingAttendance;
 use App\Services\OperatingCatalog;
+use App\Services\OperatingQuotes;
 use App\Services\OperatingReports;
 use App\Services\OperatingWorkflow;
 use Illuminate\Http\Request;
@@ -97,10 +98,17 @@ class OperatingController extends Controller
             }
         }
 
-        return $this->form($type, $request, null, $initial);
+        $initialTitle = null;
+        if ($request->filled('quote')) {
+            $draft = app(OperatingQuotes::class)->draftFrom($request->user(), $request->integer('quote'), $type);
+            $initial = $draft['data'];
+            $initialTitle = $draft['title'];
+        }
+
+        return $this->form($type, $request, null, $initial, $initialTitle);
     }
 
-    private function form(string $type, Request $request, ?object $record, array $initial = []): Response
+    private function form(string $type, Request $request, ?object $record, array $initial = [], ?string $initialTitle = null): Response
     {
         $fields = $this->access->fields($request->user(), $type, $record);
         $choices = [];
@@ -120,7 +128,7 @@ class OperatingController extends Controller
             $events = $comments = $attachments = collect();
         }
 
-        return $this->view('form', ['type' => $type, 'entity' => $this->catalog->entity($type), 'record' => $record, 'data' => $record ? $this->access->visibleData($request->user(), $record) : $initial, 'fields' => $fields, 'choices' => $choices, 'events' => $events, 'links' => $links, 'comments' => $comments, 'attachments' => $attachments, 'projectReport' => $record && $type === 'projects' ? app(OperatingReports::class)->project($record, $request->user()) : null, 'signals' => $record ? $this->signals($record) : []]);
+        return $this->view('form', ['type' => $type, 'entity' => $this->catalog->entity($type), 'record' => $record, 'data' => $record ? $this->access->visibleData($request->user(), $record) : $initial, 'fields' => $fields, 'choices' => $choices, 'events' => $events, 'links' => $links, 'comments' => $comments, 'attachments' => $attachments, 'projectReport' => $record && $type === 'projects' ? app(OperatingReports::class)->project($record, $request->user()) : null, 'signals' => $record ? $this->signals($record) : [], 'initialTitle' => $initialTitle]);
     }
 
     public function show(int $id, Request $request): Response

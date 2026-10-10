@@ -181,6 +181,14 @@ class OperatingWorkflow
         if ($type === 'contacts' && ! empty($data['is_primary']) && DB::table('operating_records')->where('type', 'contacts')->where('status', '!=', 'archived')->where('data->client_id', (int) $data['client_id'])->where('data->is_primary', true)->when($id, fn ($query) => $query->where('id', '!=', $id))->exists()) {
             $this->fail('للعميل جهة اتصال أساسية بالفعل. ألغِ تحديدها أولًا.', 'This client already has a primary contact. Unset it first.');
         }
+        if ($type === 'projects' && ! empty($data['quote_id'])) {
+            if (DB::table('operating_records')->where('id', $data['quote_id'])->value('status') !== 'approved') {
+                $this->fail('التحويل إلى مشروع يحتاج عرضًا معتمدًا.', 'Only an approved quote can become a project.');
+            }
+            if (DB::table('operating_records')->where('type', 'projects')->where('status', '!=', 'archived')->where('data->quote_id', (int) $data['quote_id'])->when($id, fn ($query) => $query->where('id', '!=', $id))->exists()) {
+                $this->fail('هذا العرض تحوّل إلى مشروع بالفعل.', 'This quote has already been converted to a project.');
+            }
+        }
         if ($type === 'quotes') {
             if ($data['line_items'] ?? []) {
                 $data['totals'] = app(OperatingQuotes::class)->totals($data['line_items'], (float) ($data['discount'] ?? 0));

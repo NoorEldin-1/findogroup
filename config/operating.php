@@ -1408,6 +1408,16 @@ return json_decode(<<<'JSON'
           "entity": "contracts"
         },
         {
+          "key": "quote_id",
+          "label": {
+            "ar": "العرض المعتمد المصدر",
+            "en": "Source quote"
+          },
+          "type": "relation",
+          "required": false,
+          "entity": "quotes"
+        },
+        {
           "key": "outcome",
           "label": {
             "ar": "النتيجة المطلوبة",
