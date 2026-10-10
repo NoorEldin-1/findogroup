@@ -102,12 +102,15 @@ class OperatingController extends Controller
             }
         }
 
-        $relations = collect($this->catalog->entity($type)['fields'])->where('type', 'relation')->keyBy('key');
+        $prefillable = collect($this->catalog->entity($type)['fields'])->whereIn('type', ['relation', 'select'])->keyBy('key');
         foreach ((array) $request->input('prefill', []) as $key => $value) {
-            if (isset($relations[$key]) && is_numeric($value)) {
+            if (($prefillable[$key]['type'] ?? null) === 'relation' && is_numeric($value)) {
                 $target = $this->access->record($request->user(), (int) $value);
-                abort_unless($target->type === $relations[$key]['entity'], 404);
+                abort_unless($target->type === $prefillable[$key]['entity'], 404);
                 $initial[$key] = (int) $value;
+            }
+            if (($prefillable[$key]['type'] ?? null) === 'select' && is_string($value) && isset($prefillable[$key]['options'][$value])) {
+                $initial[$key] = $value;
             }
         }
 

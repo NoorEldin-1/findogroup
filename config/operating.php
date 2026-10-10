@@ -7060,6 +7060,35 @@ return json_decode(<<<'JSON'
       ],
       "statuses": ["draft", "active", "maintenance", "retired", "completed", "archived"]
     },
+    "asset_movements": {
+      "label": { "ar": "حركات الأصول (تسليم ونقل وإرجاع وصيانة)", "en": "Asset movements (handover, transfer, return, maintenance)" },
+      "group": "assets",
+      "pages": [],
+      "fields": [
+        { "key": "asset_id", "label": { "ar": "الأصل", "en": "Asset" }, "type": "relation", "required": true, "entity": "assets" },
+        { "key": "movement", "label": { "ar": "نوع الحركة", "en": "Movement" }, "type": "select", "required": true, "options": {
+          "assign": { "ar": "تسليم لموظف", "en": "Hand over to an employee" },
+          "transfer": { "ar": "نقل لموظف آخر", "en": "Transfer to another employee" },
+          "return": { "ar": "إرجاع للمخزن", "en": "Return to stock" },
+          "maintenance": { "ar": "إرسال للصيانة", "en": "Send to maintenance" },
+          "maintenance_done": { "ar": "عودة من الصيانة", "en": "Back from maintenance" }
+        } },
+        { "key": "to_employee_id", "label": { "ar": "الموظف المستلم", "en": "Receiving employee" }, "type": "relation", "required": false, "entity": "employees" },
+        { "key": "movement_date", "label": { "ar": "تاريخ الحركة", "en": "Movement date" }, "type": "date", "required": true },
+        { "key": "condition", "label": { "ar": "الحالة الفنية عند الحركة", "en": "Condition at movement" }, "type": "select", "required": false, "options": {
+          "new": { "ar": "جديد", "en": "New" },
+          "good": { "ar": "جيد", "en": "Good" },
+          "fair": { "ar": "مقبول", "en": "Fair" },
+          "damaged": { "ar": "تالف / يحتاج إصلاحًا", "en": "Damaged / needs repair" }
+        } },
+        { "key": "supplier_id", "label": { "ar": "جهة الصيانة", "en": "Maintenance provider" }, "type": "relation", "required": false, "entity": "suppliers" },
+        { "key": "cost", "label": { "ar": "تكلفة الصيانة", "en": "Maintenance cost" }, "type": "number", "required": false },
+        { "key": "currency", "label": { "ar": "العملة", "en": "Currency" }, "type": "text", "required": false },
+        { "key": "notes", "label": { "ar": "ملاحظات / سبب الحركة", "en": "Notes / reason" }, "type": "textarea", "required": false }
+      ],
+      "statuses": ["draft", "completed", "archived"],
+      "immutable": ["completed", "archived"]
+    },
     "meetings": {
       "label": {
         "ar": "الاجتماعات والتقارير",

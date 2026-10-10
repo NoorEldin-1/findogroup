@@ -2,11 +2,98 @@
 
 namespace App\Services;
 
+use App\Models\User;
+use App\Notifications\OperatingAlert;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class OperatingAssets
 {
-    public function __construct(private OperatingCatalog $catalog, private OperatingWorkflow $workflow) {}
+    /**
+     * Asset states in which nothing moves any more.
+     */
+    public const OUT_OF_SERVICE = ['retired', 'completed', 'archived'];
+
+    public function __construct(private OperatingCatalog $catalog, private OperatingWorkflow $workflow, private OperatingNotifier $notifier) {}
+
+    /**
+     * Runs inside the movement completion transaction: custody, status and condition of the asset change only here,
+     * so the asset's history is the list of its completed movements.
+     *
+     * @return array<string, mixed> the movement data with the previous holder recorded
+     */
+    public function applyMovement(object $movement, User $user, string $reason): array
+    {
+        $data = $this->catalog->data($movement);
+        $asset = DB::table('operating_records')->where('id', $data['asset_id'])->lockForUpdate()->first();
+        $assetData = $this->catalog->data($asset);
+        $holder = (int) ($assetData['assignee_id'] ?? 0);
+        $to = (int) ($data['to_employee_id'] ?? 0);
+        $kind = $data['movement'];
+        if (in_array($asset->status, self::OUT_OF_SERVICE, true)) {
+            $this->workflow->fail('الأصل خارج الخدمة؛ لا تُسجَّل عليه حركات.', 'The asset is out of service; it cannot move.');
+        }
+        if (in_array($kind, ['assign', 'transfer'], true) && $asset->status === 'maintenance') {
+            $this->workflow->fail('الأصل في الصيانة. سجّل عودته أولًا.', 'The asset is in maintenance. Record its return first.');
+        }
+        match ($kind) {
+            'assign' => $holder ? $this->workflow->fail('الأصل مسلَّم بالفعل لموظف. استخدم النقل.', 'The asset is already handed over. Use a transfer.') : null,
+            'transfer' => ! $holder ? $this->workflow->fail('الأصل غير مسلَّم لأحد. استخدم التسليم.', 'Nobody holds the asset. Use a handover.') : ($to === $holder ? $this->workflow->fail('الأصل مع هذا الموظف بالفعل.', 'This employee already holds the asset.') : null),
+            'return' => ! $holder ? $this->workflow->fail('الأصل غير مسلَّم لأحد.', 'Nobody holds the asset.') : null,
+            'maintenance' => $asset->status === 'maintenance' ? $this->workflow->fail('الأصل في الصيانة بالفعل.', 'The asset is already in maintenance.') : null,
+            'maintenance_done' => $asset->status !== 'maintenance' ? $this->workflow->fail('الأصل ليس في الصيانة.', 'The asset is not in maintenance.') : null,
+        };
+        $after = $assetData;
+        $status = $asset->status;
+        if (in_array($kind, ['assign', 'transfer'], true)) {
+            $after['assignee_id'] = $to;
+            $status = $status === 'draft' ? 'active' : $status;
+        }
+        if ($kind === 'return') {
+            $after['assignee_id'] = null;
+        }
+        if ($kind === 'maintenance') {
+            $after['status_before_maintenance'] = $status;
+            $status = 'maintenance';
+        }
+        if ($kind === 'maintenance_done') {
+            $status = $after['status_before_maintenance'] ?? 'active';
+            unset($after['status_before_maintenance']);
+        }
+        if (! empty($data['condition'])) {
+            $after['condition'] = $data['condition'];
+        }
+        DB::table('operating_records')->where('id', $asset->id)->update(['status' => $status, 'data' => json_encode($after, JSON_UNESCAPED_UNICODE), 'version' => $asset->version + 1, 'updated_at' => now()]);
+        $this->workflow->event(DB::table('operating_records')->find($asset->id), 'update', 'Asset movement "'.$movement->title.'" ('.$kind.'): '.$reason, ['status' => $asset->status, 'assignee_id' => $holder ?: null], ['status' => $status, 'assignee_id' => $after['assignee_id'] ?? null], $user->id);
+
+        return array_merge($data, ['from_employee_id' => $holder ?: null]);
+    }
+
+    public function notifyReceiver(object $movement): void
+    {
+        $data = $this->catalog->data($movement);
+        if (! in_array($data['movement'] ?? null, ['assign', 'transfer'], true) || empty($data['to_employee_id'])) {
+            return;
+        }
+        $asset = DB::table('operating_records')->find($data['asset_id']);
+        $tag = $this->catalog->data($asset)['asset_tag'] ?? '';
+        $this->notifier->send([$this->notifier->employeeUser((int) $data['to_employee_id'])], new OperatingAlert(
+            'asset_assigned',
+            ['ar' => 'عهدة جديدة باسمك', 'en' => 'New asset in your custody'],
+            ['ar' => 'تم تسليمك "'.$asset->title.'" '.$tag.'. راجع حالته وأبلغ عن أي ملاحظة.', 'en' => 'You received "'.$asset->title.'" '.$tag.'. Check its condition and report any issue.'],
+            '/admin/operations/record/'.$asset->id,
+        ));
+    }
+
+    /**
+     * @return Collection<int, object>
+     */
+    public function movements(int $assetId): Collection
+    {
+        return DB::table('operating_records')->where('type', 'asset_movements')->where('status', '!=', 'archived')
+            ->whereIn('id', DB::table('operating_links')->where('field', 'asset_id')->where('target_id', $assetId)->select('record_id'))
+            ->orderByDesc('id')->get();
+    }
 
     public function nextTag(): string
     {

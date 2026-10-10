@@ -279,6 +279,18 @@ class OperatingWorkflow
                 $data['asset_tag'] = $this->catalog->data($existing)['asset_tag'] ?? null;
             }
         }
+        if ($type === 'asset_movements') {
+            if (in_array($data['movement'], ['assign', 'transfer'], true)) {
+                if (empty($data['to_employee_id'])) {
+                    $this->fail('حدّد الموظف المستلم.', 'Choose the receiving employee.');
+                }
+                if (DB::table('operating_records')->where('id', $data['to_employee_id'])->value('status') !== 'active') {
+                    $this->fail('الموظف المستلم غير نشط.', 'The receiving employee is not active.');
+                }
+            } else {
+                $data['to_employee_id'] = null;
+            }
+        }
         if ($type === 'supplier_payments') {
             $invoice = DB::table('operating_records')->find($data['supplier_invoice_id']);
             if (! in_array($invoice->status, ['approved', 'part_paid'], true)) {
@@ -529,7 +541,7 @@ class OperatingWorkflow
         $entity = $this->catalog->entity($record->type);
         $input = $request->validate(['target' => 'required|in:'.implode(',', $entity['statuses']), 'version' => 'required|integer', 'reason' => 'required|string|max:2000']);
 
-        return DB::transaction(function () use ($user, $record, $entity, $input): object {
+        $next = DB::transaction(function () use ($user, $record, $entity, $input): object {
             if (DB::getDriverName() === 'pgsql') {
                 DB::select("SELECT pg_advisory_xact_lock(hashtext('findo-operating-gates'))");
             }
@@ -564,6 +576,9 @@ class OperatingWorkflow
             if ($record->type === 'purchase_orders' && $target === 'approved') {
                 app(OperatingProcurement::class)->markRequestOrdered($record, $user);
             }
+            if ($record->type === 'asset_movements' && $target === 'completed') {
+                $changes['data'] = json_encode(app(OperatingAssets::class)->applyMovement($record, $user, $input['reason']), JSON_UNESCAPED_UNICODE);
+            }
             DB::table('operating_records')->where('id', $record->id)->update($changes);
             if ($record->type === 'supplier_payments') {
                 app(OperatingProcurement::class)->settleInvoice((int) $data['supplier_invoice_id'], $user, $input['reason']);
@@ -579,6 +594,11 @@ class OperatingWorkflow
 
             return $next;
         });
+        if ($next->type === 'asset_movements' && $next->status === 'completed') {
+            app(OperatingAssets::class)->notifyReceiver($next);
+        }
+
+        return $next;
     }
 
     private function gate(object $record, array $data, string $target, User $user, ?int $employeeId): void
@@ -594,6 +614,9 @@ class OperatingWorkflow
             abort_unless(in_array($user->role, ['owner', 'delivery', 'hr', 'marketing', 'sales', 'sales_manager', 'finance', 'seo'], true), 403);
             if ($record->type === 'receipts' && DB::table('operating_records')->where('id', $data['invoice_id'] ?? null)->value('status') === 'paid') {
                 $this->fail('صحح حالة الفاتورة أولًا قبل إلغاء تحصيلها.', 'Correct the invoice state before voiding its receipt.');
+            }
+            if (in_array($record->type, ['asset_movements', 'stock_movements'], true) && $record->status === 'completed') {
+                $this->fail('الحركة المكتملة جزء من السجل. صحّحها بحركة معاكسة.', 'A completed movement is part of the record. Correct it with a reverse movement.');
             }
             if ($record->type === 'supplier_invoices' && in_array($record->status, ['approved', 'part_paid', 'paid'], true)) {
                 $this->fail('ألغِ الفاتورة المعتمدة (إلغاء) بدل أرشفتها.', 'Void an approved invoice instead of archiving it.');
@@ -814,6 +837,9 @@ class OperatingWorkflow
             if ($target === 'received') {
                 $this->requireFields($data, ['delivered_at']);
             }
+        }
+        if (in_array($record->type, ['asset_movements', 'stock_movements'], true) && ($target !== 'completed' || $record->status !== 'draft')) {
+            $this->fail('الحركة تُعتمد من المسودة مرة واحدة، والمكتملة لا تُعدَّل.', 'A movement is completed once from draft; completed movements do not change.');
         }
         if ($record->type === 'assets') {
             if ($target === 'maintenance' || $record->status === 'maintenance') {
