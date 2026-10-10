@@ -191,6 +191,18 @@ class OperatingWorkflow
         if ($type === 'sprints' && $data['end_date'] < $data['start_date']) {
             $this->fail('نهاية السبرنت قبل بدايته.', 'The sprint ends before it starts.');
         }
+        if ($type === 'deliverables') {
+            $milestone = DB::table('operating_records')->find($data['milestone_id']);
+            $milestoneData = $this->catalog->data($milestone);
+            $data['project_id'] = $milestoneData['project_id'] ?? null;
+            $milestoneDue = ($milestoneData['approved_due'] ?? null) ?: ($milestoneData['original_due'] ?? null);
+            if ($milestoneDue && $data['due_date'] > $milestoneDue) {
+                $this->fail('موعد المخرج بعد موعد المحطة.', 'The deliverable is due after its milestone.');
+            }
+            if (! $existing && in_array($milestone->status, ['submitted', 'accepted'], true)) {
+                $this->fail('المحطة قُدِّمت للعميل؛ لا تُضاف لها مخرجات جديدة.', 'The milestone was already submitted; add no new deliverables.');
+            }
+        }
         if ($type === 'tasks' && ! empty($data['sprint_id']) && (int) $data['sprint_id'] !== (int) (($existing ? $this->catalog->data($existing) : [])['sprint_id'] ?? 0) && DB::table('operating_records')->where('id', $data['sprint_id'])->value('status') === 'completed') {
             $this->fail('لا تُضاف مهام إلى سبرنت مكتمل.', 'Tasks cannot join a completed sprint.');
         }
@@ -612,8 +624,22 @@ class OperatingWorkflow
         if (in_array($record->type, ['quotes', 'contracts'], true) && $target === 'approved') {
             $this->requireFields($data, $record->type === 'quotes' ? ['approval_evidence'] : ['client_evidence', 'signed_at']);
         }
-        if ($record->type === 'milestones' && $target === 'accepted') {
-            $this->requireFields($data, ['client_acceptance', 'accepted_at']);
+        if ($record->type === 'milestones') {
+            if (in_array($target, ['in_progress', 'submitted'], true)) {
+                $this->requireFields($data, ['assignee_id']);
+            }
+            if ($target === 'submitted' && app(OperatingMilestones::class)->deliverables($record->id)->where('status', '!=', 'delivered')->isNotEmpty()) {
+                $this->fail('سلّم كل مخرجات المحطة قبل تقديمها للعميل.', 'Deliver every deliverable before submitting the milestone.');
+            }
+            if ($target === 'accepted') {
+                if ($record->status !== 'submitted') {
+                    $this->fail('اقبل المحطة بعد تقديمها.', 'Accept a milestone after it is submitted.');
+                }
+                $this->requireFields($data, ['client_acceptance', 'accepted_at']);
+            }
+        }
+        if ($record->type === 'deliverables' && $target === 'delivered' && empty($data['delivery_url']) && empty($data['evidence'])) {
+            $this->fail('سجّل رابط التسليم أو دليله.', 'Add the delivery link or evidence.');
         }
         if ($record->type === 'acceptances' && $target === 'accepted') {
             $this->requireFields($data, ['evidence', 'accepted_at']);

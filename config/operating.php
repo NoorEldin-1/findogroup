@@ -2026,6 +2026,16 @@ return json_decode(<<<'JSON'
           "entity": "projects"
         },
         {
+          "key": "assignee_id",
+          "label": {
+            "ar": "مسؤول المحطة",
+            "en": "Milestone owner"
+          },
+          "type": "relation",
+          "required": false,
+          "entity": "employees"
+        },
+        {
           "key": "deliverable",
           "label": {
             "ar": "المخرج",
@@ -2095,6 +2105,88 @@ return json_decode(<<<'JSON'
         "in_progress",
         "submitted",
         "accepted",
+        "archived"
+      ]
+    },
+    "deliverables": {
+      "label": {
+        "ar": "المخرجات",
+        "en": "Deliverables"
+      },
+      "group": "delivery",
+      "pages": [],
+      "fields": [
+        {
+          "key": "milestone_id",
+          "label": {
+            "ar": "المحطة",
+            "en": "Milestone"
+          },
+          "type": "relation",
+          "required": true,
+          "entity": "milestones"
+        },
+        {
+          "key": "project_id",
+          "label": {
+            "ar": "المشروع (يُملأ من المحطة)",
+            "en": "Project (taken from the milestone)"
+          },
+          "type": "relation",
+          "required": false,
+          "entity": "projects"
+        },
+        {
+          "key": "assignee_id",
+          "label": {
+            "ar": "المسؤول",
+            "en": "Owner"
+          },
+          "type": "relation",
+          "required": false,
+          "entity": "employees"
+        },
+        {
+          "key": "due_date",
+          "label": {
+            "ar": "الموعد",
+            "en": "Due date"
+          },
+          "type": "date",
+          "required": true
+        },
+        {
+          "key": "description",
+          "label": {
+            "ar": "الوصف ومعيار التسليم",
+            "en": "Description and done criteria"
+          },
+          "type": "textarea",
+          "required": false
+        },
+        {
+          "key": "delivery_url",
+          "label": {
+            "ar": "رابط التسليم",
+            "en": "Delivery link"
+          },
+          "type": "url",
+          "required": false
+        },
+        {
+          "key": "evidence",
+          "label": {
+            "ar": "دليل التسليم",
+            "en": "Delivery evidence"
+          },
+          "type": "textarea",
+          "required": false
+        }
+      ],
+      "statuses": [
+        "planned",
+        "in_progress",
+        "delivered",
         "archived"
       ]
     },
