@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\Cms;
 use App\Services\OperatingAccess;
 use App\Services\OperatingCatalog;
+use App\Services\OperatingFollowUps;
 use App\Services\OperatingSales;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -12,7 +13,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 class SalesController extends Controller
 {
-    public function __construct(private OperatingSales $sales, private OperatingAccess $access, private OperatingCatalog $catalog) {}
+    public function __construct(private OperatingSales $sales, private OperatingFollowUps $followUps, private OperatingAccess $access, private OperatingCatalog $catalog) {}
 
     public function pipeline(Request $request): Response
     {
@@ -32,6 +33,14 @@ class SalesController extends Controller
         $client = $this->sales->convertToClient($request->user(), $id, $input['reason']);
 
         return redirect('/admin/operations/record/'.$client->id)->with('success', __('تم تحويل الفرصة إلى عميل وربطها به.'));
+    }
+
+    public function followUps(Request $request): Response
+    {
+        abort_unless($this->access->can($request->user(), 'activities'), 403);
+        $input = $request->validate(['assignee' => 'nullable|integer']);
+
+        return $this->view('activities-followups', ['board' => $this->followUps->board($request->user(), $input['assignee'] ?? null), 'assignee' => $input['assignee'] ?? null, 'assignees' => $this->assignees($request)]);
     }
 
     /**

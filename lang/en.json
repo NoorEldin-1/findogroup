@@ -714,5 +714,18 @@
   "هذه الفرصة غير مرتبطة بعميل بعد.": "This lead is not linked to a client yet.",
   "سبب التحويل": "Conversion reason",
   "تحويل إلى عميل": "Convert to client",
-  "تم تحويل الفرصة إلى عميل وربطها به.": "The lead was converted into a new client and linked to it."
+  "تم تحويل الفرصة إلى عميل وربطها به.": "The lead was converted into a new client and linked to it.",
+  "المتابعات والتذكيرات": "Follow-ups and reminders",
+  "اليوم": "Today",
+  "خلال 7 أيام": "Next 7 days",
+  "لاحقًا": "Later",
+  "فرص تجاوزت موعد متابعتها": "Leads past their follow-up date",
+  "مكتملة (30 يومًا)": "Completed (last 30 days)",
+  "المكالمات والاجتماعات والمتابعات المجدولة، مع تذكير قبل الموعد بساعة وتصعيد عند التأخير.": "Scheduled calls, meetings and follow-ups, with a reminder one hour before and escalation when overdue.",
+  "جدول المتابعات": "Follow-ups table",
+  "متابعة جديدة": "New follow-up",
+  "لوحة المتابعات": "Follow-ups board",
+  "المسؤول": "Owner",
+  "العميل": "Client",
+  "متابعة تجاوزت موعدها. أنجزها أو أعد جدولتها.": "This follow-up is overdue. Complete it or reschedule it."
 }

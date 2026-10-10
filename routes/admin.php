@@ -40,6 +40,7 @@ Route::middleware(AdminLocale::class)->group(function () {
         Route::get('/operations/attendance/monthly', [T::class, 'monthly']);
         Route::get('/operations/opportunities/pipeline', [S::class, 'pipeline']);
         Route::post('/operations/opportunities/{id}/convert-client', [S::class, 'convertLead'])->whereNumber('id');
+        Route::get('/operations/activities/follow-ups', [S::class, 'followUps']);
         Route::get('/operations/{type}/create', [O::class, 'create']);
         Route::get('/operations/{type}', [O::class, 'listing']);
         Route::post('/operations/{type}', [O::class, 'store']);

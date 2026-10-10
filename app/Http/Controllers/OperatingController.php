@@ -36,7 +36,7 @@ class OperatingController extends Controller
             $query = $this->access->query($request->user(), $type);
             $counts[$type] = (clone $query)->where('status', '!=', 'archived')->count();
             $groups[$entity['group']][$type] = $counts[$type];
-            foreach ((clone $query)->when($type === 'attendance', fn ($scoped) => $scoped->where('status', 'open'), fn ($scoped) => $scoped->where('status', '!=', 'archived'))->get() as $record) {
+            foreach ((clone $query)->when(in_array($type, ['attendance', 'activities'], true), fn ($scoped) => $scoped->where('status', $type === 'attendance' ? 'open' : 'planned'), fn ($scoped) => $scoped->where('status', '!=', 'archived'))->get() as $record) {
                 foreach ($this->signals($record) as $signal) {
                     $alerts[] = ['record' => $record, 'signal' => $signal];
                 }
@@ -367,6 +367,9 @@ class OperatingController extends Controller
         }
         if ($record->type === 'attendance' && $record->status === 'open' && ($data['work_date'] ?? '') < today()->toDateString()) {
             $signals[] = __('حضور بدون انصراف مسجل. صحّح السجل.');
+        }
+        if ($record->type === 'activities' && $record->status === 'planned' && ($data['due_at'] ?? '9999') < now()->format('Y-m-d\TH:i')) {
+            $signals[] = __('متابعة تجاوزت موعدها. أنجزها أو أعد جدولتها.');
         }
 
         return $signals;

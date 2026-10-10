@@ -653,6 +653,156 @@ return json_decode(<<<'JSON'
         "archived"
       ]
     },
+    "activities": {
+      "label": {
+        "ar": "المتابعات والأنشطة",
+        "en": "Follow-ups and activities"
+      },
+      "group": "sales",
+      "pages": [],
+      "assigned": true,
+      "immutable": [
+        "done",
+        "cancelled",
+        "archived"
+      ],
+      "fields": [
+        {
+          "key": "kind",
+          "label": {
+            "ar": "النوع",
+            "en": "Type"
+          },
+          "type": "select",
+          "required": true,
+          "options": {
+            "call": {
+              "ar": "مكالمة",
+              "en": "Call"
+            },
+            "meeting": {
+              "ar": "اجتماع",
+              "en": "Meeting"
+            },
+            "follow_up": {
+              "ar": "متابعة",
+              "en": "Follow-up"
+            },
+            "email": {
+              "ar": "بريد",
+              "en": "Email"
+            },
+            "whatsapp": {
+              "ar": "واتساب",
+              "en": "WhatsApp"
+            },
+            "task": {
+              "ar": "مهمة",
+              "en": "Task"
+            },
+            "note": {
+              "ar": "ملاحظة",
+              "en": "Note"
+            }
+          }
+        },
+        {
+          "key": "assignee_id",
+          "label": {
+            "ar": "المسؤول",
+            "en": "Owner"
+          },
+          "type": "relation",
+          "required": true,
+          "entity": "employees"
+        },
+        {
+          "key": "due_at",
+          "label": {
+            "ar": "الموعد",
+            "en": "Due at"
+          },
+          "type": "datetime-local",
+          "required": true
+        },
+        {
+          "key": "client_id",
+          "label": {
+            "ar": "العميل",
+            "en": "Client"
+          },
+          "type": "relation",
+          "required": false,
+          "entity": "clients"
+        },
+        {
+          "key": "opportunity_id",
+          "label": {
+            "ar": "الفرصة",
+            "en": "Lead"
+          },
+          "type": "relation",
+          "required": false,
+          "entity": "opportunities"
+        },
+        {
+          "key": "priority",
+          "label": {
+            "ar": "الأولوية",
+            "en": "Priority"
+          },
+          "type": "select",
+          "required": false,
+          "options": {
+            "low": {
+              "ar": "منخفضة",
+              "en": "Low"
+            },
+            "normal": {
+              "ar": "عادية",
+              "en": "Normal"
+            },
+            "high": {
+              "ar": "عالية",
+              "en": "High"
+            }
+          }
+        },
+        {
+          "key": "agenda",
+          "label": {
+            "ar": "الهدف / جدول الأعمال",
+            "en": "Agenda"
+          },
+          "type": "textarea",
+          "required": false
+        },
+        {
+          "key": "outcome",
+          "label": {
+            "ar": "النتيجة",
+            "en": "Outcome"
+          },
+          "type": "textarea",
+          "required": false
+        },
+        {
+          "key": "next_step",
+          "label": {
+            "ar": "الخطوة التالية",
+            "en": "Next step"
+          },
+          "type": "text",
+          "required": false
+        }
+      ],
+      "statuses": [
+        "planned",
+        "done",
+        "cancelled",
+        "archived"
+      ]
+    },
     "quotes": {
       "label": {
         "ar": "العروض التجارية",
@@ -6764,6 +6914,10 @@ return json_decode(<<<'JSON'
     "done": {
       "ar": "تم الإغلاق",
       "en": "Done"
+    },
+    "cancelled": {
+      "ar": "ملغي",
+      "en": "Cancelled"
     },
     "open": {
       "ar": "مفتوح",

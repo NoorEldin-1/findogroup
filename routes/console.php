@@ -11,3 +11,4 @@ Artisan::command('inspire', function () {
 Schedule::command('website:publish-due')->everyMinute()->withoutOverlapping();
 Schedule::command('operating:attendance-close-day')->dailyAt('23:55')->withoutOverlapping();
 Schedule::command('operating:attendance-monthly-report')->monthlyOn(1, '08:00');
+Schedule::command('operating:follow-up-reminders')->everyFifteenMinutes()->withoutOverlapping();

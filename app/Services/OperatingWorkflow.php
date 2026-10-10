@@ -153,6 +153,18 @@ class OperatingWorkflow
             }
             $this->limitAssignment($user, $data, $existing);
         }
+        if ($type === 'activities') {
+            if (empty($data['client_id']) && empty($data['opportunity_id'])) {
+                $this->fail('اربط المتابعة بعميل أو فرصة.', 'Link the follow-up to a client or a lead.');
+            }
+            if (! empty($data['opportunity_id']) && empty($data['client_id'])) {
+                $data['client_id'] = $this->catalog->data(DB::table('operating_records')->find($data['opportunity_id']))['client_id'] ?? null;
+            }
+            $this->limitAssignment($user, $data, $existing);
+            if ($existing && ($this->catalog->data($existing)['due_at'] ?? null) !== $data['due_at']) {
+                unset($data['reminded_at'], $data['overdue_alerted_at']);
+            }
+        }
         if ($type === 'attendance') {
             if (DB::table('operating_records')->where('type', 'attendance')->where('data->assignee_id', (int) $data['assignee_id'])->where('data->work_date', $data['work_date'])->where('status', '!=', 'archived')->when($id, fn ($query) => $query->where('id', '!=', $id))->exists()) {
                 $this->fail('يوجد سجل حضور لهذا الموظف في هذا اليوم.', 'This employee already has an attendance record for that day.');
@@ -331,6 +343,9 @@ class OperatingWorkflow
             $changes = ['status' => $target, 'version' => $record->version + 1, 'updated_at' => now()];
             if ($record->type === 'attendance' && $target !== 'archived') {
                 $changes['data'] = json_encode(app(OperatingAttendance::class)->derive($data, $target), JSON_UNESCAPED_UNICODE);
+            }
+            if ($record->type === 'activities' && $target === 'done') {
+                $changes['data'] = json_encode(array_merge($data, ['completed_at' => now()->format('Y-m-d\TH:i')]), JSON_UNESCAPED_UNICODE);
             }
             DB::table('operating_records')->where('id', $record->id)->update($changes);
             $next = DB::table('operating_records')->find($record->id);
@@ -583,6 +598,9 @@ class OperatingWorkflow
             if ($target === 'won') {
                 $this->requireFields($data, ['expected_value']);
             }
+        }
+        if ($record->type === 'activities' && $target === 'done') {
+            $this->requireFields($data, ['outcome']);
         }
         if ($record->type === 'evaluations') {
             if (! in_array($user->role, ['owner', 'hr', 'delivery'], true) && ! in_array($target, ['self_review', 'appealed'], true)) {
