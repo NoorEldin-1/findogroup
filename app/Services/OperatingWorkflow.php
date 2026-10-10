@@ -238,6 +238,43 @@ class OperatingWorkflow
                 }
             }
         }
+        if ($type === 'supplier_invoices') {
+            $procurement = app(OperatingProcurement::class);
+            if ((float) $data['amount'] <= 0 || (float) ($data['tax_amount'] ?? 0) > (float) $data['amount']) {
+                $this->fail('راجع الإجمالي والضريبة.', 'Check the total and the tax.');
+            }
+            if ($data['due_date'] < $data['invoice_date']) {
+                $this->fail('تاريخ الاستحقاق قبل تاريخ الفاتورة.', 'The due date is before the invoice date.');
+            }
+            $number = mb_strtolower(trim((string) $data['invoice_number']));
+            if (DB::table('operating_records')->where('type', 'supplier_invoices')->whereNotIn('status', ['void', 'archived'])->where('data->supplier_id', (int) $data['supplier_id'])->when($id, fn ($query) => $query->where('id', '!=', $id))->get()->contains(fn (object $invoice): bool => mb_strtolower(trim((string) ($this->catalog->data($invoice)['invoice_number'] ?? ''))) === $number)) {
+                $this->fail('رقم الفاتورة مسجل بالفعل لنفس المورد.', 'This supplier invoice number is already recorded.');
+            }
+            if (! empty($data['purchase_order_id'])) {
+                $order = DB::table('operating_records')->find($data['purchase_order_id']);
+                $orderData = $this->catalog->data($order);
+                if ((int) $orderData['supplier_id'] !== (int) $data['supplier_id'] || $procurement->currency($orderData) !== $procurement->currency($data)) {
+                    $this->fail('الفاتورة يجب أن تطابق مورد أمر الشراء وعملته.', 'The invoice must match the order supplier and currency.');
+                }
+                if (! in_array($order->status, ['approved', 'received', 'closed'], true)) {
+                    $this->fail('الفوترة على أمر شراء معتمد فقط.', 'Only an approved purchase order can be billed.');
+                }
+                $billed = $procurement->linked('supplier_invoices', 'purchase_order_id', $order->id)->whereIn('status', OperatingProcurement::BILLED_STATES)->where('id', '!=', $id)->sum(fn (object $invoice): float => (float) ($this->catalog->data($invoice)['amount'] ?? 0));
+                if ($billed + (float) $data['amount'] > (float) $orderData['amount'] + 0.001) {
+                    $this->fail('الفواتير تتجاوز مبلغ أمر الشراء.', 'Invoices exceed the purchase order amount.');
+                }
+            }
+        }
+        if ($type === 'supplier_payments') {
+            $invoice = DB::table('operating_records')->find($data['supplier_invoice_id']);
+            if (! in_array($invoice->status, ['approved', 'part_paid'], true)) {
+                $this->fail('سجّل الدفعات على فاتورة معتمدة غير مسددة.', 'Record payments against an approved, unpaid invoice.');
+            }
+            if ((float) $data['amount'] <= 0) {
+                $this->fail('المبلغ المدفوع يجب أن يكون أكبر من صفر.', 'The payment must be above zero.');
+            }
+            $data['currency'] = app(OperatingProcurement::class)->currency($this->catalog->data($invoice));
+        }
         if ($type === 'deliverables') {
             $milestone = DB::table('operating_records')->find($data['milestone_id']);
             $milestoneData = $this->catalog->data($milestone);
@@ -316,6 +353,12 @@ class OperatingWorkflow
                 $received = DB::table('operating_records')->where('type', 'receipts')->where('data->invoice_id', $invoice->id)->where('status', '!=', 'archived')->when($existing, fn ($query) => $query->where('id', '!=', $existing->id))->get()->sum(fn (object $row): float => (float) ($this->catalog->data($row)['amount'] ?? 0));
                 if ($received + $data['amount'] > ($this->catalog->data($invoice)['amount'] ?? 0)) {
                     $this->fail('التحصيل يتجاوز مبلغ الفاتورة.', 'Receipts cannot exceed the invoice amount.');
+                }
+            }
+            if ($type === 'supplier_payments') {
+                $invoice = DB::table('operating_records')->where('id', $data['supplier_invoice_id'])->lockForUpdate()->first();
+                if (app(OperatingProcurement::class)->paidAmount($invoice->id, $existing?->id, ['draft', 'active']) + (float) $data['amount'] > (float) ($this->catalog->data($invoice)['amount'] ?? 0) + 0.001) {
+                    $this->fail('الدفعات تتجاوز مبلغ الفاتورة.', 'Payments cannot exceed the invoice amount.');
                 }
             }
             if ($existing) {
@@ -505,6 +548,15 @@ class OperatingWorkflow
                 app(OperatingProcurement::class)->markRequestOrdered($record, $user);
             }
             DB::table('operating_records')->where('id', $record->id)->update($changes);
+            if ($record->type === 'supplier_payments') {
+                app(OperatingProcurement::class)->settleInvoice((int) $data['supplier_invoice_id'], $user, $input['reason']);
+            }
+            if ($record->type === 'supplier_invoices' && $target === 'approved') {
+                app(OperatingProcurement::class)->bookProjectCost($record, $user);
+            }
+            if ($record->type === 'supplier_invoices' && $target === 'void') {
+                app(OperatingProcurement::class)->voidProjectCost($record, $user, $input['reason']);
+            }
             $next = DB::table('operating_records')->find($record->id);
             $this->event($next, 'transition', $input['reason'], $before, (array) $next, $user->id);
 
@@ -525,6 +577,9 @@ class OperatingWorkflow
             abort_unless(in_array($user->role, ['owner', 'delivery', 'hr', 'marketing', 'sales', 'sales_manager', 'finance', 'seo'], true), 403);
             if ($record->type === 'receipts' && DB::table('operating_records')->where('id', $data['invoice_id'] ?? null)->value('status') === 'paid') {
                 $this->fail('صحح حالة الفاتورة أولًا قبل إلغاء تحصيلها.', 'Correct the invoice state before voiding its receipt.');
+            }
+            if ($record->type === 'supplier_invoices' && in_array($record->status, ['approved', 'part_paid', 'paid'], true)) {
+                $this->fail('ألغِ الفاتورة المعتمدة (إلغاء) بدل أرشفتها.', 'Void an approved invoice instead of archiving it.');
             }
 
             return;
@@ -741,6 +796,30 @@ class OperatingWorkflow
             }
             if ($target === 'received') {
                 $this->requireFields($data, ['delivered_at']);
+            }
+        }
+        if ($record->type === 'supplier_invoices') {
+            if (in_array($target, ['part_paid', 'paid'], true)) {
+                $this->fail('حالة الدفع تُحسب تلقائيًا من الدفعات المؤكدة.', 'Payment status is calculated from confirmed payments.');
+            }
+            if ($target === 'draft') {
+                $this->fail('لا تعود الفاتورة المعتمدة إلى مسودة. ألغها وسجّل فاتورة جديدة.', 'An approved invoice cannot return to draft. Void it and record a new one.');
+            }
+            if ($target === 'approved') {
+                $this->requireFields($data, ['evidence']);
+            }
+            if ($target === 'void' && app(OperatingProcurement::class)->paidAmount($record->id) > 0) {
+                $this->fail('للفاتورة دفعات مؤكدة. ألغِ الدفعات أولًا.', 'This invoice has confirmed payments. Void them first.');
+            }
+        }
+        if ($record->type === 'supplier_payments') {
+            if ($target !== 'active') {
+                $this->fail('الدفعة تُؤكَّد أو تُلغى بالأرشفة فقط.', 'A payment is either confirmed or voided by archiving.');
+            }
+            $this->requireFields($data, ['reference', 'paid_at']);
+            $invoice = DB::table('operating_records')->find($data['supplier_invoice_id']);
+            if (! in_array($invoice->status, ['approved', 'part_paid'], true) || app(OperatingProcurement::class)->paidAmount($invoice->id, $record->id) + (float) $data['amount'] > (float) ($this->catalog->data($invoice)['amount'] ?? 0) + 0.001) {
+                $this->fail('الدفعة تتجاوز المتبقي على الفاتورة أو الفاتورة غير معتمدة.', 'The payment exceeds what is left on the invoice, or the invoice is not approved.');
             }
         }
         if ($record->type === 'team_tasks') {

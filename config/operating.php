@@ -6491,6 +6491,7 @@ return json_decode(<<<'JSON'
           "type": "date",
           "required": true
         },
+        { "key": "supplier_invoice_id", "label": { "ar": "فاتورة المورد", "en": "Supplier invoice" }, "type": "relation", "required": false, "entity": "supplier_invoices" },
         {
           "key": "evidence",
           "label": {
@@ -6764,6 +6765,48 @@ return json_decode(<<<'JSON'
       ],
       "statuses": ["draft", "submitted", "approved", "received", "closed", "cancelled", "archived"],
       "immutable": ["closed", "cancelled", "archived"]
+    },
+    "supplier_invoices": {
+      "label": { "ar": "فواتير الموردين", "en": "Supplier invoices" },
+      "group": "finance",
+      "pages": [],
+      "approve_roles": ["owner", "finance"],
+      "fields": [
+        { "key": "supplier_id", "label": { "ar": "المورد", "en": "Supplier" }, "type": "relation", "required": true, "entity": "suppliers" },
+        { "key": "purchase_order_id", "label": { "ar": "أمر الشراء", "en": "Purchase order" }, "type": "relation", "required": false, "entity": "purchase_orders" },
+        { "key": "project_id", "label": { "ar": "المشروع (تُحمَّل عليه التكلفة)", "en": "Project (cost is booked to it)" }, "type": "relation", "required": false, "entity": "projects" },
+        { "key": "invoice_number", "label": { "ar": "رقم فاتورة المورد", "en": "Supplier invoice number" }, "type": "text", "required": true },
+        { "key": "invoice_date", "label": { "ar": "تاريخ الفاتورة", "en": "Invoice date" }, "type": "date", "required": true },
+        { "key": "amount", "label": { "ar": "الإجمالي شامل الضريبة", "en": "Total incl. tax" }, "type": "number", "required": true },
+        { "key": "tax_amount", "label": { "ar": "منها ضريبة", "en": "Of which tax" }, "type": "number", "required": false },
+        { "key": "currency", "label": { "ar": "العملة", "en": "Currency" }, "type": "text", "required": true },
+        { "key": "due_date", "label": { "ar": "تاريخ الاستحقاق", "en": "Due date" }, "type": "date", "required": true },
+        { "key": "evidence", "label": { "ar": "صورة الفاتورة / دليل الاستلام", "en": "Invoice copy / receipt evidence" }, "type": "textarea", "required": false }
+      ],
+      "statuses": ["draft", "approved", "part_paid", "paid", "void", "archived"],
+      "immutable": ["approved", "part_paid", "paid", "void", "archived"]
+    },
+    "supplier_payments": {
+      "label": { "ar": "مدفوعات الموردين", "en": "Supplier payments" },
+      "group": "finance",
+      "pages": [],
+      "fields": [
+        { "key": "supplier_invoice_id", "label": { "ar": "فاتورة المورد", "en": "Supplier invoice" }, "type": "relation", "required": true, "entity": "supplier_invoices" },
+        { "key": "amount", "label": { "ar": "المبلغ المدفوع", "en": "Amount paid" }, "type": "number", "required": true },
+        { "key": "paid_at", "label": { "ar": "تاريخ الدفع", "en": "Paid on" }, "type": "date", "required": true },
+        { "key": "method", "label": { "ar": "طريقة الدفع", "en": "Payment method" }, "type": "select", "required": false, "options": {
+          "bank_transfer": { "ar": "تحويل بنكي", "en": "Bank transfer" },
+          "cash": { "ar": "نقدي", "en": "Cash" },
+          "card": { "ar": "بطاقة", "en": "Card" },
+          "cheque": { "ar": "شيك", "en": "Cheque" },
+          "wallet": { "ar": "محفظة إلكترونية", "en": "E-wallet" },
+          "other": { "ar": "أخرى", "en": "Other" }
+        } },
+        { "key": "reference", "label": { "ar": "مرجع العملية", "en": "Transaction reference" }, "type": "text", "required": true },
+        { "key": "evidence", "label": { "ar": "دليل الدفع", "en": "Payment evidence" }, "type": "textarea", "required": false }
+      ],
+      "statuses": ["draft", "active", "archived"],
+      "immutable": ["active", "archived"]
     },
     "support": {
       "label": {

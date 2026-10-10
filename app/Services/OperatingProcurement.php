@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class OperatingProcurement
 {
@@ -71,6 +72,62 @@ class OperatingProcurement
             ->whereIn('status', $statuses)
             ->when($exceptPaymentId, fn (Collection $payments) => $payments->where('id', '!=', $exceptPaymentId))
             ->sum(fn (object $payment): float => (float) ($this->catalog->data($payment)['amount'] ?? 0)), 2);
+    }
+
+    /**
+     * Runs inside a payment transition: the invoice state always mirrors its confirmed payments.
+     */
+    public function settleInvoice(int $invoiceId, User $user, string $reason): void
+    {
+        $invoice = DB::table('operating_records')->where('id', $invoiceId)->lockForUpdate()->first();
+        if (! $invoice || ! in_array($invoice->status, ['approved', 'part_paid', 'paid'], true)) {
+            return;
+        }
+        $paid = $this->paidAmount($invoice->id);
+        $amount = (float) ($this->catalog->data($invoice)['amount'] ?? 0);
+        $status = $paid >= $amount - 0.005 ? 'paid' : ($paid > 0 ? 'part_paid' : 'approved');
+        if ($status === $invoice->status) {
+            return;
+        }
+        DB::table('operating_records')->where('id', $invoice->id)->update(['status' => $status, 'version' => $invoice->version + 1, 'updated_at' => now()]);
+        $this->workflow->event(DB::table('operating_records')->find($invoice->id), 'transition', 'Payment status recalculated: '.$reason, (array) $invoice, ['status' => $status, 'paid' => $paid], $user->id);
+    }
+
+    /**
+     * Runs inside the invoice approval transaction: a project invoice becomes one actual cost on that project, net of tax.
+     */
+    public function bookProjectCost(object $invoice, User $user): ?int
+    {
+        $data = $this->catalog->data($invoice);
+        if (empty($data['project_id']) || DB::table('operating_records')->where('type', 'costs')->where('status', '!=', 'archived')->where('data->supplier_invoice_id', $invoice->id)->exists()) {
+            return null;
+        }
+        $supplier = DB::table('operating_records')->find($data['supplier_id']);
+        $cost = [
+            'project_id' => (int) $data['project_id'],
+            'category' => in_array($this->catalog->data($supplier)['category'] ?? null, ['freelancer', 'services'], true) ? 'contractor' : 'tools',
+            'actual_cost' => round((float) $data['amount'] - (float) ($data['tax_amount'] ?? 0), 2),
+            'remaining_cost' => 0,
+            'cost_date' => $data['invoice_date'],
+            'supplier_invoice_id' => $invoice->id,
+            'evidence' => 'Supplier invoice '.$data['invoice_number'].' ('.$this->currency($data).')',
+        ];
+        $id = DB::table('operating_records')->insertGetId(['uuid' => Str::uuid()->toString(), 'type' => 'costs', 'title' => $supplier->title.' · '.$data['invoice_number'], 'status' => 'active', 'owner_id' => $user->id, 'created_by' => $user->id, 'data' => json_encode($cost, JSON_UNESCAPED_UNICODE), 'version' => 1, 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('operating_links')->insert([['record_id' => $id, 'target_id' => $cost['project_id'], 'field' => 'project_id'], ['record_id' => $id, 'target_id' => $invoice->id, 'field' => 'supplier_invoice_id']]);
+        $this->workflow->event(DB::table('operating_records')->find($id), 'create', 'Booked from approved supplier invoice '.$data['invoice_number'], null, $cost, $user->id);
+
+        return $id;
+    }
+
+    /**
+     * Runs inside the void transition: the project no longer carries the cost of a cancelled invoice.
+     */
+    public function voidProjectCost(object $invoice, User $user, string $reason): void
+    {
+        foreach (DB::table('operating_records')->where('type', 'costs')->where('status', '!=', 'archived')->where('data->supplier_invoice_id', $invoice->id)->lockForUpdate()->get() as $cost) {
+            DB::table('operating_records')->where('id', $cost->id)->update(['status' => 'archived', 'version' => $cost->version + 1, 'updated_at' => now()]);
+            $this->workflow->event(DB::table('operating_records')->find($cost->id), 'transition', 'Supplier invoice voided: '.$reason, (array) $cost, ['status' => 'archived'], $user->id);
+        }
     }
 
     /**
