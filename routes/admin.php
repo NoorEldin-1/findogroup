@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminController as A;
+use App\Http\Controllers\AssetController as I;
 use App\Http\Controllers\AttendanceController as T;
 use App\Http\Controllers\MarketingController as M;
 use App\Http\Controllers\NotificationController as N;
@@ -50,6 +51,7 @@ Route::middleware(AdminLocale::class)->group(function () {
         Route::get('/operations/milestones/tracker', [P::class, 'milestones']);
         Route::get('/operations/campaigns/performance', [M::class, 'performance']);
         Route::get('/operations/procurement', [R::class, 'dashboard']);
+        Route::get('/operations/assets/overview', [I::class, 'overview']);
         Route::get('/operations/projects/{id}/sprints', [P::class, 'sprints'])->whereNumber('id');
         Route::post('/operations/projects/{id}/sprints/plan', [P::class, 'planSprint'])->whereNumber('id');
         Route::get('/operations/{type}/create', [O::class, 'create']);

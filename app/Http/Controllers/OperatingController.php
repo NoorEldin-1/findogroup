@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\Cms;
 use App\Services\JiraSync;
 use App\Services\OperatingAccess;
+use App\Services\OperatingAssets;
 use App\Services\OperatingAttendance;
 use App\Services\OperatingCatalog;
 use App\Services\OperatingMarketing;
@@ -147,7 +148,7 @@ class OperatingController extends Controller
             $events = $comments = $attachments = collect();
         }
 
-        return $this->view('form', ['type' => $type, 'entity' => $this->catalog->entity($type), 'record' => $record, 'data' => $record ? $this->access->visibleData($request->user(), $record) : $initial, 'fields' => $fields, 'choices' => $choices, 'events' => $events, 'links' => $links, 'comments' => $comments, 'attachments' => $attachments, 'projectReport' => $record && $type === 'projects' ? app(OperatingReports::class)->project($record, $request->user()) : null, 'signals' => $record ? $this->signals($record) : [], 'initialTitle' => $initialTitle, 'sprintProgress' => $record && $type === 'sprints' ? app(OperatingSprints::class)->progress($record) : null, 'milestonePanel' => $record && $type === 'milestones' ? ['progress' => app(OperatingMilestones::class)->progress($record), 'deliverables' => $this->access->can($request->user(), 'deliverables') ? $this->access->query($request->user(), 'deliverables')->where('status', '!=', 'archived')->where('data->milestone_id', $record->id)->orderBy('id')->get() : collect()] : null, 'campaignReport' => $record && $type === 'campaigns' ? app(OperatingMarketing::class)->campaign($request->user(), $record) : null, 'procurementPanel' => $record && in_array($type, ['suppliers', 'purchase_requests', 'purchase_orders', 'supplier_invoices'], true) ? app(OperatingProcurement::class)->panel($request->user(), $record) : null]);
+        return $this->view('form', ['type' => $type, 'entity' => $this->catalog->entity($type), 'record' => $record, 'data' => $record ? $this->access->visibleData($request->user(), $record) : $initial, 'fields' => $fields, 'choices' => $choices, 'events' => $events, 'links' => $links, 'comments' => $comments, 'attachments' => $attachments, 'projectReport' => $record && $type === 'projects' ? app(OperatingReports::class)->project($record, $request->user()) : null, 'signals' => $record ? $this->signals($record) : [], 'initialTitle' => $initialTitle, 'sprintProgress' => $record && $type === 'sprints' ? app(OperatingSprints::class)->progress($record) : null, 'milestonePanel' => $record && $type === 'milestones' ? ['progress' => app(OperatingMilestones::class)->progress($record), 'deliverables' => $this->access->can($request->user(), 'deliverables') ? $this->access->query($request->user(), 'deliverables')->where('status', '!=', 'archived')->where('data->milestone_id', $record->id)->orderBy('id')->get() : collect()] : null, 'campaignReport' => $record && $type === 'campaigns' ? app(OperatingMarketing::class)->campaign($request->user(), $record) : null, 'procurementPanel' => $record && in_array($type, ['suppliers', 'purchase_requests', 'purchase_orders', 'supplier_invoices'], true) ? app(OperatingProcurement::class)->panel($request->user(), $record) : null, 'assetPanel' => $record && in_array($type, ['assets', 'inventory_items'], true) ? app(OperatingAssets::class)->panel($request->user(), $record) : null]);
     }
 
     public function show(int $id, Request $request): Response

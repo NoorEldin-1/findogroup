@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\User;
 use App\Notifications\OperatingAlert;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -19,7 +20,7 @@ class OperatingAssets
      */
     public const STOCK_RECIPIENTS = ['owner', 'finance', 'hr'];
 
-    public function __construct(private OperatingCatalog $catalog, private OperatingWorkflow $workflow, private OperatingNotifier $notifier) {}
+    public function __construct(private OperatingCatalog $catalog, private OperatingWorkflow $workflow, private OperatingNotifier $notifier, private OperatingAccess $access, private OperatingSales $sales) {}
 
     /**
      * Runs inside the movement completion transaction: custody, status and condition of the asset change only here,
@@ -139,6 +140,117 @@ class OperatingAssets
         }
 
         return false;
+    }
+
+    /**
+     * The register at a glance for asset managers: where things are, what is out of action, and what needs buying or renewing.
+     *
+     * @return array{by_status: array<string, int>, by_category: array<string, int>, custody: list<array{employee: ?string, employee_id: int, count: int}>, maintenance: list<object>, warranty: list<array{id: int, title: string, tag: ?string, warranty_end: string}>, low_stock: list<array{id: int, title: string, quantity: float, min: float, unit: ?string}>, recent: list<array{id: int, title: string, type: string, movement: ?string, date: ?string}>, counts: array<string, int>}
+     */
+    public function overview(User $user): array
+    {
+        $assets = $this->access->query($user, 'assets')->where('status', '!=', 'archived')->orderBy('title')->get();
+        $inService = $assets->whereNotIn('status', self::OUT_OF_SERVICE);
+        $holders = $inService->map(fn (object $asset): int => (int) ($this->catalog->data($asset)['assignee_id'] ?? 0))->filter();
+        $titles = $this->sales->titles($holders->unique()->values()->all());
+        $today = today()->toDateString();
+        $horizon = today()->addDays(30)->toDateString();
+        $warranty = $inService->filter(fn (object $asset): bool => ($end = $this->catalog->data($asset)['warranty_end'] ?? null) && $end >= $today && $end <= $horizon)
+            ->map(fn (object $asset): array => ['id' => $asset->id, 'title' => $asset->title, 'tag' => ($data = $this->catalog->data($asset))['asset_tag'] ?? null, 'warranty_end' => $data['warranty_end']])->sortBy('warranty_end')->values();
+        $items = $this->access->can($user, 'inventory_items') ? $this->access->query($user, 'inventory_items')->where('status', 'active')->orderBy('title')->get() : collect();
+        $low = $items->filter(fn (object $item): bool => $this->stockLevel($item)['low'])
+            ->map(fn (object $item): array => ['id' => $item->id, 'title' => $item->title, 'unit' => $this->catalog->data($item)['unit'] ?? null] + $this->stockLevel($item))->values();
+        $recent = collect(['asset_movements', 'stock_movements'])->filter(fn (string $type): bool => $this->access->can($user, $type))
+            ->flatMap(fn (string $type) => $this->access->query($user, $type)->where('status', 'completed')->latest('updated_at')->limit(10)->get())
+            ->sortByDesc('updated_at')->take(10)
+            ->map(fn (object $row): array => ['id' => $row->id, 'title' => $row->title, 'type' => $row->type, 'movement' => ($data = $this->catalog->data($row))['movement'] ?? null, 'date' => $data['movement_date'] ?? null])->values();
+
+        return [
+            'by_status' => $assets->countBy('status')->all(),
+            'by_category' => $assets->countBy(fn (object $asset): string => $this->catalog->data($asset)['category'] ?? 'other')->sortDesc()->all(),
+            'custody' => $holders->countBy()->sortDesc()->map(fn (int $count, int $employee): array => ['employee' => $titles[$employee] ?? null, 'employee_id' => $employee, 'count' => $count])->values()->all(),
+            'maintenance' => $assets->where('status', 'maintenance')->values()->all(),
+            'warranty' => $warranty->all(),
+            'low_stock' => $low->all(),
+            'recent' => $recent->all(),
+            'counts' => [
+                'assets' => $inService->count(),
+                'assigned' => $holders->count(),
+                'available' => $inService->where('status', 'active')->filter(fn (object $asset): bool => empty($this->catalog->data($asset)['assignee_id']))->count(),
+                'maintenance' => $assets->where('status', 'maintenance')->count(),
+                'warranty' => $warranty->count(),
+                'items' => $items->count(),
+                'low_stock' => $low->count(),
+            ],
+        ];
+    }
+
+    /**
+     * Context for an asset or inventory item page: custody and movement history, plus the movements that make sense next.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function panel(User $user, object $record): ?array
+    {
+        if ($record->type === 'assets') {
+            $data = $this->catalog->data($record);
+            $holder = (int) ($data['assignee_id'] ?? 0);
+            $canMove = $this->access->managesAssets($user) && $this->access->canCreate($user, 'asset_movements');
+            $movements = $this->access->managesAssets($user) ? $this->movements($record->id) : collect();
+            $people = $this->sales->titles($movements->flatMap(fn (object $row): array => array_values(array_filter([($move = $this->catalog->data($row))['to_employee_id'] ?? null, $move['from_employee_id'] ?? null])))->push($holder)->filter()->unique()->values()->all());
+            $actions = match (true) {
+                in_array($record->status, self::OUT_OF_SERVICE, true) => [],
+                $record->status === 'maintenance' => ['maintenance_done'],
+                (bool) $holder => ['transfer', 'return', 'maintenance'],
+                default => ['assign', 'maintenance'],
+            };
+            $maintenanceCost = $movements->where('status', 'completed')->filter(fn (object $row): bool => (float) ($this->catalog->data($row)['cost'] ?? 0) > 0)
+                ->groupBy(fn (object $row): string => strtoupper(trim((string) ($this->catalog->data($row)['currency'] ?? ''))) ?: 'USD')
+                ->map(fn (Collection $rows): float => round($rows->sum(fn (object $row): float => (float) $this->catalog->data($row)['cost']), 2))->all();
+
+            return ['type' => 'assets', 'holder' => $holder ? ($people[$holder] ?? null) : null, 'manager' => $this->access->managesAssets($user), 'actions' => $canMove ? $actions : [], 'movements' => $movements->map(fn (object $row): array => ['id' => $row->id, 'title' => $row->title, 'status' => $row->status, 'movement' => ($move = $this->catalog->data($row))['movement'] ?? null, 'date' => $move['movement_date'] ?? null, 'to' => $people[$move['to_employee_id'] ?? 0] ?? null, 'from' => $people[$move['from_employee_id'] ?? 0] ?? null, 'cost' => $move['cost'] ?? null, 'currency' => $move['currency'] ?? null])->all(), 'maintenance_cost' => $maintenanceCost];
+        }
+        if ($record->type === 'inventory_items') {
+            $movements = DB::table('operating_records')->where('type', 'stock_movements')->where('status', '!=', 'archived')
+                ->whereIn('id', DB::table('operating_links')->where('field', 'item_id')->where('target_id', $record->id)->select('record_id'))
+                ->orderByDesc('id')->limit(20)->get();
+
+            return ['type' => 'inventory_items', 'level' => $this->stockLevel($record), 'unit' => $this->catalog->data($record)['unit'] ?? null, 'canMove' => $record->status === 'active' && $this->access->canCreate($user, 'stock_movements'), 'movements' => $movements->map(fn (object $row): array => ['id' => $row->id, 'title' => $row->title, 'status' => $row->status, 'movement' => ($move = $this->catalog->data($row))['movement'] ?? null, 'quantity' => $move['quantity'] ?? null, 'after' => $move['quantity_after'] ?? null, 'date' => $move['movement_date'] ?? null])->all()];
+        }
+
+        return null;
+    }
+
+    /**
+     * Daily safety net: low stock not yet announced, and one alert per warranty end date within 30 days.
+     *
+     * @return array{low_stock: int, warranty: int}
+     */
+    public function sendAlerts(CarbonImmutable $now): array
+    {
+        $sent = ['low_stock' => 0, 'warranty' => 0];
+        foreach (DB::table('operating_records')->where('type', 'inventory_items')->whereIn('status', ['active', 'inactive'])->get() as $item) {
+            $sent['low_stock'] += (int) $this->checkStock($item);
+        }
+        $today = $now->toDateString();
+        $horizon = $now->addDays(30)->toDateString();
+        $recipients = $this->notifier->roles(self::STOCK_RECIPIENTS)->all();
+        foreach (DB::table('operating_records')->where('type', 'assets')->whereNotIn('status', self::OUT_OF_SERVICE)->where('data->warranty_end', '>=', $today)->where('data->warranty_end', '<=', $horizon)->get() as $asset) {
+            $data = $this->catalog->data($asset);
+            if (($data['warranty_alerted_for'] ?? null) === $data['warranty_end']) {
+                continue;
+            }
+            $this->notifier->send([...$recipients, ! empty($data['primary_id']) ? $this->notifier->employeeUser((int) $data['primary_id']) : null], new OperatingAlert(
+                'warranty_ending',
+                ['ar' => 'ضمان أصل ينتهي قريبًا', 'en' => 'Asset warranty ending'],
+                ['ar' => 'ضمان "'.$asset->title.'" '.($data['asset_tag'] ?? '').' ينتهي في '.$data['warranty_end'].'.', 'en' => 'The warranty of "'.$asset->title.'" '.($data['asset_tag'] ?? '').' ends on '.$data['warranty_end'].'.'],
+                '/admin/operations/record/'.$asset->id,
+            ));
+            $this->workflow->mark($asset, 'warranty_alerted_for', $data['warranty_end'], 'Warranty ending alert sent');
+            $sent['warranty']++;
+        }
+
+        return $sent;
     }
 
     public function notifyReceiver(object $movement): void

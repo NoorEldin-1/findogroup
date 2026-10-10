@@ -14,3 +14,4 @@ Schedule::command('operating:attendance-monthly-report')->monthlyOn(1, '08:00');
 Schedule::command('operating:follow-up-reminders')->everyFifteenMinutes()->withoutOverlapping();
 Schedule::command('operating:milestone-reminders')->dailyAt('08:00')->withoutOverlapping();
 Schedule::command('operating:procurement-alerts')->dailyAt('08:10')->withoutOverlapping();
+Schedule::command('operating:asset-alerts')->dailyAt('08:15')->withoutOverlapping();
