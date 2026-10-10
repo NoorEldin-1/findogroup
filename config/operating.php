@@ -2129,8 +2129,26 @@ return json_decode(<<<'JSON'
             "ar": "الأولوية",
             "en": "Priority"
           },
-          "type": "text",
-          "required": false
+          "type": "select",
+          "required": false,
+          "options": {
+            "low": {
+              "ar": "منخفضة",
+              "en": "Low"
+            },
+            "medium": {
+              "ar": "متوسطة",
+              "en": "Medium"
+            },
+            "high": {
+              "ar": "عالية",
+              "en": "High"
+            },
+            "critical": {
+              "ar": "حرجة",
+              "en": "Critical"
+            }
+          }
         },
         {
           "key": "estimate_hours",
