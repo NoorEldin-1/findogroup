@@ -57,6 +57,7 @@ class ClientProfileTest extends TestCase
         $payload = ['title' => 'Second', 'reason' => 'New contact', 'data' => ['client_id' => $ids['client'], 'is_primary' => true]];
 
         $this->actingAs($this->operatingUser('sales'))->post('/admin/operations/contacts', $payload)->assertSessionHasErrors('workflow');
+        $this->actingAs($this->operatingUser('sales_manager'))->post('/admin/operations/contacts', ['title' => 'Form', 'reason' => 'UI', 'data' => ['client_id' => $ids['client'], 'is_primary' => '1']])->assertSessionHasErrors('workflow');
         $payload['data']['is_primary'] = false;
         $this->actingAs($this->operatingUser('sales'))->post('/admin/operations/contacts', $payload)->assertSessionHasNoErrors();
     }

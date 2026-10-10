@@ -72,6 +72,15 @@ class LeadsPipelineTest extends TestCase
         $this->actingAs($sales)->post("/admin/operations/opportunities/{$leadId}/convert-client", ['reason' => 'Again'])->assertSessionHasErrors('workflow');
     }
 
+    public function test_a_lead_created_before_lead_sources_can_still_be_converted(): void
+    {
+        $manager = $this->operatingUser('sales_manager');
+        $id = $this->operatingRecord('opportunities', 'new', ['lead_company' => 'Legacy Co', 'lead_contact' => 'Sara', 'need' => 'Site', 'solution' => 'web', 'source' => 'old text', 'next_action' => 'Call', 'follow_up' => '2026-10-12'], 'Legacy lead');
+
+        $this->actingAs($manager)->post("/admin/operations/opportunities/{$id}/convert-client", ['reason' => 'Qualified'])->assertSessionHasNoErrors();
+        $this->assertSame('other', $this->recordData($id)['lead_source']);
+    }
+
     public function test_pipeline_groups_open_stages_and_computes_the_weighted_forecast(): void
     {
         $owner = $this->operatingUser('owner');

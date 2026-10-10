@@ -178,7 +178,7 @@ class OperatingWorkflow
                 unset($data['reminded_at'], $data['overdue_alerted_at']);
             }
         }
-        if ($type === 'contacts' && ! empty($data['is_primary']) && DB::table('operating_records')->where('type', 'contacts')->where('status', '!=', 'archived')->where('data->client_id', (int) $data['client_id'])->where('data->is_primary', true)->when($id, fn ($query) => $query->where('id', '!=', $id))->exists()) {
+        if ($type === 'contacts' && ! empty($data['is_primary']) && DB::table('operating_records')->where('type', 'contacts')->where('status', '!=', 'archived')->where('data->client_id', (int) $data['client_id'])->when($id, fn ($query) => $query->where('id', '!=', $id))->get()->contains(fn (object $contact): bool => ! empty($this->catalog->data($contact)['is_primary']))) {
             $this->fail('للعميل جهة اتصال أساسية بالفعل. ألغِ تحديدها أولًا.', 'This client already has a primary contact. Unset it first.');
         }
         if ($type === 'project_members') {
@@ -202,10 +202,10 @@ class OperatingWorkflow
                 $data['totals'] = app(OperatingQuotes::class)->totals($data['line_items'], (float) ($data['discount'] ?? 0));
                 $data['price'] = $data['totals']['total'];
             } else {
-                unset($data['totals']);
                 if (empty($data['price'])) {
                     $this->fail('أضف بنودًا للعرض أو سجّل سعرًا إجماليًا.', 'Add line items or enter a total price.');
                 }
+                $data['totals'] = app(OperatingQuotes::class)->totals([['quantity' => 1.0, 'unit_price' => (float) $data['price'], 'discount' => 0.0, 'tax' => 0.0]], (float) ($data['discount'] ?? 0));
             }
         }
         if ($type === 'attendance') {
@@ -243,6 +243,9 @@ class OperatingWorkflow
         return DB::transaction(function () use ($type, $user, $data, $validated, $existing, $entity): object {
             if (DB::getDriverName() === 'pgsql') {
                 DB::select("SELECT pg_advisory_xact_lock(hashtext('findo-operating-gates'))");
+            }
+            if ($type === 'projects' && ! empty($data['quote_id']) && DB::table('operating_records')->where('type', 'projects')->where('status', '!=', 'archived')->where('data->quote_id', (int) $data['quote_id'])->when($existing, fn ($query) => $query->where('id', '!=', $existing->id))->lockForUpdate()->exists()) {
+                $this->fail('هذا العرض تحوّل إلى مشروع بالفعل.', 'This quote has already been converted to a project.');
             }
             if ($type === 'receipts') {
                 $invoice = DB::table('operating_records')->where('id', $data['invoice_id'])->lockForUpdate()->first();

@@ -104,7 +104,7 @@ class OperatingSales
 
         return DB::transaction(function () use ($user, $opportunity, $data, $reason): object {
             $client = $this->saveAs($user, 'clients', ['title' => $data['lead_company'], 'reason' => $reason, 'data' => ['company' => $data['lead_company'], 'decision_maker' => ($data['decision_maker'] ?? null) ?: $data['lead_contact'], 'contact' => $data['lead_contact'], 'email' => $data['lead_email'] ?? null, 'phone' => $data['lead_phone'] ?? null]]);
-            $this->saveAs($user, 'opportunities', ['title' => $opportunity->title, 'version' => $opportunity->version, 'reason' => $reason, 'data' => array_merge($data, ['client_id' => $client->id])], $opportunity->id);
+            $this->saveAs($user, 'opportunities', ['title' => $opportunity->title, 'version' => $opportunity->version, 'reason' => $reason, 'data' => array_merge($data, ['client_id' => $client->id, 'lead_source' => ($data['lead_source'] ?? null) ?: 'other'])], $opportunity->id);
 
             return $client;
         });

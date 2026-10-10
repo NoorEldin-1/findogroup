@@ -55,6 +55,13 @@ class QuoteLinesTest extends TestCase
         $this->actingAs($rep)->post('/admin/operations/quotes', $this->quote())->assertForbidden();
     }
 
+    public function test_an_extra_discount_applies_to_a_quote_without_lines(): void
+    {
+        $this->actingAs($this->operatingUser('sales_manager'))->post('/admin/operations/quotes', $this->quote(['line_items' => [], 'price' => 1000, 'discount' => 100]))->assertSessionHasNoErrors();
+
+        $this->assertEquals(900, json_decode(DB::table('operating_records')->where('type', 'quotes')->value('data'), true)['totals']['total']);
+    }
+
     public function test_quote_numbers_are_sequential_per_year(): void
     {
         $sales = $this->operatingUser('sales_manager');
