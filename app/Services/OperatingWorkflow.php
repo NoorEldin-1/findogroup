@@ -23,6 +23,17 @@ class OperatingWorkflow
         DB::table('operating_events')->insert(['record_id' => $record?->id, 'user_id' => $userId ?? auth()->id(), 'action' => $action, 'reason' => $reason, 'before' => $before ? json_encode($before, JSON_UNESCAPED_UNICODE) : null, 'after' => $after ? json_encode($after, JSON_UNESCAPED_UNICODE) : null, 'created_at' => now()]);
     }
 
+    /**
+     * Reminder markers are system bookkeeping: they are audited but do not bump the record version, so they never conflict with a user editing the same record.
+     *
+     * Only the marker key is written (JSON path update), so a concurrent user edit to the same record is never overwritten.
+     */
+    public function mark(object $record, string $key, string $value, string $reason): void
+    {
+        DB::table('operating_records')->where('id', $record->id)->update(['data->'.$key => $value]);
+        $this->event($record, 'reminder', $reason, null, [$key => $value]);
+    }
+
     public function save(string $type, Request $request, ?int $id = null): object
     {
         $user = $request->user();

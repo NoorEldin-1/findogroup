@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\Cms;
 use App\Services\OperatingAccess;
 use App\Services\OperatingCatalog;
+use App\Services\OperatingMilestones;
 use App\Services\OperatingProjects;
 use App\Services\OperatingSprints;
 use Illuminate\Http\Request;
@@ -12,7 +13,23 @@ use Symfony\Component\HttpFoundation\Response;
 
 class ProjectController extends Controller
 {
-    public function __construct(private OperatingProjects $projects, private OperatingSprints $sprints, private OperatingAccess $access, private OperatingCatalog $catalog) {}
+    public function __construct(private OperatingProjects $projects, private OperatingSprints $sprints, private OperatingMilestones $milestones, private OperatingAccess $access, private OperatingCatalog $catalog) {}
+
+    public function milestones(Request $request): Response
+    {
+        $user = $request->user();
+        abort_unless($this->access->can($user, 'milestones'), 403);
+        $filters = $request->validate(['project' => 'nullable|integer', 'owner' => 'nullable|integer']);
+
+        return response()->view('admin.operating.milestones-tracker', $this->milestones->tracker($user, $filters) + [
+            'filters' => $filters,
+            'projects' => $this->access->query($user, 'projects')->where('status', '!=', 'archived')->orderBy('title')->pluck('title', 'id'),
+            'owners' => $this->access->can($user, 'employees') ? $this->access->query($user, 'employees')->where('status', 'active')->orderBy('title')->pluck('title', 'id') : collect(),
+            'collections' => Cms::COLLECTIONS,
+            'catalog' => $this->catalog,
+            'access' => $this->access,
+        ]);
+    }
 
     public function portfolio(Request $request): Response
     {

@@ -838,5 +838,18 @@
   "المحطة متأخرة": "Milestone overdue",
   "تقترب من موعدها": "Due soon",
   "لا مخرجات مسجلة بعد.": "No deliverables yet.",
-  "إضافة مخرج": "Add deliverable"
+  "إضافة مخرج": "Add deliverable",
+  "متابعة المحطات والمخرجات": "Milestones & deliverables tracker",
+  "قادمة": "Upcoming",
+  "مقدَّمة بانتظار العميل": "Submitted, awaiting client",
+  "مقبولة آخر 30 يومًا": "Accepted in the last 30 days",
+  "المحطات حسب الموعد، ونسبة تسليم مخرجاتها، والمخرجات المتأخرة. التنبيهات تصل لمدير المشروع والمسؤول يوميًا.": "Milestones by due date with deliverable completion and delayed deliverables. Project managers and owners are alerted daily.",
+  "محطة جديدة": "New milestone",
+  "كل المشاريع": "All projects",
+  "كل المسؤولين": "All owners",
+  "المحطة": "Milestone",
+  "المخرجات": "Deliverables",
+  "بلا مسؤول": "No owner",
+  "متابعة المحطات": "Milestone tracker",
+  "المحطات والمخرجات": "Milestones & deliverables"
 }

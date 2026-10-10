@@ -76,7 +76,7 @@ class OperatingFollowUps
                     ['ar' => 'المتابعة "'.$activity->title.'" تجاوزت موعدها '.str_replace('T', ' ', $data['due_at']).'.', 'en' => 'The follow-up "'.$activity->title.'" passed its due time '.str_replace('T', ' ', $data['due_at']).'.'],
                     $url,
                 ));
-                $this->mark($activity, 'overdue_alerted_at', $current, 'Overdue follow-up alert sent');
+                $this->workflow->mark($activity, 'overdue_alerted_at', $current, 'Overdue follow-up alert sent');
                 $sent['overdue']++;
 
                 continue;
@@ -90,22 +90,11 @@ class OperatingFollowUps
                 ['ar' => 'موعد "'.$activity->title.'" الساعة '.substr($data['due_at'], 11).'.', 'en' => '"'.$activity->title.'" is due at '.substr($data['due_at'], 11).'.'],
                 $url,
             ));
-            $this->mark($activity, 'reminded_at', $current, 'Follow-up reminder sent');
+            $this->workflow->mark($activity, 'reminded_at', $current, 'Follow-up reminder sent');
             $sent['due']++;
         }
 
         return $sent;
-    }
-
-    /**
-     * Reminder markers are system bookkeeping: they are audited but do not bump the record version, so they never conflict with a user editing the same follow-up.
-     *
-     * Only the marker key is written (JSON path update), so a concurrent user edit to the same record is never overwritten.
-     */
-    private function mark(object $activity, string $key, string $value, string $reason): void
-    {
-        DB::table('operating_records')->where('id', $activity->id)->update(['data->'.$key => $value]);
-        $this->workflow->event($activity, 'reminder', $reason, null, [$key => $value]);
     }
 
     /**
