@@ -9,6 +9,7 @@ use App\Services\OperatingAttendance;
 use App\Services\OperatingCatalog;
 use App\Services\OperatingMarketing;
 use App\Services\OperatingMilestones;
+use App\Services\OperatingProcurement;
 use App\Services\OperatingQuotes;
 use App\Services\OperatingReports;
 use App\Services\OperatingSprints;
@@ -143,7 +144,7 @@ class OperatingController extends Controller
             $events = $comments = $attachments = collect();
         }
 
-        return $this->view('form', ['type' => $type, 'entity' => $this->catalog->entity($type), 'record' => $record, 'data' => $record ? $this->access->visibleData($request->user(), $record) : $initial, 'fields' => $fields, 'choices' => $choices, 'events' => $events, 'links' => $links, 'comments' => $comments, 'attachments' => $attachments, 'projectReport' => $record && $type === 'projects' ? app(OperatingReports::class)->project($record, $request->user()) : null, 'signals' => $record ? $this->signals($record) : [], 'initialTitle' => $initialTitle, 'sprintProgress' => $record && $type === 'sprints' ? app(OperatingSprints::class)->progress($record) : null, 'milestonePanel' => $record && $type === 'milestones' ? ['progress' => app(OperatingMilestones::class)->progress($record), 'deliverables' => $this->access->can($request->user(), 'deliverables') ? $this->access->query($request->user(), 'deliverables')->where('status', '!=', 'archived')->where('data->milestone_id', $record->id)->orderBy('id')->get() : collect()] : null, 'campaignReport' => $record && $type === 'campaigns' ? app(OperatingMarketing::class)->campaign($request->user(), $record) : null]);
+        return $this->view('form', ['type' => $type, 'entity' => $this->catalog->entity($type), 'record' => $record, 'data' => $record ? $this->access->visibleData($request->user(), $record) : $initial, 'fields' => $fields, 'choices' => $choices, 'events' => $events, 'links' => $links, 'comments' => $comments, 'attachments' => $attachments, 'projectReport' => $record && $type === 'projects' ? app(OperatingReports::class)->project($record, $request->user()) : null, 'signals' => $record ? $this->signals($record) : [], 'initialTitle' => $initialTitle, 'sprintProgress' => $record && $type === 'sprints' ? app(OperatingSprints::class)->progress($record) : null, 'milestonePanel' => $record && $type === 'milestones' ? ['progress' => app(OperatingMilestones::class)->progress($record), 'deliverables' => $this->access->can($request->user(), 'deliverables') ? $this->access->query($request->user(), 'deliverables')->where('status', '!=', 'archived')->where('data->milestone_id', $record->id)->orderBy('id')->get() : collect()] : null, 'campaignReport' => $record && $type === 'campaigns' ? app(OperatingMarketing::class)->campaign($request->user(), $record) : null, 'procurementPanel' => $record && in_array($type, ['suppliers', 'purchase_requests', 'purchase_orders', 'supplier_invoices'], true) ? app(OperatingProcurement::class)->panel($request->user(), $record) : null]);
     }
 
     public function show(int $id, Request $request): Response
@@ -366,7 +367,7 @@ class OperatingController extends Controller
     {
         $data = $this->catalog->data($record);
         $signals = [];
-        if (in_array($record->status, ['closed', 'done', 'completed', 'archived', 'resolved', 'paid', 'verified'], true)) {
+        if (in_array($record->status, ['closed', 'done', 'completed', 'archived', 'resolved', 'paid', 'verified', 'void', 'cancelled', 'rejected', 'received', 'ordered'], true)) {
             return [];
         }
         $due = $data['approved_due'] ?? $data['original_due'] ?? $data['due_date'] ?? $data['follow_up'] ?? $data['review_date'] ?? null;
@@ -393,6 +394,12 @@ class OperatingController extends Controller
         }
         if ($record->type === 'activities' && $record->status === 'planned' && ($data['due_at'] ?? '9999') < now()->format('Y-m-d\TH:i')) {
             $signals[] = __('متابعة تجاوزت موعدها. أنجزها أو أعد جدولتها.');
+        }
+        if ($record->type === 'purchase_orders' && $record->status === 'approved' && empty($data['delivered_at']) && ($data['expected_delivery'] ?? '9999') < today()->toDateString()) {
+            $signals[] = __('التوريد تأخر عن موعده المتوقع. تابع المورد أو سجّل الاستلام.');
+        }
+        if ($record->type === 'suppliers' && $record->status === 'active' && ($data['agreement_end'] ?? '9999') < today()->toDateString()) {
+            $signals[] = __('اتفاقية المورد منتهية. جدّدها أو حدّث بياناتها.');
         }
 
         return $signals;
