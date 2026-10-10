@@ -6743,6 +6743,28 @@ return json_decode(<<<'JSON'
       "statuses": ["requested", "approved", "rejected", "ordered", "archived"],
       "immutable": ["approved", "rejected", "ordered", "archived"]
     },
+    "purchase_orders": {
+      "label": { "ar": "أوامر الشراء", "en": "Purchase orders" },
+      "group": "procurement",
+      "pages": [],
+      "approve_roles": ["owner"],
+      "fields": [
+        { "key": "supplier_id", "label": { "ar": "المورد", "en": "Supplier" }, "type": "relation", "required": true, "entity": "suppliers" },
+        { "key": "purchase_request_id", "label": { "ar": "طلب الشراء", "en": "Purchase request" }, "type": "relation", "required": false, "entity": "purchase_requests" },
+        { "key": "project_id", "label": { "ar": "المشروع", "en": "Project" }, "type": "relation", "required": false, "entity": "projects" },
+        { "key": "description", "label": { "ar": "البنود والمواصفات", "en": "Items and specification" }, "type": "textarea", "required": true },
+        { "key": "amount", "label": { "ar": "الإجمالي شامل الضريبة", "en": "Total incl. tax" }, "type": "number", "required": true },
+        { "key": "tax_amount", "label": { "ar": "منها ضريبة", "en": "Of which tax" }, "type": "number", "required": false },
+        { "key": "currency", "label": { "ar": "العملة", "en": "Currency" }, "type": "text", "required": true },
+        { "key": "order_date", "label": { "ar": "تاريخ الأمر", "en": "Order date" }, "type": "date", "required": true },
+        { "key": "expected_delivery", "label": { "ar": "موعد التوريد المتوقع", "en": "Expected delivery" }, "type": "date", "required": true },
+        { "key": "delivered_at", "label": { "ar": "تاريخ الاستلام الفعلي", "en": "Delivered on" }, "type": "date", "required": false },
+        { "key": "delivery_note", "label": { "ar": "ملاحظات الاستلام", "en": "Delivery notes" }, "type": "textarea", "required": false },
+        { "key": "terms", "label": { "ar": "شروط الأمر", "en": "Order terms" }, "type": "textarea", "required": false }
+      ],
+      "statuses": ["draft", "submitted", "approved", "received", "closed", "cancelled", "archived"],
+      "immutable": ["closed", "cancelled", "archived"]
+    },
     "support": {
       "label": {
         "ar": "الدعم والضمان",

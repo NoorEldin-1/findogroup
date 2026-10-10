@@ -216,6 +216,28 @@ class OperatingWorkflow
                 $this->fail('التكلفة التقديرية يجب أن تكون أكبر من صفر.', 'The estimated cost must be above zero.');
             }
         }
+        if ($type === 'purchase_orders') {
+            if ($data['expected_delivery'] < $data['order_date']) {
+                $this->fail('موعد التوريد قبل تاريخ الأمر.', 'Expected delivery is before the order date.');
+            }
+            if ((float) ($data['tax_amount'] ?? 0) > (float) $data['amount']) {
+                $this->fail('الضريبة أكبر من الإجمالي.', 'Tax cannot exceed the total.');
+            }
+            if (! empty($data['purchase_request_id'])) {
+                $request = DB::table('operating_records')->find($data['purchase_request_id']);
+                $requestData = $this->catalog->data($request);
+                $sameRequest = $existing && (int) ($this->catalog->data($existing)['purchase_request_id'] ?? 0) === (int) $data['purchase_request_id'];
+                if ($request->status !== 'approved' && ! ($sameRequest && $request->status === 'ordered')) {
+                    $this->fail('أمر الشراء يحتاج طلب شراء معتمدًا لم يصدر له أمر.', 'A purchase order needs an approved request that has not been ordered yet.');
+                }
+                if (app(OperatingProcurement::class)->currency($requestData) !== app(OperatingProcurement::class)->currency($data)) {
+                    $this->fail('عملة الأمر تختلف عن عملة الطلب.', 'The order currency differs from the request currency.');
+                }
+                if (! empty($requestData['supplier_id']) && (int) $requestData['supplier_id'] !== (int) $data['supplier_id']) {
+                    $this->fail('المورد يختلف عن المورد المحدد في الطلب.', 'The supplier differs from the one on the request.');
+                }
+            }
+        }
         if ($type === 'deliverables') {
             $milestone = DB::table('operating_records')->find($data['milestone_id']);
             $milestoneData = $this->catalog->data($milestone);
@@ -311,6 +333,12 @@ class OperatingWorkflow
                         $this->fail('بعد النشر، أكمل التحقق والتسليم فقط. بيانات قرار الإطلاق محفوظة.', 'After deployment, complete verification and handover only. Launch decision fields are preserved.');
                     }
                 }
+                if ($type === 'purchase_orders' && in_array($locked->status, ['approved', 'received'], true)) {
+                    $committed = fn (array $values): array => array_filter(array_diff_key($values, array_flip(OperatingProcurement::DELIVERY_FIELDS)), fn (mixed $value): bool => $value !== null && $value !== '');
+                    if ($committed($data) != $committed($this->catalog->data($locked)) || $validated['title'] !== $locked->title) {
+                        $this->fail('بعد الاعتماد، سجّل بيانات التوريد فقط. لأي تغيير آخر ألغِ الأمر وأصدر أمرًا جديدًا.', 'After approval, record delivery details only. Cancel and reissue the order for other changes.');
+                    }
+                }
                 $nextStatus = $locked->status;
                 if ($data !== $this->catalog->data($locked)) {
                     $resetStates = ['campaigns' => 'draft', 'briefs' => 'draft', 'social_posts' => 'draft', 'creative_assets' => 'draft', 'videos' => 'draft', 'reviews' => 'pending', 'test_cases' => 'untested', 'releases' => 'draft', 'evaluations' => 'draft', 'deployments' => 'draft', 'acceptances' => 'pending'];
@@ -330,6 +358,9 @@ class OperatingWorkflow
                 $before = null;
                 if ($type === 'quotes') {
                     $data['quote_number'] = app(OperatingQuotes::class)->nextNumber();
+                }
+                if ($type === 'purchase_orders') {
+                    $data['po_number'] = app(OperatingProcurement::class)->nextOrderNumber();
                 }
                 $id = DB::table('operating_records')->insertGetId(['uuid' => Str::uuid()->toString(), 'type' => $type, 'title' => $validated['title'], 'status' => $type === 'attendance' ? app(OperatingAttendance::class)->initialStatus($data) : $entity['statuses'][0], 'owner_id' => $user->id, 'created_by' => $user->id, 'data' => json_encode($data, JSON_UNESCAPED_UNICODE), 'version' => 1, 'created_at' => now(), 'updated_at' => now()]);
             }
@@ -469,6 +500,9 @@ class OperatingWorkflow
             }
             if ($record->type === 'sprints' && $target === 'completed') {
                 $changes['data'] = json_encode(array_merge($data, ['completed_summary' => app(OperatingSprints::class)->releaseUnfinished($record, $user, $input['reason'])]), JSON_UNESCAPED_UNICODE);
+            }
+            if ($record->type === 'purchase_orders' && $target === 'approved') {
+                app(OperatingProcurement::class)->markRequestOrdered($record, $user);
             }
             DB::table('operating_records')->where('id', $record->id)->update($changes);
             $next = DB::table('operating_records')->find($record->id);
@@ -677,6 +711,36 @@ class OperatingWorkflow
                 if ($user->role !== 'owner' && (int) $record->owner_id === $user->id) {
                     $this->fail('لا يعتمد مقدم الطلب طلبه بنفسه.', 'Requesters cannot decide on their own request.');
                 }
+            }
+        }
+        if ($record->type === 'purchase_orders') {
+            $stages = ['draft', 'submitted', 'approved', 'received', 'closed'];
+            if ($target === 'cancelled') {
+                if (! in_array($record->status, ['draft', 'submitted', 'approved'], true)) {
+                    $this->fail('لا يُلغى أمر شراء بعد استلامه.', 'A received order cannot be cancelled.');
+                }
+                if (app(OperatingProcurement::class)->orderCommitment($record)['invoices'] > 0) {
+                    $this->fail('للأمر فواتير مسجلة. ألغِ الفواتير أولًا.', 'This order has invoices. Void them first.');
+                }
+            } elseif (array_search($target, $stages, true) !== array_search($record->status, $stages, true) + 1) {
+                $this->fail('انتقل عبر مراحل أمر الشراء بالترتيب.', 'Follow purchase order stages in order.');
+            }
+            if ($target === 'approved') {
+                if ((float) ($data['amount'] ?? 0) <= 0) {
+                    $this->fail('مبلغ الأمر يجب أن يكون أكبر من صفر.', 'The order amount must be above zero.');
+                }
+                if (! empty($data['purchase_request_id'])) {
+                    $request = DB::table('operating_records')->find($data['purchase_request_id']);
+                    if ($request->status !== 'approved') {
+                        $this->fail('طلب الشراء لم يعد معتمدًا أو صدر له أمر آخر.', 'The purchase request is no longer approved or was already ordered.');
+                    }
+                    if ((float) $data['amount'] > (float) ($this->catalog->data($request)['estimated_amount'] ?? 0) * 1.1 + 0.001) {
+                        $this->fail('الأمر يتجاوز تقدير الطلب المعتمد بأكثر من 10%. قدّم طلبًا جديدًا.', 'The order exceeds the approved request estimate by more than 10%. File a new request.');
+                    }
+                }
+            }
+            if ($target === 'received') {
+                $this->requireFields($data, ['delivered_at']);
             }
         }
         if ($record->type === 'team_tasks') {
