@@ -38,6 +38,16 @@ class CampaignsTest extends TestCase
         $this->actingAs($owner)->post("/admin/operations/record/{$id}/transition", ['target' => 'approved', 'version' => 1, 'reason' => 'Go'])->assertSessionHasNoErrors();
     }
 
+    public function test_the_marketing_manager_runs_campaigns_but_approval_stays_with_the_owner(): void
+    {
+        $marketing = $this->operatingUser('marketing');
+        $this->actingAs($marketing)->post('/admin/operations/campaigns', $this->campaign(['channel' => 'facebook']))->assertSessionHasNoErrors();
+        $id = DB::table('operating_records')->where('type', 'campaigns')->value('id');
+
+        $this->actingAs($marketing)->post('/admin/operations/campaign_metrics', ['title' => 'Day 1', 'reason' => 'Daily', 'data' => ['campaign_id' => $id, 'metric_date' => '2026-10-11', 'spent' => 40]])->assertSessionHasNoErrors();
+        $this->actingAs($marketing)->post("/admin/operations/record/{$id}/transition", ['target' => 'approved', 'version' => 1, 'reason' => 'Go'])->assertForbidden();
+    }
+
     public function test_a_lead_can_point_to_its_source_campaign(): void
     {
         $campaign = $this->campaignId();

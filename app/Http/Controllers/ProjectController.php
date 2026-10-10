@@ -72,6 +72,6 @@ class ProjectController extends Controller
         $input = $request->validate(['sprint_id' => 'nullable|integer', 'task_ids' => 'required|array|min:1|max:100', 'task_ids.*' => 'integer', 'reason' => 'required|string|max:2000']);
         $moved = $this->sprints->plan($request->user(), $project, $input['sprint_id'] ?? null, $input['task_ids'], $input['reason']);
 
-        return back()->with('success', __('تم نقل :count مهمة.', ['count' => $moved]));
+        return back()->with('success', __('عدد المهام المنقولة: :count', ['count' => $moved]));
     }
 }

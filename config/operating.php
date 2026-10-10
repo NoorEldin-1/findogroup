@@ -124,6 +124,7 @@ return json_decode(<<<'JSON'
       ],
       "write": [
         "owner",
+        "marketing",
         "media_buyer"
       ]
     },

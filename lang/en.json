@@ -832,7 +832,7 @@
   "بلا أولوية": "No priority",
   "تقدم السبرنت": "Sprint progress",
   "لوحة السبرنت": "Sprint board",
-  "تم نقل :count مهمة.": "Moved :count task(s).",
+  "عدد المهام المنقولة: :count": "Moved :count task(s).",
   "مخرجات المحطة": "Milestone deliverables",
   "مخرجات متأخرة": "Delayed deliverables",
   "المحطة متأخرة": "Milestone overdue",
