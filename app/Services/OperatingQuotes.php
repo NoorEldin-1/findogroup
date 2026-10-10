@@ -62,10 +62,10 @@ class OperatingQuotes
     public function document(User $user, object $quote): array
     {
         $data = $this->catalog->data($quote);
-        $opportunity = ! empty($data['opportunity_id']) ? DB::table('operating_records')->find($data['opportunity_id']) : null;
-        $lead = $opportunity ? $this->catalog->data($opportunity) : [];
-        $client = ! empty($lead['client_id']) && $this->access->can($user, 'clients') ? DB::table('operating_records')->find($lead['client_id']) : null;
-        $clientData = $client ? $this->catalog->data($client) : [];
+        $opportunity = $this->visibleRecord($user, 'opportunities', $data['opportunity_id'] ?? null);
+        $lead = $opportunity ? $this->access->visibleData($user, $opportunity) : [];
+        $client = $this->visibleRecord($user, 'clients', $lead['client_id'] ?? null);
+        $clientData = $client ? $this->access->visibleData($user, $client) : [];
 
         return [
             'quote' => $quote,
@@ -104,22 +104,37 @@ class OperatingQuotes
             $this->workflow->fail('التحويل متاح للعروض المعتمدة فقط.', 'Only approved quotes can be converted.');
         }
         $data = $this->catalog->data($quote);
-        $opportunity = ! empty($data['opportunity_id']) ? DB::table('operating_records')->find($data['opportunity_id']) : null;
-        $lead = $opportunity ? $this->catalog->data($opportunity) : [];
-        $clientId = $lead['client_id'] ?? null;
-        $client = $clientId ? $this->catalog->data(DB::table('operating_records')->find($clientId)) : [];
+        $opportunity = $this->visibleRecord($user, 'opportunities', $data['opportunity_id'] ?? null);
+        $lead = $opportunity ? $this->access->visibleData($user, $opportunity) : [];
+        $clientRecord = $this->visibleRecord($user, 'clients', $lead['client_id'] ?? null);
+        $clientId = $clientRecord?->id;
+        $client = $clientRecord ? $this->access->visibleData($user, $clientRecord) : [];
         $scope = implode("\n", array_map(fn (array $line): string => '- '.$line['description'].' × '.(float) $line['quantity'], $data['line_items'] ?? []));
         if ($type === 'contracts') {
             return ['title' => $quote->title, 'data' => ['client_id' => $clientId, 'quote_id' => $quote->id, 'scope_reference' => trim(($data['quote_number'] ?? '')."\n".$scope)]];
         }
-        $contractId = DB::table('operating_records')->where('type', 'contracts')->where('status', 'approved')->where('data->quote_id', $quote->id)->value('id');
+        $contractId = $this->access->can($user, 'contracts') ? $this->access->query($user, 'contracts')->where('status', 'approved')->where('data->quote_id', $quote->id)->value('id') : null;
 
         return ['title' => $quote->title, 'data' => ['client_id' => $clientId, 'quote_id' => $quote->id, 'contract_id' => $contractId, 'outcome' => trim(($lead['need'] ?? '')."\n".$scope), 'original_due' => $lead['requested_date'] ?? null, 'client_contact' => $client['contact'] ?? ($lead['lead_contact'] ?? null)]];
     }
 
-    public function convertedProject(int $quoteId): ?object
+    /**
+     * Whether the quote already became a project; only exposed as a record the viewer may open.
+     */
+    public function convertedProject(User $user, int $quoteId): ?object
     {
-        return DB::table('operating_records')->where('type', 'projects')->where('status', '!=', 'archived')->where('data->quote_id', $quoteId)->first();
+        $project = DB::table('operating_records')->where('type', 'projects')->where('status', '!=', 'archived')->where('data->quote_id', $quoteId)->first();
+
+        return $project ? $this->visibleRecord($user, 'projects', $project->id) : null;
+    }
+
+    private function visibleRecord(User $user, string $type, mixed $id): ?object
+    {
+        if (empty($id) || ! $this->access->can($user, $type)) {
+            return null;
+        }
+
+        return $this->access->query($user, $type)->where('id', (int) $id)->first();
     }
 
     /**

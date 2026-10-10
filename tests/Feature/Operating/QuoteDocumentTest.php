@@ -24,7 +24,7 @@ class QuoteDocumentTest extends TestCase
     {
         $id = $this->quote('approved');
 
-        $this->actingAs($this->operatingUser('sales'))->get("/admin/operations/quotes/{$id}/print")
+        $this->actingAs($this->operatingUser('sales_manager'))->get("/admin/operations/quotes/{$id}/print")
             ->assertOk()->assertSee('Q-2026-0007')->assertSee('Acme Corp')->assertSee('TX-9')->assertSee('Portal build')->assertSee('1,140.00')->assertDontSee('data-draft', false);
     }
 
@@ -32,9 +32,21 @@ class QuoteDocumentTest extends TestCase
     {
         $id = $this->quote('draft');
 
-        $this->actingAs($this->operatingUser('sales'))->get("/admin/operations/quotes/{$id}/print")->assertOk()->assertSee('data-draft', false);
+        $this->actingAs($this->operatingUser('sales_manager'))->get("/admin/operations/quotes/{$id}/print")->assertOk()->assertSee('data-draft', false);
         $this->actingAs($this->operatingUser('developer'))->get("/admin/operations/quotes/{$id}/print")->assertForbidden();
         $this->actingAs($this->operatingUser('owner'))->get("/admin/operations/quotes/{$this->clientId}/print")->assertNotFound();
+    }
+
+    public function test_a_rep_only_reaches_quotes_on_their_own_leads(): void
+    {
+        $rep = $this->operatingUser('sales');
+        $others = $this->quote('approved');
+        $ownLead = $this->operatingRecord('opportunities', 'proposal', ['lead_company' => 'Mine'], 'My lead', $rep->id);
+        $own = $this->operatingRecord('quotes', 'draft', ['opportunity_id' => $ownLead, 'price' => 10, 'currency' => 'USD', 'payment_terms' => 'Net 30'], 'My quote');
+
+        $this->actingAs($rep)->get("/admin/operations/quotes/{$others}/print")->assertForbidden();
+        $this->actingAs($rep)->get("/admin/operations/quotes/{$own}/print")->assertOk()->assertSee('Mine')->assertDontSee('Acme Corp');
+        $this->assertSame(['My quote'], collect($this->actingAs($rep)->getJson('/admin/operations/quotes?format=json')->json('data'))->pluck('title')->all());
     }
 
     public function test_an_approved_quote_prefills_a_project_and_a_contract(): void

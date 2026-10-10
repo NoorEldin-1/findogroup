@@ -1398,6 +1398,72 @@ return json_decode(<<<'JSON'
           "entity": "clients"
         },
         {
+          "key": "project_type",
+          "label": {
+            "ar": "نوع المشروع",
+            "en": "Project type"
+          },
+          "type": "select",
+          "required": false,
+          "options": {
+            "web": {
+              "ar": "موقع / نظام ويب",
+              "en": "Web"
+            },
+            "mobile": {
+              "ar": "تطبيق جوال",
+              "en": "Mobile app"
+            },
+            "erp": {
+              "ar": "ERP / نظام داخلي",
+              "en": "ERP / internal system"
+            },
+            "ecommerce": {
+              "ar": "متجر إلكتروني",
+              "en": "E-commerce"
+            },
+            "wordpress": {
+              "ar": "ووردبريس",
+              "en": "WordPress"
+            },
+            "maintenance": {
+              "ar": "صيانة",
+              "en": "Maintenance"
+            },
+            "other": {
+              "ar": "أخرى",
+              "en": "Other"
+            }
+          }
+        },
+        {
+          "key": "priority",
+          "label": {
+            "ar": "الأولوية",
+            "en": "Priority"
+          },
+          "type": "select",
+          "required": false,
+          "options": {
+            "low": {
+              "ar": "منخفضة",
+              "en": "Low"
+            },
+            "medium": {
+              "ar": "متوسطة",
+              "en": "Medium"
+            },
+            "high": {
+              "ar": "عالية",
+              "en": "High"
+            },
+            "critical": {
+              "ar": "حرجة",
+              "en": "Critical"
+            }
+          }
+        },
+        {
           "key": "contract_id",
           "label": {
             "ar": "العقد",
@@ -1557,6 +1623,111 @@ return json_decode(<<<'JSON'
         "acceptance",
         "launch",
         "closed",
+        "archived"
+      ]
+    },
+    "project_members": {
+      "label": {
+        "ar": "فريق المشروع",
+        "en": "Project team"
+      },
+      "group": "delivery",
+      "pages": [],
+      "fields": [
+        {
+          "key": "project_id",
+          "label": {
+            "ar": "المشروع",
+            "en": "Project"
+          },
+          "type": "relation",
+          "required": true,
+          "entity": "projects"
+        },
+        {
+          "key": "assignee_id",
+          "label": {
+            "ar": "الموظف",
+            "en": "Employee"
+          },
+          "type": "relation",
+          "required": true,
+          "entity": "employees"
+        },
+        {
+          "key": "member_role",
+          "label": {
+            "ar": "الدور في المشروع",
+            "en": "Project role"
+          },
+          "type": "select",
+          "required": true,
+          "options": {
+            "pm": {
+              "ar": "مدير المشروع",
+              "en": "Project manager"
+            },
+            "tech_lead": {
+              "ar": "قائد تقني",
+              "en": "Tech lead"
+            },
+            "developer": {
+              "ar": "مطور",
+              "en": "Developer"
+            },
+            "designer": {
+              "ar": "مصمم",
+              "en": "Designer"
+            },
+            "ui_ux": {
+              "ar": "مصمم UI/UX",
+              "en": "UI/UX designer"
+            },
+            "qa": {
+              "ar": "اختبار جودة",
+              "en": "QA"
+            },
+            "devops": {
+              "ar": "DevOps",
+              "en": "DevOps"
+            },
+            "other": {
+              "ar": "أخرى",
+              "en": "Other"
+            }
+          }
+        },
+        {
+          "key": "allocation_percent",
+          "label": {
+            "ar": "نسبة التخصيص %",
+            "en": "Allocation %"
+          },
+          "type": "number",
+          "required": false
+        },
+        {
+          "key": "start_date",
+          "label": {
+            "ar": "من",
+            "en": "From"
+          },
+          "type": "date",
+          "required": false
+        },
+        {
+          "key": "end_date",
+          "label": {
+            "ar": "إلى",
+            "en": "To"
+          },
+          "type": "date",
+          "required": false
+        }
+      ],
+      "statuses": [
+        "active",
+        "ended",
         "archived"
       ]
     },
@@ -7074,6 +7245,10 @@ return json_decode(<<<'JSON'
     "done": {
       "ar": "تم الإغلاق",
       "en": "Done"
+    },
+    "ended": {
+      "ar": "انتهت",
+      "en": "Ended"
     },
     "cancelled": {
       "ar": "ملغي",

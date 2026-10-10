@@ -181,6 +181,14 @@ class OperatingWorkflow
         if ($type === 'contacts' && ! empty($data['is_primary']) && DB::table('operating_records')->where('type', 'contacts')->where('status', '!=', 'archived')->where('data->client_id', (int) $data['client_id'])->where('data->is_primary', true)->when($id, fn ($query) => $query->where('id', '!=', $id))->exists()) {
             $this->fail('للعميل جهة اتصال أساسية بالفعل. ألغِ تحديدها أولًا.', 'This client already has a primary contact. Unset it first.');
         }
+        if ($type === 'project_members') {
+            if (! empty($data['end_date']) && ! empty($data['start_date']) && $data['end_date'] < $data['start_date']) {
+                $this->fail('تاريخ النهاية قبل تاريخ البداية.', 'The end date is before the start date.');
+            }
+            if (DB::table('operating_records')->where('type', 'project_members')->where('status', '!=', 'archived')->where('data->project_id', (int) $data['project_id'])->where('data->assignee_id', (int) $data['assignee_id'])->where('data->member_role', $data['member_role'])->when($id, fn ($query) => $query->where('id', '!=', $id))->exists()) {
+                $this->fail('الموظف مسجل بنفس الدور في هذا المشروع.', 'This employee already has that role on the project.');
+            }
+        }
         if ($type === 'projects' && ! empty($data['quote_id'])) {
             if (DB::table('operating_records')->where('id', $data['quote_id'])->value('status') !== 'approved') {
                 $this->fail('التحويل إلى مشروع يحتاج عرضًا معتمدًا.', 'Only an approved quote can become a project.');

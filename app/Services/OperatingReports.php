@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 class OperatingReports
 {
@@ -36,6 +37,8 @@ class OperatingReports
             $hours[($entryData['category'] ?? '') === 'waiting' ? 'waiting' : 'execution'] += (float) ($entryData['hours'] ?? 0);
         }
 
-        return ['health' => $health, 'hours' => $hours, 'rows' => $rows, 'updated_at' => $project->updated_at];
+        $members = $this->access->can($user, 'project_members') ? $this->access->query($user, 'project_members')->where('status', 'active')->whereIn('id', DB::table('operating_links')->where('field', 'project_id')->where('target_id', $project->id)->select('record_id'))->orderBy('title')->get() : collect();
+
+        return ['health' => $health, 'hours' => $hours, 'rows' => $rows, 'updated_at' => $project->updated_at, 'progress' => app(OperatingProjects::class)->progress($project), 'members' => $members];
     }
 }

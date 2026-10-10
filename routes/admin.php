@@ -4,6 +4,7 @@ use App\Http\Controllers\AdminController as A;
 use App\Http\Controllers\AttendanceController as T;
 use App\Http\Controllers\NotificationController as N;
 use App\Http\Controllers\OperatingController as O;
+use App\Http\Controllers\ProjectController as P;
 use App\Http\Controllers\SalesController as S;
 use App\Http\Middleware\AdminAccess;
 use App\Http\Middleware\AdminLocale;
@@ -43,6 +44,7 @@ Route::middleware(AdminLocale::class)->group(function () {
         Route::get('/operations/activities/follow-ups', [S::class, 'followUps']);
         Route::get('/operations/clients/{id}/profile', [S::class, 'clientProfile'])->whereNumber('id');
         Route::get('/operations/quotes/{id}/print', [S::class, 'printQuote'])->whereNumber('id');
+        Route::get('/operations/projects/portfolio', [P::class, 'portfolio']);
         Route::get('/operations/{type}/create', [O::class, 'create']);
         Route::get('/operations/{type}', [O::class, 'listing']);
         Route::post('/operations/{type}', [O::class, 'store']);

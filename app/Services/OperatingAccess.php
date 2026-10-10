@@ -118,9 +118,15 @@ class OperatingAccess
                 }
             });
         }
+        if ($user->role === 'sales' && $type === 'quotes') {
+            $quoteIds = DB::table('operating_links')->where('field', 'opportunity_id')->whereIn('target_id', $this->query($user, 'opportunities')->pluck('id'))->pluck('record_id');
+
+            return $query->where(fn (Builder $scope) => $scope->where('owner_id', $user->id)->orWhereIn('id', $quoteIds));
+        }
         if (in_array($user->role, ['developer', 'qa'], true) && $type === 'projects') {
             $taskIds = $this->query($user, 'tasks')->pluck('id');
-            $projects = DB::table('operating_links')->whereIn('record_id', $taskIds)->where('field', 'project_id')->pluck('target_id');
+            $memberIds = $employeeId ? DB::table('operating_records')->where('type', 'project_members')->where('status', 'active')->where('data->assignee_id', $employeeId)->pluck('id') : collect();
+            $projects = DB::table('operating_links')->whereIn('record_id', $taskIds->merge($memberIds))->where('field', 'project_id')->pluck('target_id');
 
             return $query->whereIn('id', $projects);
         }
