@@ -279,6 +279,22 @@ class OperatingWorkflow
                 $data['asset_tag'] = $this->catalog->data($existing)['asset_tag'] ?? null;
             }
         }
+        if ($type === 'inventory_items') {
+            if (! empty($data['sku']) && app(OperatingAssets::class)->isTaken('inventory_items', 'sku', $data['sku'], $id)) {
+                $this->fail('كود الصنف مستخدم لصنف آخر.', 'This SKU is already in use.');
+            }
+            if (! $existing) {
+                $data['quantity'] = 0;
+            }
+        }
+        if ($type === 'stock_movements') {
+            if ((float) $data['quantity'] <= 0 && $data['movement'] !== 'adjust') {
+                $this->fail('الكمية يجب أن تكون أكبر من صفر.', 'The quantity must be above zero.');
+            }
+            if (DB::table('operating_records')->where('id', $data['item_id'])->value('status') !== 'active') {
+                $this->fail('الصنف غير نشط.', 'The item is not active.');
+            }
+        }
         if ($type === 'asset_movements') {
             if (in_array($data['movement'], ['assign', 'transfer'], true)) {
                 if (empty($data['to_employee_id'])) {
@@ -579,6 +595,9 @@ class OperatingWorkflow
             if ($record->type === 'asset_movements' && $target === 'completed') {
                 $changes['data'] = json_encode(app(OperatingAssets::class)->applyMovement($record, $user, $input['reason']), JSON_UNESCAPED_UNICODE);
             }
+            if ($record->type === 'stock_movements' && $target === 'completed') {
+                $changes['data'] = json_encode(app(OperatingAssets::class)->applyStock($record, $user, $input['reason']), JSON_UNESCAPED_UNICODE);
+            }
             DB::table('operating_records')->where('id', $record->id)->update($changes);
             if ($record->type === 'supplier_payments') {
                 app(OperatingProcurement::class)->settleInvoice((int) $data['supplier_invoice_id'], $user, $input['reason']);
@@ -596,6 +615,9 @@ class OperatingWorkflow
         });
         if ($next->type === 'asset_movements' && $next->status === 'completed') {
             app(OperatingAssets::class)->notifyReceiver($next);
+        }
+        if ($next->type === 'stock_movements' && $next->status === 'completed') {
+            app(OperatingAssets::class)->checkStock(DB::table('operating_records')->find($this->catalog->data($next)['item_id']));
         }
 
         return $next;

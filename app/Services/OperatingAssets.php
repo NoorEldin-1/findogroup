@@ -14,6 +14,11 @@ class OperatingAssets
      */
     public const OUT_OF_SERVICE = ['retired', 'completed', 'archived'];
 
+    /**
+     * Roles told about low stock and expiring warranties.
+     */
+    public const STOCK_RECIPIENTS = ['owner', 'finance', 'hr'];
+
     public function __construct(private OperatingCatalog $catalog, private OperatingWorkflow $workflow, private OperatingNotifier $notifier) {}
 
     /**
@@ -67,6 +72,73 @@ class OperatingAssets
         $this->workflow->event(DB::table('operating_records')->find($asset->id), 'update', 'Asset movement "'.$movement->title.'" ('.$kind.'): '.$reason, ['status' => $asset->status, 'assignee_id' => $holder ?: null], ['status' => $status, 'assignee_id' => $after['assignee_id'] ?? null], $user->id);
 
         return array_merge($data, ['from_employee_id' => $holder ?: null]);
+    }
+
+    /**
+     * Runs inside the stock movement completion transaction: the item quantity changes only through completed movements.
+     *
+     * @return array<string, mixed> the movement data with the quantity before and after
+     */
+    public function applyStock(object $movement, User $user, string $reason): array
+    {
+        $data = $this->catalog->data($movement);
+        $item = DB::table('operating_records')->where('id', $data['item_id'])->lockForUpdate()->first();
+        if ($item->status !== 'active') {
+            $this->workflow->fail('الصنف غير نشط.', 'The item is not active.');
+        }
+        $itemData = $this->catalog->data($item);
+        $before = (float) ($itemData['quantity'] ?? 0);
+        $quantity = (float) $data['quantity'];
+        $after = round(match ($data['movement']) {
+            'in' => $before + $quantity,
+            'out' => $before - $quantity,
+            'adjust' => $quantity,
+        }, 3);
+        if ($after < 0) {
+            $this->workflow->fail('الكمية المتاحة لا تكفي (المتاح '.$before.').', 'Not enough stock (available '.$before.').');
+        }
+        DB::table('operating_records')->where('id', $item->id)->update(['data' => json_encode(array_merge($itemData, ['quantity' => $after]), JSON_UNESCAPED_UNICODE), 'version' => $item->version + 1, 'updated_at' => now()]);
+        $this->workflow->event(DB::table('operating_records')->find($item->id), 'update', 'Stock movement "'.$movement->title.'" ('.$data['movement'].'): '.$reason, ['quantity' => $before], ['quantity' => $after], $user->id);
+
+        return array_merge($data, ['quantity_before' => $before, 'quantity_after' => $after]);
+    }
+
+    /**
+     * @return array{quantity: float, min: float, low: bool}
+     */
+    public function stockLevel(object $item): array
+    {
+        $data = $this->catalog->data($item);
+        $quantity = (float) ($data['quantity'] ?? 0);
+        $min = (float) ($data['min_quantity'] ?? 0);
+
+        return ['quantity' => $quantity, 'min' => $min, 'low' => $item->status === 'active' && $quantity <= $min];
+    }
+
+    /**
+     * One alert each time an item drops to its reorder level; restocking above the level re-arms it.
+     */
+    public function checkStock(object $item): bool
+    {
+        $item = DB::table('operating_records')->find($item->id);
+        $level = $this->stockLevel($item);
+        $alerted = ! empty($this->catalog->data($item)['low_stock_alerted']);
+        if ($level['low'] && ! $alerted) {
+            $this->notifier->send($this->notifier->roles(self::STOCK_RECIPIENTS)->all(), new OperatingAlert(
+                'low_stock',
+                ['ar' => 'مخزون منخفض', 'en' => 'Low stock'],
+                ['ar' => 'الصنف "'.$item->title.'" وصل إلى '.$level['quantity'].' (حد إعادة الطلب '.$level['min'].'). اطلب كمية جديدة.', 'en' => 'The item "'.$item->title.'" is at '.$level['quantity'].' (reorder level '.$level['min'].'). Reorder it.'],
+                '/admin/operations/record/'.$item->id,
+            ));
+            $this->workflow->mark($item, 'low_stock_alerted', today()->toDateString(), 'Low stock alert sent');
+
+            return true;
+        }
+        if (! $level['low'] && $alerted) {
+            $this->workflow->mark($item, 'low_stock_alerted', '', 'Stock back above the reorder level');
+        }
+
+        return false;
     }
 
     public function notifyReceiver(object $movement): void

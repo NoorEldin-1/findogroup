@@ -401,6 +401,12 @@ class OperatingController extends Controller
         if ($record->type === 'purchase_orders' && $record->status === 'approved' && empty($data['delivered_at']) && ($data['expected_delivery'] ?? '9999') < today()->toDateString()) {
             $signals[] = __('التوريد تأخر عن موعده المتوقع. تابع المورد أو سجّل الاستلام.');
         }
+        if ($record->type === 'inventory_items' && $record->status === 'active' && (float) ($data['quantity'] ?? 0) <= (float) ($data['min_quantity'] ?? 0)) {
+            $signals[] = __('المخزون عند حد إعادة الطلب أو أقل. اطلب كمية جديدة.');
+        }
+        if ($record->type === 'assets' && ! in_array($record->status, ['retired', 'completed', 'archived'], true) && ! empty($data['warranty_end']) && $data['warranty_end'] >= today()->toDateString() && $data['warranty_end'] <= today()->addDays(30)->toDateString()) {
+            $signals[] = __('ضمان الأصل ينتهي خلال 30 يومًا.');
+        }
         if ($record->type === 'suppliers' && $record->status === 'active' && ($data['agreement_end'] ?? '9999') < today()->toDateString()) {
             $signals[] = __('اتفاقية المورد منتهية. جدّدها أو حدّث بياناتها.');
         }

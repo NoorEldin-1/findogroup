@@ -7089,6 +7089,60 @@ return json_decode(<<<'JSON'
       "statuses": ["draft", "completed", "archived"],
       "immutable": ["completed", "archived"]
     },
+    "inventory_items": {
+      "label": { "ar": "أصناف المخزون", "en": "Inventory items" },
+      "group": "assets",
+      "pages": [],
+      "fields": [
+        { "key": "sku", "label": { "ar": "كود الصنف", "en": "SKU" }, "type": "text", "required": false },
+        { "key": "category", "label": { "ar": "الفئة", "en": "Category" }, "type": "select", "required": true, "options": {
+          "consumable": { "ar": "مستهلكات", "en": "Consumables" },
+          "spare_part": { "ar": "قطع غيار", "en": "Spare parts" },
+          "it_accessory": { "ar": "ملحقات تقنية", "en": "IT accessories" },
+          "office_supply": { "ar": "أدوات مكتبية", "en": "Office supplies" },
+          "cleaning": { "ar": "نظافة وضيافة", "en": "Cleaning and hospitality" },
+          "merchandise": { "ar": "هدايا ومطبوعات", "en": "Merchandise and print" },
+          "other": { "ar": "أخرى", "en": "Other" }
+        } },
+        { "key": "unit", "label": { "ar": "وحدة القياس", "en": "Unit" }, "type": "select", "required": true, "options": {
+          "piece": { "ar": "قطعة", "en": "Piece" },
+          "box": { "ar": "علبة", "en": "Box" },
+          "pack": { "ar": "عبوة", "en": "Pack" },
+          "ream": { "ar": "رزمة", "en": "Ream" },
+          "kg": { "ar": "كيلوجرام", "en": "Kilogram" },
+          "liter": { "ar": "لتر", "en": "Liter" },
+          "meter": { "ar": "متر", "en": "Meter" },
+          "other": { "ar": "أخرى", "en": "Other" }
+        } },
+        { "key": "min_quantity", "label": { "ar": "حد إعادة الطلب (تنبيه عند الوصول له أو أقل)", "en": "Reorder level (alert at or below)" }, "type": "number", "required": true },
+        { "key": "location", "label": { "ar": "مكان التخزين", "en": "Storage location" }, "type": "text", "required": false },
+        { "key": "supplier_id", "label": { "ar": "المورد المعتاد", "en": "Usual supplier" }, "type": "relation", "required": false, "entity": "suppliers" },
+        { "key": "unit_cost", "label": { "ar": "تكلفة الوحدة", "en": "Unit cost" }, "type": "number", "required": false },
+        { "key": "currency", "label": { "ar": "العملة", "en": "Currency" }, "type": "text", "required": false },
+        { "key": "notes", "label": { "ar": "ملاحظات", "en": "Notes" }, "type": "textarea", "required": false }
+      ],
+      "statuses": ["active", "inactive", "archived"]
+    },
+    "stock_movements": {
+      "label": { "ar": "حركات المخزون", "en": "Stock movements" },
+      "group": "assets",
+      "pages": [],
+      "fields": [
+        { "key": "item_id", "label": { "ar": "الصنف", "en": "Item" }, "type": "relation", "required": true, "entity": "inventory_items" },
+        { "key": "movement", "label": { "ar": "نوع الحركة", "en": "Movement" }, "type": "select", "required": true, "options": {
+          "in": { "ar": "إضافة للمخزون (استلام)", "en": "Stock in (receipt)" },
+          "out": { "ar": "صرف من المخزون", "en": "Stock out (issue)" },
+          "adjust": { "ar": "جرد (ضبط الكمية على المعدود)", "en": "Count (set quantity to counted)" }
+        } },
+        { "key": "quantity", "label": { "ar": "الكمية", "en": "Quantity" }, "type": "number", "required": true },
+        { "key": "movement_date", "label": { "ar": "تاريخ الحركة", "en": "Movement date" }, "type": "date", "required": true },
+        { "key": "purchase_order_id", "label": { "ar": "أمر الشراء", "en": "Purchase order" }, "type": "relation", "required": false, "entity": "purchase_orders" },
+        { "key": "assignee_id", "label": { "ar": "صُرف إلى (موظف)", "en": "Issued to (employee)" }, "type": "relation", "required": false, "entity": "employees" },
+        { "key": "notes", "label": { "ar": "ملاحظات", "en": "Notes" }, "type": "textarea", "required": false }
+      ],
+      "statuses": ["draft", "completed", "archived"],
+      "immutable": ["completed", "archived"]
+    },
     "meetings": {
       "label": {
         "ar": "الاجتماعات والتقارير",
