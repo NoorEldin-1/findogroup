@@ -869,5 +869,20 @@
   "مفتوحة": "Open",
   "منجزة": "Done",
   "لا مهام لهذه الحملة بعد.": "No tasks for this campaign yet.",
-  "إسناد مهمة للفريق": "Assign a team task"
+  "إسناد مهمة للفريق": "Assign a team task",
+  "الإنفاق والـLeads والتحويلات والإيراد والعائد لكل حملة وقناة. الأرقام لكل عملة على حدة.": "Spend, leads, conversions, revenue and return per campaign and channel. Figures are per currency.",
+  "القناة": "Channel",
+  "كل القنوات": "All channels",
+  "التحويلات": "Conversions",
+  "لا نشاط تسويقي في هذه الفترة.": "No marketing activity in this period.",
+  "أفضل قناة": "Best channel",
+  "أضعف قناة": "Weakest channel",
+  "مقارنة القنوات": "Channel comparison",
+  "حملات": "Campaigns",
+  "الحملات": "Campaigns",
+  "الحملة": "Campaign",
+  "غير محدد": "Unspecified",
+  "الـLeads من المبيعات (بين قوسين: المُبلَّغ يدويًا). الإيراد = قيمة الصفقات المكسوبة بعملة الحملة.": "Leads come from sales (manually reported in brackets). Revenue is the value of won deals in the campaign currency.",
+  "مصادر الـLeads": "Lead sources",
+  "قيمة المكسوب": "Won value"
 }

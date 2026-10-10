@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminController as A;
 use App\Http\Controllers\AttendanceController as T;
+use App\Http\Controllers\MarketingController as M;
 use App\Http\Controllers\NotificationController as N;
 use App\Http\Controllers\OperatingController as O;
 use App\Http\Controllers\ProjectController as P;
@@ -46,6 +47,7 @@ Route::middleware(AdminLocale::class)->group(function () {
         Route::get('/operations/quotes/{id}/print', [S::class, 'printQuote'])->whereNumber('id');
         Route::get('/operations/projects/portfolio', [P::class, 'portfolio']);
         Route::get('/operations/milestones/tracker', [P::class, 'milestones']);
+        Route::get('/operations/campaigns/performance', [M::class, 'performance']);
         Route::get('/operations/projects/{id}/sprints', [P::class, 'sprints'])->whereNumber('id');
         Route::post('/operations/projects/{id}/sprints/plan', [P::class, 'planSprint'])->whereNumber('id');
         Route::get('/operations/{type}/create', [O::class, 'create']);

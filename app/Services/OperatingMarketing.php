@@ -77,6 +77,79 @@ class OperatingMarketing
     }
 
     /**
+     * Campaigns with spend, leads or a running state in the period; totals and channel groups are per currency, never converted.
+     * Lead sources count every lead created in the period, as an aggregate.
+     *
+     * @param  array{from?: ?string, to?: ?string, channel?: ?string}  $filters
+     * @return array{from: string, to: string, rows: list<array<string, mixed>>, totals: list<array<string, mixed>>, channels: list<array<string, mixed>>, sources: list<array<string, mixed>>, best: ?array<string, mixed>, worst: ?array<string, mixed>}
+     */
+    public function performance(User $user, array $filters = []): array
+    {
+        $from = ($filters['from'] ?? null) ?: today()->startOfMonth()->toDateString();
+        $to = ($filters['to'] ?? null) ?: today()->toDateString();
+        $rows = collect();
+        foreach ($this->access->query($user, 'campaigns')->where('status', '!=', 'archived')->when($filters['channel'] ?? null, fn ($query, $channel) => $query->where('data->channel', $channel))->orderBy('title')->get() as $campaign) {
+            $stats = $this->stats($campaign, $from, $to);
+            if ($stats['spend'] > 0 || $stats['leads'] || $stats['reported_leads'] || $campaign->status === 'running') {
+                $rows->push(['id' => $campaign->id, 'title' => $campaign->title, 'status' => $campaign->status] + $stats);
+            }
+        }
+        $channels = $rows->groupBy(fn (array $row): string => ($row['channel'] ?? 'unspecified').'|'.$row['currency'])
+            ->map(fn (Collection $group, string $key): array => array_combine(['channel', 'currency'], explode('|', $key)) + $this->aggregate($group))
+            ->sortByDesc('spend')->values();
+        $ranked = $channels->filter(fn (array $channel): bool => $channel['roi'] !== null)->sortBy('roi')->values();
+        $sources = DB::table('operating_records')->where('type', 'opportunities')->where('status', '!=', 'archived')->whereBetween('created_at', [$from.' 00:00:00', $to.' 23:59:59'])->get()
+            ->groupBy(fn (object $lead): string => $this->catalog->data($lead)['lead_source'] ?? 'unspecified')
+            ->map(function (Collection $group, string $source): array {
+                $won = $group->where('status', 'won');
+                $value = [];
+                foreach ($won as $lead) {
+                    $data = $this->catalog->data($lead);
+                    $currency = $this->currency($data);
+                    $value[$currency] = round(($value[$currency] ?? 0) + (float) ($data['expected_value'] ?? 0), 2);
+                }
+
+                return ['source' => $source, 'leads' => $group->count(), 'won' => $won->count(), 'conversion' => round($won->count() / $group->count() * 100, 1), 'won_value' => $value];
+            })->sortByDesc('leads')->values();
+
+        return [
+            'from' => $from,
+            'to' => $to,
+            'rows' => $rows->all(),
+            'totals' => $rows->groupBy('currency')->map(fn (Collection $group, string $currency): array => ['currency' => $currency] + $this->aggregate($group))->values()->all(),
+            'channels' => $channels->all(),
+            'sources' => $sources->all(),
+            'best' => $ranked->count() > 1 ? $ranked->last() : null,
+            'worst' => $ranked->count() > 1 ? $ranked->first() : null,
+        ];
+    }
+
+    /**
+     * @param  Collection<int, array<string, mixed>>  $rows
+     * @return array{campaigns: int, spend: float, impressions: int, clicks: int, leads: int, won: int, revenue: float, cpl: ?float, conversion: ?float, roi: ?float}
+     */
+    private function aggregate(Collection $rows): array
+    {
+        $spend = round((float) $rows->sum('spend'), 2);
+        $leads = (int) $rows->sum('leads');
+        $won = (int) $rows->sum('won');
+        $revenue = round((float) $rows->sum('revenue'), 2);
+
+        return [
+            'campaigns' => $rows->count(),
+            'spend' => $spend,
+            'impressions' => (int) $rows->sum('impressions'),
+            'clicks' => (int) $rows->sum('clicks'),
+            'leads' => $leads,
+            'won' => $won,
+            'revenue' => $revenue,
+            'cpl' => $leads ? round($spend / $leads, 2) : null,
+            'conversion' => $leads ? round($won / $leads * 100, 1) : null,
+            'roi' => $spend > 0 ? round(($revenue - $spend) / $spend * 100, 1) : null,
+        ];
+    }
+
+    /**
      * @param  array<string, mixed>  $data
      */
     private function currency(array $data): string
