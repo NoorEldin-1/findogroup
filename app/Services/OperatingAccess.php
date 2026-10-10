@@ -235,7 +235,7 @@ class OperatingAccess
 
     public function restrictedContext(User $user, object $record): bool
     {
-        return ($record->type === 'projects' && in_array($user->role, ['sales', 'sales_manager'], true)) || ($record->type === 'employees' && ! in_array($user->role, ['owner', 'hr'], true) && $this->employeeId($user) !== $record->id);
+        return ($record->type === 'assets' && ! $this->managesAssets($user)) || ($record->type === 'projects' && in_array($user->role, ['sales', 'sales_manager'], true)) || ($record->type === 'employees' && ! in_array($user->role, ['owner', 'hr'], true) && $this->employeeId($user) !== $record->id);
     }
 
     public function fields(User $user, string $type, ?object $record = null): array

@@ -46,6 +46,9 @@ class AssetsRegisterTest extends TestCase
         $this->assertSame('C02XYZ', $rows[0]['data']['serial_number']);
         $this->assertArrayNotHasKey('cost', $rows[0]['data']);
         $this->actingAs($developer)->post('/admin/operations/assets', $this->asset(['serial_number' => 'S3']))->assertForbidden();
+        $mine = $rows[0]['id'];
+        DB::table('operating_attachments')->insert(['record_id' => $mine, 'user_id' => $developer->id, 'name' => 'purchase-invoice.pdf', 'path' => 'x/y.pdf', 'mime' => 'application/pdf', 'bytes' => 10, 'created_at' => now()]);
+        $this->actingAs($developer)->get("/admin/operations/record/{$mine}")->assertOk()->assertSee('C02XYZ')->assertDontSee('purchase-invoice.pdf')->assertDontSee('2200');
         $this->actingAs($this->operatingUser('qa'))->getJson('/admin/operations/assets?format=json')->assertForbidden();
     }
 

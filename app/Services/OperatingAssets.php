@@ -196,7 +196,7 @@ class OperatingAssets
             $data = $this->catalog->data($record);
             $holder = (int) ($data['assignee_id'] ?? 0);
             $canMove = $this->access->managesAssets($user) && $this->access->canCreate($user, 'asset_movements');
-            $movements = $this->access->managesAssets($user) ? $this->movements($record->id) : collect();
+            $movements = $this->access->managesAssets($user) && $this->access->can($user, 'asset_movements') ? $this->movements($record->id) : collect();
             $people = $this->sales->titles($movements->flatMap(fn (object $row): array => array_values(array_filter([($move = $this->catalog->data($row))['to_employee_id'] ?? null, $move['from_employee_id'] ?? null])))->push($holder)->filter()->unique()->values()->all());
             $actions = match (true) {
                 in_array($record->status, self::OUT_OF_SERVICE, true) => [],
@@ -211,9 +211,9 @@ class OperatingAssets
             return ['type' => 'assets', 'holder' => $holder ? ($people[$holder] ?? null) : null, 'manager' => $this->access->managesAssets($user), 'actions' => $canMove ? $actions : [], 'movements' => $movements->map(fn (object $row): array => ['id' => $row->id, 'title' => $row->title, 'status' => $row->status, 'movement' => ($move = $this->catalog->data($row))['movement'] ?? null, 'date' => $move['movement_date'] ?? null, 'to' => $people[$move['to_employee_id'] ?? 0] ?? null, 'from' => $people[$move['from_employee_id'] ?? 0] ?? null, 'cost' => $move['cost'] ?? null, 'currency' => $move['currency'] ?? null])->all(), 'maintenance_cost' => $maintenanceCost];
         }
         if ($record->type === 'inventory_items') {
-            $movements = DB::table('operating_records')->where('type', 'stock_movements')->where('status', '!=', 'archived')
+            $movements = $this->access->can($user, 'stock_movements') ? $this->access->query($user, 'stock_movements')->where('status', '!=', 'archived')
                 ->whereIn('id', DB::table('operating_links')->where('field', 'item_id')->where('target_id', $record->id)->select('record_id'))
-                ->orderByDesc('id')->limit(20)->get();
+                ->orderByDesc('id')->limit(20)->get() : collect();
 
             return ['type' => 'inventory_items', 'level' => $this->stockLevel($record), 'unit' => $this->catalog->data($record)['unit'] ?? null, 'canMove' => $record->status === 'active' && $this->access->canCreate($user, 'stock_movements'), 'movements' => $movements->map(fn (object $row): array => ['id' => $row->id, 'title' => $row->title, 'status' => $row->status, 'movement' => ($move = $this->catalog->data($row))['movement'] ?? null, 'quantity' => $move['quantity'] ?? null, 'after' => $move['quantity_after'] ?? null, 'date' => $move['movement_date'] ?? null])->all()];
         }
