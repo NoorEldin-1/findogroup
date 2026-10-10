@@ -208,6 +208,14 @@ class OperatingWorkflow
         if ($type === 'team_tasks') {
             $this->limitAssignment($user, $data, $existing, 'marketing');
         }
+        if ($type === 'purchase_requests') {
+            if (! in_array($user->role, OperatingAccess::PROCUREMENT_MANAGERS, true) && (int) $data['requester_id'] !== (int) $this->access->employeeId($user)) {
+                $this->fail('تسجّل طلب الشراء باسمك فقط.', 'File purchase requests in your own name.');
+            }
+            if ((float) $data['estimated_amount'] <= 0) {
+                $this->fail('التكلفة التقديرية يجب أن تكون أكبر من صفر.', 'The estimated cost must be above zero.');
+            }
+        }
         if ($type === 'deliverables') {
             $milestone = DB::table('operating_records')->find($data['milestone_id']);
             $milestoneData = $this->catalog->data($milestone);
@@ -655,6 +663,20 @@ class OperatingWorkflow
                     $this->fail('اقبل المحطة بعد تقديمها.', 'Accept a milestone after it is submitted.');
                 }
                 $this->requireFields($data, ['client_acceptance', 'accepted_at']);
+            }
+        }
+        if ($record->type === 'purchase_requests') {
+            if ($target === 'ordered') {
+                $this->fail('يتحوّل الطلب إلى "تم الطلب" تلقائيًا عند اعتماد أمر الشراء.', 'A request becomes ordered automatically when its purchase order is approved.');
+            }
+            if (in_array($target, ['approved', 'rejected'], true)) {
+                if ($record->status !== 'requested') {
+                    $this->fail('القرار يُتخذ على الطلب المقدَّم فقط.', 'Only an open request can be approved or rejected.');
+                }
+                abort_unless($this->access->can($user, 'purchase_requests', 'approve'), 403);
+                if ($user->role !== 'owner' && (int) $record->owner_id === $user->id) {
+                    $this->fail('لا يعتمد مقدم الطلب طلبه بنفسه.', 'Requesters cannot decide on their own request.');
+                }
             }
         }
         if ($record->type === 'team_tasks') {

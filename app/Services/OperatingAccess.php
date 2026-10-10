@@ -18,6 +18,16 @@ class OperatingAccess
      */
     public const PROJECT_SCOPED = ['project_members', 'sprints', 'deliverables'];
 
+    /**
+     * Roles that run procurement end to end; other procurement readers only browse suppliers and file their own purchase requests.
+     */
+    public const PROCUREMENT_MANAGERS = ['owner', 'finance'];
+
+    /**
+     * Supplier fields kept to the procurement managers.
+     */
+    public const SUPPLIER_PRIVATE_FIELDS = ['bank_details', 'tax_number'];
+
     public function __construct(private OperatingCatalog $catalog) {}
 
     public function employeeId(User $user): ?int
@@ -54,6 +64,17 @@ class OperatingAccess
         }
         if ($user->role === 'data_entry' && ! in_array($type, ['data_batches', 'employees', 'goals', 'evaluations', 'leave', 'improvement_plans'], true)) {
             return false;
+        }
+        if ($entity['group'] === 'procurement' && ! in_array($user->role, self::PROCUREMENT_MANAGERS, true)) {
+            if (! in_array($user->role, config('operating.groups.procurement.read', []), true)) {
+                return false;
+            }
+
+            return match ($action) {
+                'read' => in_array($type, ['suppliers', 'purchase_requests'], true),
+                'write' => $type === 'purchase_requests',
+                default => $this->delegation($user, $type) !== null,
+            };
         }
         if ($action === 'approve') {
             if (in_array($user->role, $entity['approve_roles'] ?? [], true)) {
@@ -108,6 +129,11 @@ class OperatingAccess
     {
         abort_unless($this->can($user, $type), 403);
         $query = DB::table('operating_records')->where('type', $type);
+        if ($type === 'purchase_requests' && ! in_array($user->role, self::PROCUREMENT_MANAGERS, true)) {
+            $employeeId = $this->employeeId($user);
+
+            return $query->where(fn (Builder $scope) => $scope->where('owner_id', $user->id)->when($employeeId, fn (Builder $mine) => $mine->orWhere('data->requester_id', $employeeId)));
+        }
         if (in_array($user->role, ['owner', 'hr'], true)) {
             return $query;
         }
@@ -178,6 +204,9 @@ class OperatingAccess
         if ($record->type === 'projects' && in_array($user->role, ['sales', 'sales_manager'], true)) {
             return array_intersect_key($data, array_flip(['client_id', 'outcome', 'original_due', 'approved_due', 'client_contact']));
         }
+        if ($record->type === 'suppliers' && ! in_array($user->role, self::PROCUREMENT_MANAGERS, true)) {
+            return array_diff_key($data, array_flip(self::SUPPLIER_PRIVATE_FIELDS));
+        }
 
         return $data;
     }
@@ -195,6 +224,9 @@ class OperatingAccess
         }
         if ($type === 'projects' && in_array($user->role, ['sales', 'sales_manager'], true)) {
             $fields = array_filter($fields, fn (array $field): bool => in_array($field['key'], ['client_id', 'outcome', 'original_due', 'approved_due', 'client_contact'], true));
+        }
+        if ($type === 'suppliers' && ! in_array($user->role, self::PROCUREMENT_MANAGERS, true)) {
+            $fields = array_filter($fields, fn (array $field): bool => ! in_array($field['key'], self::SUPPLIER_PRIVATE_FIELDS, true));
         }
         if ($type === 'team_tasks' && ! in_array($user->role, ['owner', 'marketing', 'media_buyer'], true)) {
             $fields = array_filter($fields, fn (array $field): bool => in_array($field['key'], ['deliverable_url', 'notes'], true));

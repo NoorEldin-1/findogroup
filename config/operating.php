@@ -189,10 +189,20 @@ return json_decode(<<<'JSON'
         "finance"
       ]
     },
+    "procurement": {
+      "label": { "ar": "المشتريات والموردون", "en": "Procurement and suppliers" },
+      "read": ["owner", "finance", "delivery", "tech_lead", "hr", "marketing", "sales_manager", "support"],
+      "write": ["owner", "finance"]
+    },
+    "assets": {
+      "label": { "ar": "الأصول والمخزون", "en": "Assets and inventory" },
+      "read": ["owner", "finance", "hr", "delivery", "tech_lead", "support"],
+      "write": ["owner", "finance", "hr", "delivery", "tech_lead", "support"]
+    },
     "support": {
       "label": {
-        "ar": "الدعم والأصول",
-        "en": "Support and assets"
+        "ar": "الدعم والصيانة",
+        "en": "Support and maintenance"
       },
       "read": [
         "owner",
@@ -6662,6 +6672,77 @@ return json_decode(<<<'JSON'
         "archived"
       ]
     },
+    "suppliers": {
+      "label": { "ar": "الموردون", "en": "Suppliers" },
+      "group": "procurement",
+      "pages": [],
+      "fields": [
+        { "key": "category", "label": { "ar": "فئة المورد", "en": "Supplier category" }, "type": "select", "required": true, "options": {
+          "hosting": { "ar": "استضافة", "en": "Hosting" },
+          "domain": { "ar": "نطاقات", "en": "Domains" },
+          "cloud": { "ar": "خدمات سحابية", "en": "Cloud services" },
+          "api": { "ar": "واجهات برمجية API", "en": "APIs" },
+          "saas": { "ar": "برمجيات واشتراكات SaaS", "en": "Software / SaaS" },
+          "hardware": { "ar": "أجهزة ومعدات", "en": "Hardware and equipment" },
+          "office": { "ar": "مستلزمات مكتبية", "en": "Office supplies" },
+          "freelancer": { "ar": "مستقل / متعاقد", "en": "Freelancer / contractor" },
+          "services": { "ar": "خدمات", "en": "Services" },
+          "other": { "ar": "أخرى", "en": "Other" }
+        } },
+        { "key": "contact_name", "label": { "ar": "مسؤول التواصل", "en": "Contact person" }, "type": "text", "required": false },
+        { "key": "email", "label": { "ar": "البريد الإلكتروني", "en": "Email" }, "type": "email", "required": false },
+        { "key": "phone", "label": { "ar": "الهاتف", "en": "Phone" }, "type": "text", "required": false },
+        { "key": "website", "label": { "ar": "الموقع الإلكتروني", "en": "Website" }, "type": "url", "required": false },
+        { "key": "address", "label": { "ar": "العنوان", "en": "Address" }, "type": "textarea", "required": false },
+        { "key": "tax_number", "label": { "ar": "الرقم الضريبي", "en": "Tax number" }, "type": "text", "required": false },
+        { "key": "payment_terms", "label": { "ar": "شروط الدفع", "en": "Payment terms" }, "type": "select", "required": false, "options": {
+          "immediate": { "ar": "فوري", "en": "Immediate" },
+          "advance": { "ar": "دفع مقدم", "en": "In advance" },
+          "net_15": { "ar": "خلال 15 يومًا", "en": "Net 15" },
+          "net_30": { "ar": "خلال 30 يومًا", "en": "Net 30" },
+          "net_45": { "ar": "خلال 45 يومًا", "en": "Net 45" },
+          "net_60": { "ar": "خلال 60 يومًا", "en": "Net 60" },
+          "other": { "ar": "أخرى", "en": "Other" }
+        } },
+        { "key": "payment_terms_note", "label": { "ar": "تفاصيل شروط الدفع", "en": "Payment terms details" }, "type": "text", "required": false },
+        { "key": "currency", "label": { "ar": "عملة التعامل", "en": "Currency" }, "type": "text", "required": false },
+        { "key": "bank_details", "label": { "ar": "بيانات التحويل البنكي", "en": "Bank transfer details" }, "type": "textarea", "required": false },
+        { "key": "agreement", "label": { "ar": "ملخص الاتفاقية", "en": "Agreement summary" }, "type": "textarea", "required": false },
+        { "key": "agreement_url", "label": { "ar": "رابط الاتفاقية", "en": "Agreement link" }, "type": "url", "required": false },
+        { "key": "agreement_end", "label": { "ar": "انتهاء الاتفاقية", "en": "Agreement end" }, "type": "date", "required": false }
+      ],
+      "statuses": ["active", "inactive", "archived"]
+    },
+    "purchase_requests": {
+      "label": { "ar": "طلبات الشراء", "en": "Purchase requests" },
+      "group": "procurement",
+      "pages": [],
+      "approve_roles": ["owner"],
+      "fields": [
+        { "key": "requester_id", "label": { "ar": "مقدم الطلب", "en": "Requested by" }, "type": "relation", "required": true, "entity": "employees" },
+        { "key": "category", "label": { "ar": "الفئة", "en": "Category" }, "type": "select", "required": true, "options": {
+          "equipment": { "ar": "أجهزة ومعدات", "en": "Equipment" },
+          "saas": { "ar": "برمجيات واشتراكات", "en": "Software / subscriptions" },
+          "hosting": { "ar": "استضافة", "en": "Hosting" },
+          "domain": { "ar": "نطاقات", "en": "Domains" },
+          "cloud": { "ar": "خدمات سحابية", "en": "Cloud services" },
+          "api": { "ar": "واجهات برمجية API", "en": "APIs" },
+          "office": { "ar": "مستلزمات مكتبية", "en": "Office supplies" },
+          "services": { "ar": "خدمات ومتعاقدون", "en": "Services and contractors" },
+          "other": { "ar": "أخرى", "en": "Other" }
+        } },
+        { "key": "supplier_id", "label": { "ar": "المورد المقترح", "en": "Suggested supplier" }, "type": "relation", "required": false, "entity": "suppliers" },
+        { "key": "description", "label": { "ar": "المطلوب شراؤه", "en": "What is needed" }, "type": "textarea", "required": true },
+        { "key": "quantity", "label": { "ar": "الكمية", "en": "Quantity" }, "type": "number", "required": false },
+        { "key": "estimated_amount", "label": { "ar": "التكلفة التقديرية", "en": "Estimated cost" }, "type": "number", "required": true },
+        { "key": "currency", "label": { "ar": "العملة", "en": "Currency" }, "type": "text", "required": true },
+        { "key": "needed_by", "label": { "ar": "مطلوب قبل", "en": "Needed by" }, "type": "date", "required": false },
+        { "key": "project_id", "label": { "ar": "المشروع", "en": "Project" }, "type": "relation", "required": false, "entity": "projects" },
+        { "key": "justification", "label": { "ar": "المبرر", "en": "Justification" }, "type": "textarea", "required": false }
+      ],
+      "statuses": ["requested", "approved", "rejected", "ordered", "archived"],
+      "immutable": ["approved", "rejected", "ordered", "archived"]
+    },
     "support": {
       "label": {
         "ar": "الدعم والضمان",
@@ -7825,7 +7906,10 @@ return json_decode(<<<'JSON'
     "monitoring": {
       "ar": "متابعة إعادة الزحف",
       "en": "Recrawl monitoring"
-    }
+    },
+    "ordered": { "ar": "تم الطلب", "en": "Ordered" },
+    "received": { "ar": "تم الاستلام", "en": "Received" },
+    "maintenance": { "ar": "في الصيانة", "en": "In maintenance" }
   },
   "scorecards": {
     "delivery": {
