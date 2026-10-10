@@ -189,6 +189,12 @@ class OperatingWorkflow
                 $this->fail('الموظف مسجل بنفس الدور في هذا المشروع.', 'This employee already has that role on the project.');
             }
         }
+        if ($type === 'sprints' && $data['end_date'] < $data['start_date']) {
+            $this->fail('نهاية السبرنت قبل بدايته.', 'The sprint ends before it starts.');
+        }
+        if ($type === 'tasks' && ! empty($data['sprint_id']) && (int) $data['sprint_id'] !== (int) (($existing ? $this->catalog->data($existing) : [])['sprint_id'] ?? 0) && DB::table('operating_records')->where('id', $data['sprint_id'])->value('status') === 'completed') {
+            $this->fail('لا تُضاف مهام إلى سبرنت مكتمل.', 'Tasks cannot join a completed sprint.');
+        }
         if ($type === 'projects' && ! empty($data['quote_id'])) {
             if (DB::table('operating_records')->where('id', $data['quote_id'])->value('status') !== 'approved') {
                 $this->fail('التحويل إلى مشروع يحتاج عرضًا معتمدًا.', 'Only an approved quote can become a project.');
@@ -396,6 +402,9 @@ class OperatingWorkflow
             if ($record->type === 'activities' && $target === 'done') {
                 $changes['data'] = json_encode(array_merge($data, ['completed_at' => now()->format('Y-m-d\TH:i')]), JSON_UNESCAPED_UNICODE);
             }
+            if ($record->type === 'sprints' && $target === 'completed') {
+                $changes['data'] = json_encode(array_merge($data, ['completed_summary' => app(OperatingSprints::class)->releaseUnfinished($record, $user, $input['reason'])]), JSON_UNESCAPED_UNICODE);
+            }
             DB::table('operating_records')->where('id', $record->id)->update($changes);
             $next = DB::table('operating_records')->find($record->id);
             $this->event($next, 'transition', $input['reason'], $before, (array) $next, $user->id);
@@ -526,6 +535,20 @@ class OperatingWorkflow
                 $this->requireFields($data, ['client_acceptance', 'closure']);
                 if (! $this->related('deployments', ['data->project_id' => $record->id, 'status' => 'verified'])) {
                     $this->fail('الإغلاق يحتاج نشرًا متحققًا وتسليمًا.', 'Closure requires verified deployment and handover.');
+                }
+            }
+        }
+        if ($record->type === 'sprints') {
+            $stages = ['planned', 'active', 'completed'];
+            if (array_search($target, $stages, true) !== array_search($record->status, $stages, true) + 1) {
+                $this->fail('انتقل عبر مراحل السبرنت بالترتيب.', 'Follow sprint stages in order.');
+            }
+            if ($target === 'active') {
+                if (! in_array(DB::table('operating_records')->where('id', $data['project_id'])->value('status'), ['execution', 'acceptance', 'launch'], true)) {
+                    $this->fail('تفعيل السبرنت يحتاج مشروعًا في مرحلة التنفيذ.', 'Start a sprint once the project is in execution.');
+                }
+                if (DB::table('operating_records')->where('type', 'sprints')->where('status', 'active')->where('data->project_id', (int) $data['project_id'])->where('id', '!=', $record->id)->exists()) {
+                    $this->fail('للمشروع سبرنت جارٍ بالفعل. أكمله أولًا.', 'This project already has an active sprint. Complete it first.');
                 }
             }
         }

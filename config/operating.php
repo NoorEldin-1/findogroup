@@ -1731,6 +1731,72 @@ return json_decode(<<<'JSON'
         "archived"
       ]
     },
+    "sprints": {
+      "label": {
+        "ar": "السبرنتات",
+        "en": "Sprints"
+      },
+      "group": "delivery",
+      "pages": [],
+      "fields": [
+        {
+          "key": "project_id",
+          "label": {
+            "ar": "المشروع",
+            "en": "Project"
+          },
+          "type": "relation",
+          "required": true,
+          "entity": "projects"
+        },
+        {
+          "key": "goal",
+          "label": {
+            "ar": "هدف السبرنت",
+            "en": "Sprint goal"
+          },
+          "type": "textarea",
+          "required": true
+        },
+        {
+          "key": "start_date",
+          "label": {
+            "ar": "البداية",
+            "en": "Start date"
+          },
+          "type": "date",
+          "required": true
+        },
+        {
+          "key": "end_date",
+          "label": {
+            "ar": "النهاية",
+            "en": "End date"
+          },
+          "type": "date",
+          "required": true
+        },
+        {
+          "key": "capacity_hours",
+          "label": {
+            "ar": "السعة المتاحة بالساعات",
+            "en": "Capacity (hours)"
+          },
+          "type": "number",
+          "required": false
+        }
+      ],
+      "statuses": [
+        "planned",
+        "active",
+        "completed",
+        "archived"
+      ],
+      "immutable": [
+        "completed",
+        "archived"
+      ]
+    },
     "scopes": {
       "label": {
         "ar": "إصدارات النطاق",
@@ -2065,6 +2131,16 @@ return json_decode(<<<'JSON'
           "type": "relation",
           "required": false,
           "entity": "requirements"
+        },
+        {
+          "key": "sprint_id",
+          "label": {
+            "ar": "السبرنت",
+            "en": "Sprint"
+          },
+          "type": "relation",
+          "required": false,
+          "entity": "sprints"
         },
         {
           "key": "assignee_id",

@@ -13,6 +13,11 @@ class OperatingAccess
      */
     public const SALES_SCOPED = ['opportunities', 'activities'];
 
+    /**
+     * Delivery child records a developer or QA sees only for projects they can already see.
+     */
+    public const PROJECT_SCOPED = ['project_members', 'sprints', 'deliverables'];
+
     public function __construct(private OperatingCatalog $catalog) {}
 
     public function employeeId(User $user): ?int
@@ -130,7 +135,7 @@ class OperatingAccess
 
             return $query->whereIn('id', $projects);
         }
-        if (in_array($user->role, ['developer', 'qa'], true) && $type === 'project_members') {
+        if (in_array($user->role, ['developer', 'qa'], true) && in_array($type, self::PROJECT_SCOPED, true)) {
             $members = DB::table('operating_links')->where('field', 'project_id')->whereIn('target_id', $this->query($user, 'projects')->pluck('id'))->pluck('record_id');
 
             return $query->whereIn('id', $members);
