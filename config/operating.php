@@ -958,19 +958,46 @@ return json_decode(<<<'JSON'
           "entity": "scopes"
         },
         {
+          "key": "line_items",
+          "label": {
+            "ar": "بنود العرض",
+            "en": "Line items"
+          },
+          "type": "lines",
+          "required": false
+        },
+        {
+          "key": "valid_until",
+          "label": {
+            "ar": "صالح حتى",
+            "en": "Valid until"
+          },
+          "type": "date",
+          "required": false
+        },
+        {
+          "key": "terms",
+          "label": {
+            "ar": "الشروط والملاحظات",
+            "en": "Terms and notes"
+          },
+          "type": "textarea",
+          "required": false
+        },
+        {
           "key": "price",
           "label": {
-            "ar": "السعر",
-            "en": "Price"
+            "ar": "السعر الإجمالي (يُحسب من البنود إن وُجدت)",
+            "en": "Total price (computed from line items when present)"
           },
           "type": "number",
-          "required": true
+          "required": false
         },
         {
           "key": "discount",
           "label": {
-            "ar": "الخصم",
-            "en": "Discount"
+            "ar": "خصم إضافي على العرض (مبلغ)",
+            "en": "Extra quote discount (amount)"
           },
           "type": "number",
           "required": false

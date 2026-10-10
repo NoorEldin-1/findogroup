@@ -45,6 +45,14 @@ class OperatingWorkflow
         }
         $rules = ['title' => 'required|string|max:500', 'version' => $existing ? 'required|integer|min:1' : 'nullable|integer', 'reason' => 'required|string|max:2000'];
         foreach ($fields as $field) {
+            if ($field['type'] === 'lines') {
+                $rules['data.'.$field['key']] = 'nullable|array|max:100';
+                foreach (['description' => 'nullable|string|max:500', 'kind' => 'nullable|in:product,service', 'quantity' => 'nullable|numeric|min:0|max:1000000', 'unit_price' => 'nullable|numeric|min:0|max:1000000000', 'discount' => 'nullable|numeric|min:0|max:100', 'tax' => 'nullable|numeric|min:0|max:100'] as $column => $columnRule) {
+                    $rules['data.'.$field['key'].'.*.'.$column] = $columnRule;
+                }
+
+                continue;
+            }
             $rule = ($field['required'] ? 'required' : 'nullable').'|';
             $rule .= match ($field['type']) {
                 'relation' => 'integer|exists:operating_records,id',
@@ -63,6 +71,11 @@ class OperatingWorkflow
         $validated = $request->validate($rules);
         $data = $existing ? $this->catalog->data($existing) : [];
         foreach ($fields as $field) {
+            if ($field['type'] === 'lines') {
+                $data[$field['key']] = app(OperatingQuotes::class)->normalizeLines($validated['data'][$field['key']] ?? []);
+
+                continue;
+            }
             $value = $validated['data'][$field['key']] ?? ($field['type'] === 'checkbox' ? false : null);
             if ($field['type'] === 'relation' && $value) {
                 $target = DB::table('operating_records')->find($value);
@@ -168,6 +181,17 @@ class OperatingWorkflow
         if ($type === 'contacts' && ! empty($data['is_primary']) && DB::table('operating_records')->where('type', 'contacts')->where('status', '!=', 'archived')->where('data->client_id', (int) $data['client_id'])->where('data->is_primary', true)->when($id, fn ($query) => $query->where('id', '!=', $id))->exists()) {
             $this->fail('للعميل جهة اتصال أساسية بالفعل. ألغِ تحديدها أولًا.', 'This client already has a primary contact. Unset it first.');
         }
+        if ($type === 'quotes') {
+            if ($data['line_items'] ?? []) {
+                $data['totals'] = app(OperatingQuotes::class)->totals($data['line_items'], (float) ($data['discount'] ?? 0));
+                $data['price'] = $data['totals']['total'];
+            } else {
+                unset($data['totals']);
+                if (empty($data['price'])) {
+                    $this->fail('أضف بنودًا للعرض أو سجّل سعرًا إجماليًا.', 'Add line items or enter a total price.');
+                }
+            }
+        }
         if ($type === 'attendance') {
             if (DB::table('operating_records')->where('type', 'attendance')->where('data->assignee_id', (int) $data['assignee_id'])->where('data->work_date', $data['work_date'])->where('status', '!=', 'archived')->when($id, fn ($query) => $query->where('id', '!=', $id))->exists()) {
                 $this->fail('يوجد سجل حضور لهذا الموظف في هذا اليوم.', 'This employee already has an attendance record for that day.');
@@ -243,6 +267,9 @@ class OperatingWorkflow
                 $id = $existing->id;
             } else {
                 $before = null;
+                if ($type === 'quotes') {
+                    $data['quote_number'] = app(OperatingQuotes::class)->nextNumber();
+                }
                 $id = DB::table('operating_records')->insertGetId(['uuid' => Str::uuid()->toString(), 'type' => $type, 'title' => $validated['title'], 'status' => $type === 'attendance' ? app(OperatingAttendance::class)->initialStatus($data) : $entity['statuses'][0], 'owner_id' => $user->id, 'created_by' => $user->id, 'data' => json_encode($data, JSON_UNESCAPED_UNICODE), 'version' => 1, 'created_at' => now(), 'updated_at' => now()]);
             }
             $record = DB::table('operating_records')->find($id);
@@ -484,9 +511,12 @@ class OperatingWorkflow
             }
         }
         if ($record->type === 'quotes' && $target === 'approved') {
-            $this->requireFields($data, ['scope_id']);
-            if (DB::table('operating_records')->where('id', $data['scope_id'])->value('status') !== 'approved') {
-                $this->fail('العرض التجاري يحتاج نسخة نطاق معتمدة.', 'The commercial quote requires an approved scope version.');
+            if (! empty($data['scope_id'])) {
+                if (DB::table('operating_records')->where('id', $data['scope_id'])->value('status') !== 'approved') {
+                    $this->fail('العرض المربوط بنطاق يحتاج نسخة نطاق معتمدة.', 'A quote linked to a scope requires an approved scope version.');
+                }
+            } elseif (empty($data['line_items'])) {
+                $this->fail('العرض بدون نطاق يحتاج بنودًا مفصلة قبل الاعتماد.', 'A quote without a scope needs line items before approval.');
             }
         }
         if ($record->type === 'contracts' && $target === 'approved') {

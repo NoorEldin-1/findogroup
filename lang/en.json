@@ -748,5 +748,19 @@
   "انتقل إلى": "Moved to",
   "تم الإنشاء": "Created",
   "ملف العميل الكامل": "Full client profile",
-  "للعميل جهة اتصال أساسية بالفعل. ألغِ تحديدها أولًا.": "This client already has a primary contact. Unset it first."
+  "للعميل جهة اتصال أساسية بالفعل. ألغِ تحديدها أولًا.": "This client already has a primary contact. Unset it first.",
+  "الكمية": "Quantity",
+  "سعر الوحدة": "Unit price",
+  "خصم %": "Discount %",
+  "ضريبة %": "Tax %",
+  "الإجمالي": "Total",
+  "منتج": "Product",
+  "حذف البند": "Remove line",
+  "إضافة بند": "Add line",
+  "الإجمالي قبل الخصم": "Subtotal",
+  "خصم البنود": "Line discounts",
+  "الضريبة": "Tax",
+  "الخصم الإضافي": "Extra discount",
+  "الإجمالي النهائي": "Grand total",
+  "الإجمالي النهائي يُحسب ويُحفظ على الخادم عند الحفظ. الصف بلا وصف يُتجاهل.": "The grand total is calculated and stored on the server when you save. Rows without a description are ignored."
 }

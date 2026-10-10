@@ -13,6 +13,9 @@
 <fieldset {{ $canEdit?'':'disabled' }}><label>{{ __('العنوان') }}<input name="title" value="{{ old('title',$record?->title) }}" required maxlength="500"></label><div class="field-grid">
 @foreach($fields as $field)
 @php $key=$field['key'];$value=old('data.'.$key,$data[$key]??null);$readonly=$type==='tasks' && auth()->user()->role==='developer' && !in_array($key,['remaining_hours','implementation_url','build_version','closure_reason'],true); @endphp
+@if($field['type']==='lines')@include('admin.operating.line-items',['key'=>$key,'lines'=>is_array($value)?array_values($value):[],'label'=>$catalog->label($field['label']),'totals'=>$data['totals']??null,'readonly'=>!$canEdit])
+@continue
+@endif
 <label class="{{ $field['type']==='textarea'?'long':'' }}">{{ $catalog->label($field['label']) }} @if($field['required'])<span class="danger">*</span>@endif
 @if($field['type']==='textarea')<textarea name="data[{{ $key }}]" rows="4" {{ $field['required']?'required':'' }} {{ $readonly?'readonly':'' }}>{{ $value }}</textarea>
 @elseif(in_array($field['type'],['relation','user','select'],true))<select name="data[{{ $key }}]" {{ $field['required']?'required':'' }} {{ $readonly?'disabled':'' }}><option value="">— {{ __('اختر') }} —</option>@if($field['type']==='select')@foreach($field['options'] as $option=>$label)<option value="{{ $option }}" @selected((string)$value===(string)$option)>{{ $catalog->label($label) }}</option>@endforeach @else @foreach($choices[$key]??[] as $option)<option value="{{ $option->id }}" @selected((string)$value===(string)$option->id)>#{{ $option->id }} · {{ $option->title }}</option>@endforeach @endif</select>

@@ -63,3 +63,36 @@
     controls.append(selector,apply,add); root.replaceChildren(controls,table,status);
     area.closest('label').classList.add('hidden'); render();
 })();
+
+(() => {
+    document.querySelectorAll('[data-line-items]').forEach((editor) => {
+        const body = editor.querySelector('tbody');
+        const number = (row, name) => parseFloat(row.querySelector(`[data-${name}]`)?.value) || 0;
+        const recalc = () => body.querySelectorAll('[data-line]').forEach((row) => {
+            const net = number(row, 'quantity') * number(row, 'unit-price') * (1 - number(row, 'discount') / 100);
+            row.querySelector('[data-line-total]').textContent = row.querySelector('input')?.value.trim() ? (net * (1 + number(row, 'tax') / 100)).toFixed(2) : '—';
+        });
+        editor.addEventListener('input', recalc);
+        editor.querySelector('[data-add-line]')?.addEventListener('click', () => {
+            const row = body.querySelector('[data-line]:last-child').cloneNode(true);
+            const index = editor.dataset.next++;
+            row.querySelectorAll('input,select').forEach((input) => {
+                input.name = input.name.replace(/\[\d+\]/, `[${index}]`);
+                if (input.tagName === 'INPUT') input.value = input.hasAttribute('data-quantity') ? '1' : '';
+                if (input.tagName === 'SELECT') input.value = 'service';
+            });
+            body.appendChild(row);
+            recalc();
+            row.querySelector('input')?.focus();
+        });
+        editor.addEventListener('click', (event) => {
+            const remove = event.target.closest('[data-remove-line]');
+            if (!remove) return;
+            const row = remove.closest('[data-line]');
+            if (body.querySelectorAll('[data-line]').length > 1) row.remove();
+            else row.querySelectorAll('input').forEach((input) => { input.value = ''; });
+            recalc();
+        });
+        recalc();
+    });
+})();
