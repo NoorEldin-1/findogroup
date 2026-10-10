@@ -115,6 +115,9 @@ class OperatingController extends Controller
         foreach ($fields as $field) {
             if ($field['type'] === 'relation') {
                 $choices[$field['key']] = $this->access->can($request->user(), $field['entity']) ? $this->access->query($request->user(), $field['entity'])->where('status', '!=', 'archived')->orderBy('title')->select('id', 'title', 'status')->get() : collect();
+                if ($field['key'] === 'assignee_id' && $request->user()->role === 'sales' && in_array($type, OperatingAccess::SALES_SCOPED, true)) {
+                    $choices[$field['key']] = $choices[$field['key']]->whereIn('id', array_filter([$this->access->employeeId($request->user()), $record ? ($this->catalog->data($record)['assignee_id'] ?? null) : null]))->values();
+                }
             }
             if ($field['type'] === 'user') {
                 $choices[$field['key']] = $request->user()->role === 'owner' ? DB::table('users')->where('active', true)->select('id', 'name as title')->get() : collect();

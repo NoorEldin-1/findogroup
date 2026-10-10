@@ -54,7 +54,7 @@ class QuoteDocumentTest extends TestCase
         $id = $this->quote('approved');
         $owner = $this->operatingUser('owner');
 
-        $this->actingAs($owner)->get("/admin/operations/projects/create?quote={$id}")->assertOk()->assertSee('Customer portal')->assertSee('2026-12-15')->assertSee('value="Portal quote"', false)->assertSee('<option value="'.$id.'" selected', false);
+        $this->actingAs($owner)->get("/admin/operations/projects/create?quote={$id}")->assertOk()->assertSee('Customer portal')->assertSee('2026-12-15')->assertSee('value="Portal lead"', false)->assertSee('<option value="'.$id.'" selected', false);
         $this->actingAs($owner)->get("/admin/operations/contracts/create?quote={$id}")->assertOk()->assertSee('Portal build');
         $this->actingAs($owner)->get("/admin/operations/record/{$id}")->assertOk()->assertSee("/admin/operations/projects/create?quote={$id}", false)->assertSee("/admin/operations/quotes/{$id}/print", false);
     }

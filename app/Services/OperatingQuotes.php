@@ -115,7 +115,7 @@ class OperatingQuotes
         }
         $contractId = $this->access->can($user, 'contracts') ? $this->access->query($user, 'contracts')->where('status', 'approved')->where('data->quote_id', $quote->id)->value('id') : null;
 
-        return ['title' => $quote->title, 'data' => ['client_id' => $clientId, 'quote_id' => $quote->id, 'contract_id' => $contractId, 'outcome' => trim(($lead['need'] ?? '')."\n".$scope), 'original_due' => $lead['requested_date'] ?? null, 'client_contact' => $client['contact'] ?? ($lead['lead_contact'] ?? null)]];
+        return ['title' => $opportunity?->title ?? $quote->title, 'data' => ['client_id' => $clientId, 'quote_id' => $quote->id, 'contract_id' => $contractId, 'outcome' => trim(($lead['need'] ?? '')."\n".$scope), 'original_due' => $lead['requested_date'] ?? null, 'client_contact' => $client['contact'] ?? ($lead['lead_contact'] ?? null)]];
     }
 
     /**

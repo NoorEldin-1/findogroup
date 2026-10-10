@@ -39,6 +39,7 @@ class LeadsPipelineTest extends TestCase
         $this->actingAs($sales)->post('/admin/operations/opportunities', $this->lead(['assignee_id' => $own]))->assertSessionHasNoErrors();
         $this->actingAs($sales)->post('/admin/operations/opportunities', $this->lead(['assignee_id' => $colleague]))->assertSessionHasErrors('workflow');
         $this->actingAs($this->operatingUser('sales_manager'))->post('/admin/operations/opportunities', $this->lead(['assignee_id' => $colleague]))->assertSessionHasNoErrors();
+        $this->actingAs($sales)->get('/admin/operations/opportunities/create')->assertOk()->assertSee('<option value="'.$own.'"', false)->assertDontSee('<option value="'.$colleague.'"', false);
     }
 
     public function test_proposal_requires_a_client_and_won_requires_a_value(): void
