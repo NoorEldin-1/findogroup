@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class OperatingSales
@@ -107,6 +108,91 @@ class OperatingSales
 
             return $client;
         });
+    }
+
+    /**
+     * Everything linked to a client, each section filtered by the viewer's own access; a null section means the viewer cannot read that type.
+     *
+     * @return array{client: object, data: array<string, mixed>, sections: array<string, Collection<int, object>|null>, outstanding: array<string, float>|null, collected: array<string, float>|null, stats: array{open_leads: int, won_value: array<string, float>, active_projects: int}, timeline: list<array{at: string, title: string, label: string, id: int}>}
+     */
+    public function clientProfile(User $user, object $client): array
+    {
+        $linked = function (string $type, string $field, array $targets) use ($user): ?Collection {
+            if (! $this->access->can($user, $type)) {
+                return null;
+            }
+            if (! $targets) {
+                return collect();
+            }
+            $ids = DB::table('operating_links')->where('field', $field)->whereIn('target_id', $targets)->pluck('record_id');
+
+            return $this->access->query($user, $type)->whereIn('id', $ids)->where('status', '!=', 'archived')->latest('updated_at')->get();
+        };
+        $sections = [];
+        foreach (['contacts', 'opportunities', 'activities', 'contracts', 'projects', 'invoices'] as $type) {
+            $sections[$type] = $linked($type, 'client_id', [$client->id]);
+        }
+        $sections['quotes'] = $linked('quotes', 'opportunity_id', $sections['opportunities']?->pluck('id')->all() ?? []);
+        $sections['receipts'] = $linked('receipts', 'invoice_id', $sections['invoices']?->pluck('id')->all() ?? []);
+        $sections['support'] = $linked('support', 'project_id', $sections['projects']?->pluck('id')->all() ?? []);
+        $outstanding = $collected = null;
+        if ($sections['invoices'] !== null && $sections['receipts'] !== null) {
+            $outstanding = $collected = $paid = [];
+            foreach ($sections['receipts']->whereIn('status', ['active', 'completed']) as $receipt) {
+                $receiptData = $this->catalog->data($receipt);
+                $paid[$receiptData['invoice_id']] = ($paid[$receiptData['invoice_id']] ?? 0) + (float) ($receiptData['amount'] ?? 0);
+            }
+            foreach ($sections['invoices'] as $invoice) {
+                $invoiceData = $this->catalog->data($invoice);
+                $currency = $this->currency($invoiceData);
+                $collected[$currency] = ($collected[$currency] ?? 0) + ($paid[$invoice->id] ?? 0);
+                if (in_array($invoice->status, ['issued', 'part_paid', 'overdue'], true)) {
+                    $outstanding[$currency] = ($outstanding[$currency] ?? 0) + max(0, (float) ($invoiceData['amount'] ?? 0) - ($paid[$invoice->id] ?? 0));
+                }
+            }
+        }
+        $wonValue = [];
+        foreach ($sections['opportunities']?->where('status', 'won') ?? [] as $won) {
+            $wonData = $this->catalog->data($won);
+            $wonValue[$this->currency($wonData)] = ($wonValue[$this->currency($wonData)] ?? 0) + (float) ($wonData['expected_value'] ?? 0);
+        }
+
+        return [
+            'client' => $client,
+            'data' => $this->access->visibleData($user, $client),
+            'sections' => $sections,
+            'outstanding' => $outstanding,
+            'collected' => $collected,
+            'stats' => ['open_leads' => $sections['opportunities']?->whereIn('status', self::OPEN_STAGES)->count() ?? 0, 'won_value' => $wonValue, 'active_projects' => $sections['projects']?->whereNotIn('status', ['closed', 'archived'])->count() ?? 0],
+            'timeline' => $this->timeline($client, $sections),
+        ];
+    }
+
+    /**
+     * Completed activities plus create/status events of records the viewer can already read; no field snapshots are exposed.
+     *
+     * @param  array<string, Collection<int, object>|null>  $sections
+     * @return list<array{at: string, title: string, label: string, id: int}>
+     */
+    private function timeline(object $client, array $sections): array
+    {
+        $timeline = [];
+        foreach ($sections['activities'] ?? [] as $activity) {
+            $activityData = $this->catalog->data($activity);
+            $timeline[] = ['at' => str_replace('T', ' ', $activityData['completed_at'] ?? $activityData['due_at'] ?? (string) $activity->updated_at), 'title' => $activity->title, 'label' => $this->catalog->label($this->catalog->entity('activities')['label']).' · '.$this->catalog->status($activity->status), 'id' => $activity->id];
+        }
+        $recordIds = collect([$client->id]);
+        foreach (['opportunities', 'quotes', 'contracts', 'projects'] as $type) {
+            $recordIds = $recordIds->merge($sections[$type]?->pluck('id') ?? []);
+        }
+        $events = DB::table('operating_events')->join('operating_records as r', 'r.id', '=', 'operating_events.record_id')->whereIn('operating_events.record_id', $recordIds->all())->whereIn('operating_events.action', ['create', 'transition'])->select('operating_events.created_at', 'operating_events.action', 'operating_events.after', 'r.title', 'r.id', 'r.type')->latest('operating_events.id')->limit(40)->get();
+        foreach ($events as $event) {
+            $status = $event->action === 'transition' ? (json_decode($event->after ?? 'null', true)['status'] ?? null) : null;
+            $timeline[] = ['at' => (string) $event->created_at, 'title' => $event->title, 'label' => $this->catalog->label($this->catalog->entity($event->type)['label']).' · '.($status ? __('انتقل إلى').' '.$this->catalog->status($status) : __('تم الإنشاء')), 'id' => $event->id];
+        }
+        usort($timeline, fn (array $a, array $b): int => strcmp($b['at'], $a['at']));
+
+        return array_slice($timeline, 0, 60);
     }
 
     /**

@@ -345,6 +345,60 @@ return json_decode(<<<'JSON'
           "required": false
         },
         {
+          "key": "phone",
+          "label": {
+            "ar": "الهاتف",
+            "en": "Phone"
+          },
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "website",
+          "label": {
+            "ar": "الموقع الإلكتروني",
+            "en": "Website"
+          },
+          "type": "url",
+          "required": false
+        },
+        {
+          "key": "industry",
+          "label": {
+            "ar": "المجال",
+            "en": "Industry"
+          },
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "country",
+          "label": {
+            "ar": "الدولة",
+            "en": "Country"
+          },
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "address",
+          "label": {
+            "ar": "العنوان",
+            "en": "Address"
+          },
+          "type": "textarea",
+          "required": false
+        },
+        {
+          "key": "tax_number",
+          "label": {
+            "ar": "الرقم الضريبي",
+            "en": "Tax number"
+          },
+          "type": "text",
+          "required": false
+        },
+        {
           "key": "notes",
           "label": {
             "ar": "ملاحظات",
@@ -358,6 +412,75 @@ return json_decode(<<<'JSON'
         "draft",
         "active",
         "completed",
+        "archived"
+      ]
+    },
+    "contacts": {
+      "label": {
+        "ar": "جهات اتصال العملاء",
+        "en": "Client contacts"
+      },
+      "group": "sales",
+      "pages": [],
+      "fields": [
+        {
+          "key": "client_id",
+          "label": {
+            "ar": "العميل",
+            "en": "Client"
+          },
+          "type": "relation",
+          "required": true,
+          "entity": "clients"
+        },
+        {
+          "key": "position",
+          "label": {
+            "ar": "المنصب",
+            "en": "Position"
+          },
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "phone",
+          "label": {
+            "ar": "الهاتف",
+            "en": "Phone"
+          },
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "email",
+          "label": {
+            "ar": "البريد الإلكتروني",
+            "en": "Email"
+          },
+          "type": "email",
+          "required": false
+        },
+        {
+          "key": "is_primary",
+          "label": {
+            "ar": "جهة الاتصال الأساسية",
+            "en": "Primary contact"
+          },
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "key": "notes",
+          "label": {
+            "ar": "ملاحظات",
+            "en": "Notes"
+          },
+          "type": "textarea",
+          "required": false
+        }
+      ],
+      "statuses": [
+        "active",
         "archived"
       ]
     },

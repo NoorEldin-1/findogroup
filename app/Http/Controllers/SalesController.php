@@ -35,6 +35,14 @@ class SalesController extends Controller
         return redirect('/admin/operations/record/'.$client->id)->with('success', __('تم تحويل الفرصة إلى عميل وربطها به.'));
     }
 
+    public function clientProfile(int $id, Request $request): Response
+    {
+        $client = $this->access->record($request->user(), $id);
+        abort_unless($client->type === 'clients', 404);
+
+        return $this->view('client-profile', $this->sales->clientProfile($request->user(), $client));
+    }
+
     public function followUps(Request $request): Response
     {
         abort_unless($this->access->can($request->user(), 'activities'), 403);
