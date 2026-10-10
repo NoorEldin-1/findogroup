@@ -101,6 +101,29 @@ class ProjectLifecycleTest extends TestCase
         $this->actingAs($this->operatingUser('delivery'))->get("/admin/operations/record/{$id}")->assertOk()->assertSee('50%')->assertSee('Nour on portal');
     }
 
+    public function test_progress_and_hidden_field_filters_stay_private_to_delivery(): void
+    {
+        $id = $this->project('2026-12-01', 'execution', 'Secret portal');
+        $this->operatingRecord('tasks', 'done', ['project_id' => $id], 'T1');
+        $sales = $this->operatingUser('sales_manager');
+
+        $this->actingAs($sales)->get('/admin/operations/projects/portfolio')->assertOk()->assertSee('Secret portal')->assertDontSee('100%');
+        $this->actingAs($sales)->get('/admin/operations/projects/portfolio?priority=low')->assertOk()->assertSee('Secret portal');
+        $this->actingAs($sales)->get("/admin/operations/record/{$id}")->assertOk()->assertDontSee('100%');
+    }
+
+    public function test_developers_only_see_team_rows_of_their_projects(): void
+    {
+        $developer = $this->operatingUser('developer');
+        $employee = $this->employeeFor($developer);
+        $mine = $this->project();
+        $other = $this->project();
+        $this->operatingRecord('project_members', 'active', ['project_id' => $mine, 'assignee_id' => $employee, 'member_role' => 'developer'], 'Me on mine');
+        $this->operatingRecord('project_members', 'active', ['project_id' => $other, 'assignee_id' => $this->employeeFor($this->operatingUser('developer')), 'member_role' => 'developer'], 'Someone on other');
+
+        $this->assertSame(['Me on mine'], collect($this->actingAs($developer)->getJson('/admin/operations/project_members?format=json')->json('data'))->pluck('title')->all());
+    }
+
     public function test_the_portfolio_lists_projects_with_progress(): void
     {
         $late = $this->project('2026-10-01', 'execution', 'Late portal');

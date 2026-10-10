@@ -39,6 +39,6 @@ class OperatingReports
 
         $members = $this->access->can($user, 'project_members') ? $this->access->query($user, 'project_members')->where('status', 'active')->whereIn('id', DB::table('operating_links')->where('field', 'project_id')->where('target_id', $project->id)->select('record_id'))->orderBy('title')->get() : collect();
 
-        return ['health' => $health, 'hours' => $hours, 'rows' => $rows, 'updated_at' => $project->updated_at, 'progress' => app(OperatingProjects::class)->progress($project), 'members' => $members];
+        return ['health' => $health, 'hours' => $hours, 'rows' => $rows, 'updated_at' => $project->updated_at, 'progress' => $this->access->can($user, 'tasks') ? app(OperatingProjects::class)->progress($project) : null, 'members' => $members];
     }
 }

@@ -130,6 +130,11 @@ class OperatingAccess
 
             return $query->whereIn('id', $projects);
         }
+        if (in_array($user->role, ['developer', 'qa'], true) && $type === 'project_members') {
+            $members = DB::table('operating_links')->where('field', 'project_id')->whereIn('target_id', $this->query($user, 'projects')->pluck('id'))->pluck('record_id');
+
+            return $query->whereIn('id', $members);
+        }
 
         return $query;
     }
