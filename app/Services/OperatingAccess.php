@@ -75,8 +75,8 @@ class OperatingAccess
             if ($user->role === 'qa' && ! in_array($type, ['test_cases', 'defects', 'releases'], true)) {
                 return false;
             }
-            if (in_array($user->role, ['designer', 'video_editor'], true) && $type !== ($user->role === 'designer' ? 'creative_assets' : 'videos')) {
-                return false;
+            if (in_array($user->role, ['designer', 'video_editor'], true)) {
+                return $type === 'team_tasks' || in_array($user->role, config('operating.groups.'.$entity['group'].'.write', []), true) && $type === ($user->role === 'designer' ? 'creative_assets' : 'videos');
             }
         }
 
@@ -195,6 +195,9 @@ class OperatingAccess
         }
         if ($type === 'projects' && in_array($user->role, ['sales', 'sales_manager'], true)) {
             $fields = array_filter($fields, fn (array $field): bool => in_array($field['key'], ['client_id', 'outcome', 'original_due', 'approved_due', 'client_contact'], true));
+        }
+        if ($type === 'team_tasks' && ! in_array($user->role, ['owner', 'marketing', 'media_buyer'], true)) {
+            $fields = array_filter($fields, fn (array $field): bool => in_array($field['key'], ['deliverable_url', 'notes'], true));
         }
         if ($type === 'goals' && ! in_array($user->role, ['owner', 'hr', 'delivery'], true)) {
             $fields = array_filter($fields, fn (array $field): bool => $field['key'] === 'evidence');

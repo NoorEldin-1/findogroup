@@ -202,6 +202,12 @@ class OperatingWorkflow
         if ($type === 'sprints' && $data['end_date'] < $data['start_date']) {
             $this->fail('نهاية السبرنت قبل بدايته.', 'The sprint ends before it starts.');
         }
+        if ($type === 'campaigns' && ! empty($data['start_date']) && ! empty($data['end_date']) && $data['end_date'] < $data['start_date']) {
+            $this->fail('نهاية الحملة قبل بدايتها.', 'The campaign ends before it starts.');
+        }
+        if ($type === 'team_tasks') {
+            $this->limitAssignment($user, $data, $existing, 'marketing');
+        }
         if ($type === 'deliverables') {
             $milestone = DB::table('operating_records')->find($data['milestone_id']);
             $milestoneData = $this->catalog->data($milestone);
@@ -382,18 +388,20 @@ class OperatingWorkflow
     }
 
     /**
-     * Sales reps may keep or take ownership of their own records; assigning work to someone else is a manager decision.
+     * Non-managers may keep or take ownership of their own records; assigning work to someone else is a manager decision.
      *
      * @param  array<string, mixed>  $data
      */
-    private function limitAssignment(User $user, array $data, ?object $existing): void
+    private function limitAssignment(User $user, array $data, ?object $existing, string $managerRole = 'sales_manager'): void
     {
-        if (in_array($user->role, ['owner', 'sales_manager'], true) || empty($data['assignee_id'])) {
+        if (in_array($user->role, ['owner', $managerRole], true) || empty($data['assignee_id'])) {
             return;
         }
         $previous = $existing ? ($this->catalog->data($existing)['assignee_id'] ?? null) : null;
         if ((int) $data['assignee_id'] !== (int) $this->access->employeeId($user) && (int) $data['assignee_id'] !== (int) $previous) {
-            $this->fail('الإسناد لموظف آخر من صلاحية مدير المبيعات.', 'Only a sales manager can assign this to someone else.');
+            $managerRole === 'marketing'
+                ? $this->fail('الإسناد لموظف آخر من صلاحية مدير التسويق.', 'Only the marketing manager can assign this to someone else.')
+                : $this->fail('الإسناد لموظف آخر من صلاحية مدير المبيعات.', 'Only a sales manager can assign this to someone else.');
         }
     }
 
@@ -649,6 +657,14 @@ class OperatingWorkflow
                 $this->requireFields($data, ['client_acceptance', 'accepted_at']);
             }
         }
+        if ($record->type === 'team_tasks') {
+            if ($target === 'done' && ! in_array($user->role, ['owner', 'marketing'], true) && (int) $record->owner_id !== $user->id) {
+                abort(403);
+            }
+            if (in_array($target, ['review', 'done'], true) && empty($data['deliverable_url']) && empty($data['notes'])) {
+                $this->fail('سجّل رابط التسليم أو ملاحظة التنفيذ قبل المراجعة.', 'Add the delivery link or an execution note before review.');
+            }
+        }
         if ($record->type === 'deliverables' && $target === 'delivered' && empty($data['delivery_url']) && empty($data['evidence'])) {
             $this->fail('سجّل رابط التسليم أو دليله.', 'Add the delivery link or evidence.');
         }
@@ -690,10 +706,10 @@ class OperatingWorkflow
         }
         if ($record->type === 'campaigns') {
             if ($target === 'approved') {
-                $this->requireFields($data, ['budget_cap']);
+                $this->requireFields($data, ['budget_cap', 'channel']);
             }
             if ($target === 'running') {
-                $this->requireFields($data, ['landing_url', 'asset_approval', 'tracking_test', 'sales_ready']);
+                $this->requireFields($data, ['landing_url', 'asset_approval', 'tracking_test', 'sales_ready', 'channel']);
                 if (! in_array($record->status, ['approved', 'paused'], true) || ! DB::table('operating_events')->where('record_id', $record->id)->where('after->status', 'approved')->exists() || ($data['spent'] ?? 0) >= $data['budget_cap']) {
                     $this->fail('الحملة تحتاج ميزانية معتمدة وإنفاقًا تحت السقف.', 'The campaign needs approved budget and spend below its cap.');
                 }

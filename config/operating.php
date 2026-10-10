@@ -590,6 +590,16 @@ return json_decode(<<<'JSON'
           }
         },
         {
+          "key": "campaign_id",
+          "label": {
+            "ar": "الحملة المصدر",
+            "en": "Source campaign"
+          },
+          "type": "relation",
+          "required": false,
+          "entity": "campaigns"
+        },
+        {
           "key": "assignee_id",
           "label": {
             "ar": "مندوب المبيعات المسؤول",
@@ -4787,11 +4797,72 @@ return json_decode(<<<'JSON'
         {
           "key": "platform",
           "label": {
-            "ar": "المنصة",
-            "en": "Platform"
+            "ar": "تفاصيل المنصة / الحساب",
+            "en": "Platform / account details"
           },
           "type": "text",
-          "required": true
+          "required": false
+        },
+        {
+          "key": "channel",
+          "label": {
+            "ar": "القناة التسويقية",
+            "en": "Marketing channel"
+          },
+          "type": "select",
+          "required": false,
+          "options": {
+            "facebook": {
+              "ar": "فيسبوك",
+              "en": "Facebook"
+            },
+            "instagram": {
+              "ar": "إنستجرام",
+              "en": "Instagram"
+            },
+            "google": {
+              "ar": "جوجل",
+              "en": "Google"
+            },
+            "tiktok": {
+              "ar": "تيك توك",
+              "en": "TikTok"
+            },
+            "linkedin": {
+              "ar": "لينكدإن",
+              "en": "LinkedIn"
+            },
+            "snapchat": {
+              "ar": "سناب شات",
+              "en": "Snapchat"
+            },
+            "youtube": {
+              "ar": "يوتيوب",
+              "en": "YouTube"
+            },
+            "email": {
+              "ar": "البريد الإلكتروني",
+              "en": "Email"
+            },
+            "website": {
+              "ar": "الموقع / SEO",
+              "en": "Website / SEO"
+            },
+            "other": {
+              "ar": "أخرى",
+              "en": "Other"
+            }
+          }
+        },
+        {
+          "key": "assignee_id",
+          "label": {
+            "ar": "مسؤول الحملة",
+            "en": "Campaign owner"
+          },
+          "type": "relation",
+          "required": false,
+          "entity": "employees"
         },
         {
           "key": "objective",
@@ -4813,6 +4884,14 @@ return json_decode(<<<'JSON'
             "leads": {
               "ar": "استفسارات",
               "en": "Leads"
+            },
+            "engagement": {
+              "ar": "تفاعل",
+              "en": "Engagement"
+            },
+            "sales": {
+              "ar": "مبيعات / تحويلات",
+              "en": "Sales / conversions"
             }
           }
         },
@@ -4841,6 +4920,15 @@ return json_decode(<<<'JSON'
             "en": "Current spend"
           },
           "type": "number",
+          "required": false
+        },
+        {
+          "key": "currency",
+          "label": {
+            "ar": "العملة",
+            "en": "Currency"
+          },
+          "type": "text",
           "required": false
         },
         {
@@ -5038,6 +5126,107 @@ return json_decode(<<<'JSON'
         "completed",
         "archived"
       ]
+    },
+    "team_tasks": {
+      "label": {
+        "ar": "مهام فريق التسويق",
+        "en": "Marketing team tasks"
+      },
+      "group": "marketing",
+      "pages": [],
+      "fields": [
+        {
+          "key": "campaign_id",
+          "label": {
+            "ar": "الحملة",
+            "en": "Campaign"
+          },
+          "type": "relation",
+          "required": false,
+          "entity": "campaigns"
+        },
+        {
+          "key": "assignee_id",
+          "label": {
+            "ar": "المسؤول",
+            "en": "Assignee"
+          },
+          "type": "relation",
+          "required": true,
+          "entity": "employees"
+        },
+        {
+          "key": "priority",
+          "label": {
+            "ar": "الأولوية",
+            "en": "Priority"
+          },
+          "type": "select",
+          "required": false,
+          "options": {
+            "low": {
+              "ar": "منخفضة",
+              "en": "Low"
+            },
+            "medium": {
+              "ar": "متوسطة",
+              "en": "Medium"
+            },
+            "high": {
+              "ar": "عالية",
+              "en": "High"
+            },
+            "critical": {
+              "ar": "حرجة",
+              "en": "Critical"
+            }
+          }
+        },
+        {
+          "key": "due_date",
+          "label": {
+            "ar": "الموعد",
+            "en": "Due date"
+          },
+          "type": "date",
+          "required": true
+        },
+        {
+          "key": "description",
+          "label": {
+            "ar": "المطلوب",
+            "en": "What is needed"
+          },
+          "type": "textarea",
+          "required": true
+        },
+        {
+          "key": "deliverable_url",
+          "label": {
+            "ar": "رابط التسليم",
+            "en": "Delivery link"
+          },
+          "type": "url",
+          "required": false
+        },
+        {
+          "key": "notes",
+          "label": {
+            "ar": "ملاحظات التنفيذ",
+            "en": "Execution notes"
+          },
+          "type": "textarea",
+          "required": false
+        }
+      ],
+      "statuses": [
+        "backlog",
+        "in_progress",
+        "review",
+        "done",
+        "archived"
+      ],
+      "assigned": true
     },
     "employees": {
       "label": {
