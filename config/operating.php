@@ -380,8 +380,137 @@ return json_decode(<<<'JSON'
             "en": "Client"
           },
           "type": "relation",
-          "required": true,
+          "required": false,
           "entity": "clients"
+        },
+        {
+          "key": "lead_company",
+          "label": {
+            "ar": "شركة العميل المحتمل",
+            "en": "Lead company"
+          },
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "lead_contact",
+          "label": {
+            "ar": "اسم جهة الاتصال",
+            "en": "Contact name"
+          },
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "lead_phone",
+          "label": {
+            "ar": "الهاتف",
+            "en": "Phone"
+          },
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "lead_email",
+          "label": {
+            "ar": "البريد الإلكتروني",
+            "en": "Email"
+          },
+          "type": "email",
+          "required": false
+        },
+        {
+          "key": "lead_source",
+          "label": {
+            "ar": "مصدر الفرصة",
+            "en": "Lead source"
+          },
+          "type": "select",
+          "required": true,
+          "options": {
+            "website": {
+              "ar": "الموقع",
+              "en": "Website"
+            },
+            "facebook": {
+              "ar": "فيسبوك",
+              "en": "Facebook"
+            },
+            "instagram": {
+              "ar": "إنستجرام",
+              "en": "Instagram"
+            },
+            "google": {
+              "ar": "جوجل",
+              "en": "Google"
+            },
+            "linkedin": {
+              "ar": "لينكدإن",
+              "en": "LinkedIn"
+            },
+            "referral": {
+              "ar": "ترشيح",
+              "en": "Referral"
+            },
+            "cold_call": {
+              "ar": "اتصال مباشر",
+              "en": "Cold call"
+            },
+            "event": {
+              "ar": "فعالية",
+              "en": "Event"
+            },
+            "other": {
+              "ar": "أخرى",
+              "en": "Other"
+            }
+          }
+        },
+        {
+          "key": "assignee_id",
+          "label": {
+            "ar": "مندوب المبيعات المسؤول",
+            "en": "Sales owner"
+          },
+          "type": "relation",
+          "required": false,
+          "entity": "employees"
+        },
+        {
+          "key": "expected_value",
+          "label": {
+            "ar": "القيمة المتوقعة",
+            "en": "Expected value"
+          },
+          "type": "number",
+          "required": false
+        },
+        {
+          "key": "currency",
+          "label": {
+            "ar": "العملة",
+            "en": "Currency"
+          },
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "probability",
+          "label": {
+            "ar": "احتمالية الفوز %",
+            "en": "Win probability %"
+          },
+          "type": "number",
+          "required": false
+        },
+        {
+          "key": "expected_close",
+          "label": {
+            "ar": "تاريخ الإغلاق المتوقع",
+            "en": "Expected close"
+          },
+          "type": "date",
+          "required": false
         },
         {
           "key": "need",
@@ -458,11 +587,11 @@ return json_decode(<<<'JSON'
         {
           "key": "source",
           "label": {
-            "ar": "مصدر الفرصة",
-            "en": "Lead source"
+            "ar": "تفاصيل المصدر",
+            "en": "Source details"
           },
           "type": "text",
-          "required": true
+          "required": false
         },
         {
           "key": "next_action",

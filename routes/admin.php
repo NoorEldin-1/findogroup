@@ -4,6 +4,7 @@ use App\Http\Controllers\AdminController as A;
 use App\Http\Controllers\AttendanceController as T;
 use App\Http\Controllers\NotificationController as N;
 use App\Http\Controllers\OperatingController as O;
+use App\Http\Controllers\SalesController as S;
 use App\Http\Middleware\AdminAccess;
 use App\Http\Middleware\AdminLocale;
 use Illuminate\Support\Facades\Route;
@@ -37,6 +38,8 @@ Route::middleware(AdminLocale::class)->group(function () {
         Route::post('/operations/attendance/check-out', [T::class, 'checkOut'])->middleware('throttle:10,1');
         Route::get('/operations/attendance/board', [T::class, 'board']);
         Route::get('/operations/attendance/monthly', [T::class, 'monthly']);
+        Route::get('/operations/opportunities/pipeline', [S::class, 'pipeline']);
+        Route::post('/operations/opportunities/{id}/convert-client', [S::class, 'convertLead'])->whereNumber('id');
         Route::get('/operations/{type}/create', [O::class, 'create']);
         Route::get('/operations/{type}', [O::class, 'listing']);
         Route::post('/operations/{type}', [O::class, 'store']);

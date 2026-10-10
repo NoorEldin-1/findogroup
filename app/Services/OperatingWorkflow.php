@@ -134,7 +134,7 @@ class OperatingWorkflow
         if ($type === 'budgets' && ($data['target_margin'] ?? 0) >= 100) {
             $this->fail('الهامش المستهدف يجب أن يكون أقل من 100%.', 'Target margin must be below 100%.');
         }
-        foreach (['target_margin', 'weight'] as $percentage) {
+        foreach (['target_margin', 'weight', 'probability', 'allocation_percent'] as $percentage) {
             if (isset($data[$percentage]) && $data[$percentage] > 100) {
                 $this->fail('النسبة لا تتجاوز 100%.', 'Percentages must not exceed 100%.');
             }
@@ -146,6 +146,12 @@ class OperatingWorkflow
         }
         if ($type === 'data_batches' && ($data['valid_rows'] ?? 0) > ($data['sample_size'] ?? 0)) {
             $this->fail('السجلات الصحيحة تتجاوز حجم العينة.', 'Valid rows cannot exceed the sample size.');
+        }
+        if ($type === 'opportunities') {
+            if (empty($data['client_id']) && empty($data['lead_company'])) {
+                $this->fail('اربط الفرصة بعميل أو سجّل اسم شركة العميل المحتمل.', 'Link a client or enter the lead company.');
+            }
+            $this->limitAssignment($user, $data, $existing);
         }
         if ($type === 'attendance') {
             if (DB::table('operating_records')->where('type', 'attendance')->where('data->assignee_id', (int) $data['assignee_id'])->where('data->work_date', $data['work_date'])->where('status', '!=', 'archived')->when($id, fn ($query) => $query->where('id', '!=', $id))->exists()) {
@@ -257,6 +263,22 @@ class OperatingWorkflow
         }
 
         return round($score, 2);
+    }
+
+    /**
+     * Sales reps may keep or take ownership of their own records; assigning work to someone else is a manager decision.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    private function limitAssignment(User $user, array $data, ?object $existing): void
+    {
+        if (in_array($user->role, ['owner', 'sales_manager'], true) || empty($data['assignee_id'])) {
+            return;
+        }
+        $previous = $existing ? ($this->catalog->data($existing)['assignee_id'] ?? null) : null;
+        if ((int) $data['assignee_id'] !== (int) $this->access->employeeId($user) && (int) $data['assignee_id'] !== (int) $previous) {
+            $this->fail('الإسناد لموظف آخر من صلاحية مدير المبيعات.', 'Only a sales manager can assign this to someone else.');
+        }
     }
 
     private function requireFields(array $data, array $fields): void
@@ -551,8 +573,16 @@ class OperatingWorkflow
                 $this->requireFields($data, ['source_url', 'final_url', 'rights', 'audio_checked', 'subtitles_checked', 'export_checked']);
             }
         }
-        if ($record->type === 'opportunities' && in_array($target, ['lost', 'deferred', 'unsuitable'], true)) {
-            $this->requireFields($data, ['reason']);
+        if ($record->type === 'opportunities') {
+            if (in_array($target, ['lost', 'deferred', 'unsuitable'], true)) {
+                $this->requireFields($data, ['reason']);
+            }
+            if (in_array($target, ['proposal', 'negotiation', 'won'], true) && empty($data['client_id'])) {
+                $this->fail('حوّل العميل المحتمل إلى عميل قبل العرض أو التفاوض أو الفوز.', 'Convert the lead to a client before proposal, negotiation or win.');
+            }
+            if ($target === 'won') {
+                $this->requireFields($data, ['expected_value']);
+            }
         }
         if ($record->type === 'evaluations') {
             if (! in_array($user->role, ['owner', 'hr', 'delivery'], true) && ! in_array($target, ['self_review', 'appealed'], true)) {
