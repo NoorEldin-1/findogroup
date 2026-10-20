@@ -117,3 +117,34 @@
         form.querySelector('[data-crm-columns-reset]')?.addEventListener('click', () => localStorage.removeItem(key));
     } catch (error) { /* storage blocked: columns simply fall back to the defaults */ }
 })();
+(() => {
+    const board = document.querySelector('[data-pipeline-dnd]');
+    if (!board) return;
+    const token = document.querySelector('meta[name="csrf-token"]')?.content;
+    let dragged = null;
+    board.addEventListener('dragstart', (event) => {
+        dragged = event.target.closest('.pipeline-card');
+        if (dragged) event.dataTransfer.setData('text/plain', dragged.dataset.id);
+    });
+    board.querySelectorAll('section[data-stage]').forEach((column) => {
+        column.addEventListener('dragover', (event) => { if (dragged) { event.preventDefault(); column.classList.add('drop-target'); } });
+        column.addEventListener('dragleave', () => column.classList.remove('drop-target'));
+        column.addEventListener('drop', async (event) => {
+            event.preventDefault();
+            column.classList.remove('drop-target');
+            const card = dragged;
+            dragged = null;
+            if (!card || card.closest('section') === column) return;
+            const reason = prompt(board.dataset.confirm);
+            if (!reason) return;
+            const response = await fetch('/admin/operations/record/' + card.dataset.id + '/transition', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': token},
+                body: JSON.stringify({target: column.dataset.stage, version: Number(card.dataset.version), reason}),
+            });
+            if (response.ok) { location.reload(); return; }
+            const body = await response.json().catch(() => ({}));
+            alert(body.errors?.workflow?.[0] || body.errors?.target?.[0] || body.message || response.status);
+        });
+    });
+})();

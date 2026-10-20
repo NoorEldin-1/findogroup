@@ -120,4 +120,69 @@ class OperatingLeads
 
         return $this->spreadsheet->xlsx($sheet, 'Leads', app()->getLocale() === 'ar');
     }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function profile(User $user, object $lead): array
+    {
+        $data = $this->access->visibleData($user, $lead);
+        $titles = $this->sales->titles(array_values(array_filter([$data['client_id'] ?? null, $data['campaign_id'] ?? null, $data['assignee_id'] ?? null])));
+        $linkedIds = DB::table('operating_links')->where('field', 'opportunity_id')->where('target_id', $lead->id)->pluck('record_id');
+        $activities = $this->access->can($user, 'activities') ? $this->access->query($user, 'activities')->whereIn('id', $linkedIds)->where('status', '!=', 'archived')->get() : collect();
+        $quotes = $this->access->can($user, 'quotes') ? $this->access->query($user, 'quotes')->whereIn('id', $linkedIds)->where('status', '!=', 'archived')->latest('updated_at')->get() : collect();
+        $activityFields = collect($this->catalog->entity('activities')['fields'])->keyBy('key');
+        $optionLabel = fn (string $field, ?string $value): ?string => $value && isset($activityFields[$field]['options'][$value]) ? $this->catalog->label($activityFields[$field]['options'][$value]) : null;
+        $assigneeTitles = $this->sales->titles($activities->map(fn (object $activity): mixed => $this->catalog->data($activity)['assignee_id'] ?? null)->filter()->unique()->values()->all());
+
+        $events = DB::table('operating_events')->leftJoin('users', 'users.id', '=', 'operating_events.user_id')->where('record_id', $lead->id)->whereIn('action', ['create', 'transition'])->select('operating_events.action', 'operating_events.after', 'operating_events.reason', 'operating_events.created_at', 'users.name')->orderBy('operating_events.id')->get();
+        $journey = [];
+        foreach ($events as $event) {
+            $status = json_decode($event->after ?? 'null', true)['status'] ?? null;
+            if ($status) {
+                $journey[] = ['status' => $status, 'label' => $this->catalog->status($status), 'at' => substr((string) $event->created_at, 0, 16), 'by' => $event->name, 'reason' => $event->reason];
+            }
+        }
+
+        $timeline = [];
+        foreach ($activities->where('status', 'done') as $activity) {
+            $activityData = $this->catalog->data($activity);
+            $timeline[] = ['at' => str_replace('T', ' ', $activityData['completed_at'] ?? $activityData['due_at'] ?? ''), 'kind' => $optionLabel('kind', $activityData['kind'] ?? null) ?? __('نشاط'), 'title' => trim(($optionLabel('result', $activityData['result'] ?? null) ?? '').' '), 'body' => $activityData['outcome'] ?? null, 'by' => $assigneeTitles[$activityData['assignee_id'] ?? 0] ?? null];
+        }
+        foreach (DB::table('operating_comments')->join('users', 'users.id', '=', 'operating_comments.user_id')->where('record_id', $lead->id)->select('operating_comments.body', 'operating_comments.created_at', 'users.name')->get() as $comment) {
+            $timeline[] = ['at' => substr((string) $comment->created_at, 0, 16), 'kind' => __('ملاحظة داخلية'), 'title' => '', 'body' => $comment->body, 'by' => $comment->name];
+        }
+        foreach ($journey as $step) {
+            $timeline[] = ['at' => $step['at'], 'kind' => __('تغيير المرحلة'), 'title' => $step['label'], 'body' => $step['reason'], 'by' => $step['by']];
+        }
+        usort($timeline, fn (array $a, array $b): int => strcmp($b['at'], $a['at']));
+
+        $contacts = $activities->where('status', 'done')->filter(fn (object $activity): bool => in_array($this->catalog->data($activity)['kind'] ?? null, OperatingCrm::CONTACT_KINDS, true));
+        $lastContact = $contacts->map(fn (object $activity): string => $this->catalog->data($activity)['completed_at'] ?? '')->filter()->max() ?: ($data['first_contact_at'] ?? null);
+        $upcoming = $activities->where('status', 'planned')->sortBy(fn (object $activity): string => $this->catalog->data($activity)['due_at'] ?? '')->values();
+        $nextActivity = $upcoming->first();
+        $stageSince = collect($journey)->last()['at'] ?? substr((string) $lead->created_at, 0, 16);
+        $entity = $this->catalog->entity('opportunities');
+
+        return [
+            'lead' => $lead, 'data' => $data, 'fields' => $this->access->fields($user, 'opportunities', $lead),
+            'titles' => ['client' => $titles[$data['client_id'] ?? 0] ?? null, 'campaign' => $titles[$data['campaign_id'] ?? 0] ?? null, 'assignee' => $titles[$data['assignee_id'] ?? 0] ?? null],
+            'sla' => $this->crm->slaState($lead), 'slaOpen' => $this->crm->openAlert($lead), 'responseHours' => $this->crm->responseHours($lead),
+            'journey' => $journey, 'timeline' => $timeline, 'upcoming' => $upcoming, 'quotes' => $quotes,
+            'attachments' => DB::table('operating_attachments')->where('record_id', $lead->id)->latest('id')->get(),
+            'stats' => ['last_contact' => $lastContact ? str_replace('T', ' ', $lastContact) : null, 'days_in_stage' => (int) floor(abs(now()->diffInDays($stageSince))), 'next' => $nextActivity ? str_replace('T', ' ', $this->catalog->data($nextActivity)['due_at'] ?? '').' · '.$nextActivity->title : ($data['next_action'] ?? null)],
+            'canWrite' => $this->access->can($user, 'opportunities', 'write'), 'isManager' => $this->crm->isManager($user),
+            'nextStages' => collect($entity['statuses'])->reject(fn (string $status): bool => in_array($status, [$lead->status, 'archived'], true))->mapWithKeys(fn (string $status): array => [$status => $this->catalog->status($status)])->all(),
+        ];
+    }
+
+    /**
+     * Reassignment by a manager goes through the normal save so the change, its note and the new owner's notification are all recorded.
+     */
+    public function handover(User $user, object $lead, int $employeeId, string $note): object
+    {
+        abort_unless($this->crm->isManager($user), 403);
+
+        return $this->sales->saveAs($user, 'opportunities', ['title' => $lead->title, 'version' => $lead->version, 'reason' => __('تسليم العميل').': '.$note, 'data' => array_merge($this->catalog->data($lead), ['assignee_id' => $employeeId])], $lead->id);
+    }
 }

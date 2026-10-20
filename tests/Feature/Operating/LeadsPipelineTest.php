@@ -97,4 +97,23 @@ class LeadsPipelineTest extends TestCase
         $this->assertSame(2000.0, $pipeline['columns']['proposal']['value']['USD']);
         $this->actingAs($owner)->get('/admin/operations/opportunities/pipeline')->assertOk()->assertSee('2,000.00')->assertSee('1,000.00 USD');
     }
+
+    public function test_the_board_has_a_meeting_column_and_draggable_cards_that_open_the_profile(): void
+    {
+        $manager = $this->operatingUser('sales_manager');
+        $id = $this->operatingRecord('opportunities', 'meeting', ['lead_company' => 'Nile Foods'], 'Nile Foods');
+
+        $this->actingAs($manager)->get('/admin/operations/opportunities/pipeline')->assertOk()
+            ->assertSee('data-stage="meeting"', false)
+            ->assertSee('href="/admin/operations/crm/leads/'.$id.'"', false)
+            ->assertSee('data-version="1"', false)
+            ->assertSee('draggable="true"', false);
+    }
+
+    public function test_cards_are_not_draggable_for_read_only_roles(): void
+    {
+        $this->operatingRecord('opportunities', 'new', ['lead_company' => 'Nile Foods'], 'Nile Foods');
+
+        $this->actingAs($this->operatingUser('delivery'))->get('/admin/operations/opportunities/pipeline')->assertOk()->assertDontSee('draggable="true"', false);
+    }
 }

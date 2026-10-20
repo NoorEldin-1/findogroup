@@ -63,6 +63,32 @@ class CrmController extends Controller
         return response($binary, 200, ['Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'Content-Disposition' => 'attachment; filename="leads-'.now()->format('Ymd-His').'.xlsx"']);
     }
 
+    public function lead(int $id, Request $request): Response
+    {
+        $this->authorizeCrm($request);
+        $lead = $this->access->record($request->user(), $id);
+        abort_unless($lead->type === 'opportunities', 404);
+        $activityFields = collect($this->catalog->entity('activities')['fields'])->keyBy('key');
+
+        return $this->view('crm-lead', $this->leads->profile($request->user(), $lead) + [
+            'kinds' => array_map(fn (array $label): string => $this->catalog->label($label), (array) $activityFields['kind']['options']),
+            'results' => array_map(fn (array $label): string => $this->catalog->label($label), (array) $activityFields['result']['options']),
+            'employees' => $this->crm->isManager($request->user()) ? $this->access->query($request->user(), 'employees')->where('status', 'active')->orderBy('title')->pluck('title', 'id') : collect(),
+        ]);
+    }
+
+    public function handover(int $id, Request $request): Response
+    {
+        $this->authorizeCrm($request, manager: true);
+        $lead = $this->access->record($request->user(), $id, 'write');
+        abort_unless($lead->type === 'opportunities', 404);
+        $input = $request->validate(['assignee_id' => 'required|integer', 'note' => 'required|string|max:2000']);
+        abort_unless(DB::table('operating_records')->where('type', 'employees')->where('status', 'active')->where('id', $input['assignee_id'])->exists(), 422);
+        $this->leads->handover($request->user(), $lead, (int) $input['assignee_id'], $input['note']);
+
+        return back()->with('success', __('تم تسليم العميل للزميل.'));
+    }
+
     public function logActivity(int $id, Request $request): Response
     {
         $this->authorizeCrm($request);

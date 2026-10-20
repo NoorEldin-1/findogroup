@@ -110,6 +110,7 @@ class OperatingSales
             $columns[$record->status]['value'][$currency] = ($columns[$record->status]['value'][$currency] ?? 0) + $value;
             $columns[$record->status]['cards'][] = [
                 'id' => $record->id,
+                'version' => $record->version,
                 'title' => $record->title,
                 'company' => $titles[$data['client_id'] ?? 0] ?? ($data['lead_company'] ?? null),
                 'assignee' => $titles[$data['assignee_id'] ?? 0] ?? null,
