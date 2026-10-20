@@ -181,6 +181,12 @@ class OperatingWorkflow
                 $since = substr((string) $duplicate->created_at, 0, 10);
                 $this->fail('هذا الرقم مسجل بالفعل في الفرصة "'.$duplicate->title.'" منذ '.$since.'.', 'This phone is already registered on lead "'.$duplicate->title.'" since '.$since.'.');
             }
+            if (! $existing) {
+                if (empty($data['assignee_id'])) {
+                    $data['assignee_id'] = $crm->isManager($user) ? $crm->nextAssignee() : $this->access->employeeId($user);
+                }
+                $data['sla_due_at'] = $crm->slaDueAt(now());
+            }
         }
         if ($type === 'activities') {
             if (empty($data['client_id']) && empty($data['opportunity_id'])) {

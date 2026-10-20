@@ -3,6 +3,9 @@
 namespace App\Services;
 
 use App\Models\User;
+use App\Notifications\OperatingAlert;
+use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 
 class OperatingCrm
@@ -32,11 +35,151 @@ class OperatingCrm
      */
     public const AUDITED_TYPES = ['opportunities', 'activities', 'clients', 'contacts', 'quotes', 'contracts', 'campaigns'];
 
-    public function __construct(private OperatingCatalog $catalog, private OperatingWorkflow $workflow) {}
+    public const DEFAULTS = ['sla_enabled' => true, 'sla_hours' => 24, 'round_robin_enabled' => false, 'round_robin_pool' => []];
+
+    public function __construct(private OperatingCatalog $catalog, private OperatingWorkflow $workflow, private OperatingNotifier $notifier) {}
 
     public function isManager(User $user): bool
     {
         return in_array($user->role, self::MANAGERS, true);
+    }
+
+    /**
+     * @return array{sla_enabled: bool, sla_hours: int, round_robin_enabled: bool, round_robin_pool: list<int>}
+     */
+    public function settings(): array
+    {
+        $saved = DB::table('operating_settings')->where('key', 'crm')->value('data');
+        $settings = array_replace(self::DEFAULTS, $saved ? json_decode($saved, true) : []);
+
+        return ['sla_enabled' => (bool) $settings['sla_enabled'], 'sla_hours' => (int) $settings['sla_hours'], 'round_robin_enabled' => (bool) $settings['round_robin_enabled'], 'round_robin_pool' => array_values(array_map('intval', (array) $settings['round_robin_pool']))];
+    }
+
+    public function settingsVersion(): int
+    {
+        return (int) (DB::table('operating_settings')->where('key', 'crm')->value('version') ?? 0);
+    }
+
+    /**
+     * @param  array{version: int, sla_enabled?: bool|string|null, sla_hours: int, round_robin_enabled?: bool|string|null, round_robin_pool?: list<int|string>|null, reason: string}  $input
+     */
+    public function saveSettings(User $user, array $input): void
+    {
+        abort_unless($this->isManager($user), 403);
+        $pool = array_values(array_unique(array_map('intval', $input['round_robin_pool'] ?? [])));
+        if ($pool && DB::table('operating_records')->where('type', 'employees')->where('status', 'active')->whereIn('id', $pool)->count() !== count($pool)) {
+            $this->workflow->fail('قائمة التوزيع تقبل الموظفين النشطين فقط.', 'The rotation only accepts active employees.');
+        }
+        $data = ['sla_enabled' => (bool) ($input['sla_enabled'] ?? false), 'sla_hours' => (int) $input['sla_hours'], 'round_robin_enabled' => (bool) ($input['round_robin_enabled'] ?? false), 'round_robin_pool' => $pool];
+        DB::transaction(function () use ($input, $data, $user): void {
+            $old = DB::table('operating_settings')->where('key', 'crm')->lockForUpdate()->first();
+            if ((int) ($old?->version ?? 0) !== (int) $input['version']) {
+                $this->workflow->fail('تم تعديل الإعدادات في نافذة أخرى. حدّث الصفحة.', 'Settings changed in another window. Refresh first.');
+            }
+            DB::table('operating_settings')->updateOrInsert(['key' => 'crm'], ['data' => json_encode($data), 'version' => ($old?->version ?? 0) + 1, 'created_at' => $old?->created_at ?? now(), 'updated_at' => now()]);
+            $this->workflow->event(null, 'configure_crm', $input['reason'], $old ? json_decode($old->data, true) : null, $data, $user->id);
+        });
+    }
+
+    /**
+     * Next active employee in the rotation; the cursor lives in its own settings row so it never bumps the settings version.
+     */
+    public function nextAssignee(): ?int
+    {
+        $settings = $this->settings();
+        if (! $settings['round_robin_enabled'] || ! $settings['round_robin_pool']) {
+            return null;
+        }
+        $active = DB::table('operating_records')->where('type', 'employees')->where('status', 'active')->whereIn('id', $settings['round_robin_pool'])->pluck('id')->map(fn ($id): int => (int) $id)->all();
+        $pool = array_values(array_filter($settings['round_robin_pool'], fn (int $id): bool => in_array($id, $active, true)));
+        if (! $pool) {
+            return null;
+        }
+
+        return DB::transaction(function () use ($pool): int {
+            $row = DB::table('operating_settings')->where('key', 'crm_round_robin')->lockForUpdate()->first();
+            $index = array_search((int) ($row ? (json_decode($row->data, true)['last'] ?? 0) : 0), $pool, true);
+            $next = $pool[$index === false ? 0 : ($index + 1) % count($pool)];
+            DB::table('operating_settings')->updateOrInsert(['key' => 'crm_round_robin'], ['data' => json_encode(['last' => $next]), 'version' => ($row?->version ?? 0) + 1, 'created_at' => $row?->created_at ?? now(), 'updated_at' => now()]);
+
+            return $next;
+        });
+    }
+
+    public function slaDueAt(CarbonInterface $from): ?string
+    {
+        $settings = $this->settings();
+
+        return $settings['sla_enabled'] ? $from->copy()->addHours($settings['sla_hours'])->format('Y-m-d\TH:i') : null;
+    }
+
+    /**
+     * pending: still inside the deadline; met / late: first contact before / after it; breached: open, never contacted, deadline passed.
+     */
+    public function slaState(object $lead, ?string $now = null): ?string
+    {
+        $data = $this->catalog->data($lead);
+        $due = $data['sla_due_at'] ?? null;
+        if (! $due) {
+            return null;
+        }
+        if (! empty($data['first_contact_at'])) {
+            return $data['first_contact_at'] <= $due ? 'met' : 'late';
+        }
+        if (! in_array($lead->status, OperatingSales::OPEN_STAGES, true)) {
+            return null;
+        }
+
+        return ($now ?? now()->format('Y-m-d\TH:i')) > $due ? 'breached' : 'pending';
+    }
+
+    public function openAlert(object $lead, ?string $now = null): bool
+    {
+        return $this->slaState($lead, $now) === 'breached' && empty($this->catalog->data($lead)['sla_dismissed_at']);
+    }
+
+    public function responseHours(object $lead): ?float
+    {
+        $first = $this->catalog->data($lead)['first_contact_at'] ?? null;
+
+        return $first ? round(max(0, CarbonImmutable::parse($lead->created_at)->diffInMinutes(CarbonImmutable::parse($first))) / 60, 1) : null;
+    }
+
+    /**
+     * One alert per breached lead; the marker keeps reruns of the schedule from repeating it.
+     */
+    public function sendSlaAlerts(CarbonImmutable $now): int
+    {
+        $current = $now->format('Y-m-d\TH:i');
+        $sent = 0;
+        foreach (DB::table('operating_records')->where('type', 'opportunities')->whereIn('status', OperatingSales::OPEN_STAGES)->where('data->sla_due_at', '<', $current)->get() as $lead) {
+            $data = $this->catalog->data($lead);
+            if (! empty($data['first_contact_at']) || ! empty($data['sla_breached_at'])) {
+                continue;
+            }
+            $assignee = (int) ($data['assignee_id'] ?? 0);
+            $this->notifier->send([$assignee ? $this->notifier->employeeUser($assignee) : null, $assignee ? $this->notifier->managerUser($assignee) : null, ...$this->notifier->roles(['sales_manager'])], new OperatingAlert(
+                'crm_sla',
+                ['ar' => 'تجاوز مهلة التواصل', 'en' => 'Lead response SLA breached'],
+                ['ar' => 'لم يتم التواصل مع "'.$lead->title.'" قبل '.str_replace('T', ' ', $data['sla_due_at']).'.', 'en' => '"'.$lead->title.'" was not contacted before '.str_replace('T', ' ', $data['sla_due_at']).'.'],
+                '/admin/operations/crm/leads/'.$lead->id,
+            ));
+            $this->workflow->mark($lead, 'sla_breached_at', $current, 'Lead response SLA breached');
+            $sent++;
+        }
+
+        return $sent;
+    }
+
+    public function dismissSla(User $user, int $leadId, string $reason): void
+    {
+        abort_unless($this->isManager($user), 403);
+        $lead = DB::table('operating_records')->where('type', 'opportunities')->find($leadId);
+        abort_unless($lead, 404);
+        if (! $this->openAlert($lead)) {
+            $this->workflow->fail('لا يوجد تنبيه SLA مفتوح لهذا العميل.', 'This lead has no open SLA alert.');
+        }
+        $this->workflow->mark($lead, 'sla_dismissed_at', now()->format('Y-m-d\TH:i'), 'SLA alert dismissed: '.$reason);
     }
 
     /**

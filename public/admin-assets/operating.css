@@ -18,3 +18,5 @@ fieldset{border:0;padding:0;margin:0;min-width:0}fieldset:disabled{opacity:.85}.
 .progress{height:8px;min-width:80px;border-radius:999px;background:hsl(var(--muted));overflow:hidden}.progress i{display:block;height:100%;border-radius:inherit;background:hsl(var(--primary))}.progress-row{display:grid;gap:6px;margin:12px 0}
 label.checkbox{display:flex;gap:8px;align-items:center;padding:6px 0}
 .inline-stats{flex-wrap:wrap;row-gap:8px}
+.check-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:.4rem;border:1px solid var(--admin-border);border-radius:12px;padding:.75rem;margin:.5rem 0}
+.check-grid legend{padding:0 .4rem;font-weight:600}

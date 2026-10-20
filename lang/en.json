@@ -978,5 +978,20 @@
   "المخزون عند حد إعادة الطلب أو أقل. اطلب كمية جديدة.": "Stock is at or below the reorder level. Reorder it.",
   "ضمان الأصل ينتهي خلال 30 يومًا.": "The asset warranty ends within 30 days.",
   "هذا الرقم مسجل بالفعل في الفرصة": "This phone is already registered on lead",
-  "اجتماع محدد": "Meeting scheduled"
+  "اجتماع محدد": "Meeting scheduled",
+  "حفظ": "Save",
+  "إعدادات CRM": "CRM settings",
+  "مهلة التواصل مع العملاء الجدد، والتوزيع الدوري على فريق المبيعات. كل تغيير يُسجَّل بسببه في سجل العمليات.": "Response deadline for new leads and round-robin distribution. Every change is recorded with its reason in the audit log.",
+  "مهلة التواصل (SLA)": "Response SLA",
+  "تفعيل SLA": "Enable SLA",
+  "عدد الساعات": "Hours",
+  "يظهر تنبيه إذا لم يتم التواصل مع العميل خلال هذه المدة من إنشائه. المدة بالساعات الكاملة ولا تستثني العطلات.": "An alert appears when a lead is not contacted within this time of creation. Counted in full hours, including weekends.",
+  "التوزيع الدوري": "Round robin",
+  "توزيع العملاء الجدد غير المسندين بالتناوب": "Rotate new unassigned leads across the team",
+  "الموظفون المشاركون في التوزيع": "Employees in the rotation",
+  "لا يوجد موظفون نشطون.": "No active employees.",
+  "يُطبَّق على العملاء الذين ينشئهم المدير بدون مسؤول وعلى الاستيراد. مندوب المبيعات الذي ينشئ عميلًا يُسند إليه تلقائيًا.": "Applies to leads a manager creates without an owner and to imports. A rep who creates a lead owns it automatically.",
+  "سبب التغيير": "Reason for change",
+  "تم حفظ إعدادات CRM.": "CRM settings saved.",
+  "تم إخفاء تنبيه SLA.": "SLA alert dismissed."
 }
