@@ -35,6 +35,11 @@ class OperatingCrm
      */
     public const AUDITED_TYPES = ['opportunities', 'activities', 'clients', 'contacts', 'quotes', 'contracts', 'campaigns'];
 
+    /**
+     * Arabic keys for __(); the English text lives in lang/en.json.
+     */
+    public const SLA_LABELS = ['pending' => 'ضمن المهلة', 'met' => 'في الموعد', 'late' => 'متأخر', 'breached' => 'متجاوز'];
+
     public const DEFAULTS = ['sla_enabled' => true, 'sla_hours' => 24, 'round_robin_enabled' => false, 'round_robin_pool' => []];
 
     public function __construct(private OperatingCatalog $catalog, private OperatingWorkflow $workflow, private OperatingNotifier $notifier) {}

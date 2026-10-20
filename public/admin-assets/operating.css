@@ -20,3 +20,52 @@ label.checkbox{display:flex;gap:8px;align-items:center;padding:6px 0}
 .inline-stats{flex-wrap:wrap;row-gap:8px}
 .check-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:.4rem;border:1px solid var(--admin-border);border-radius:12px;padding:.75rem;margin:.5rem 0}
 .check-grid legend{padding:0 .4rem;font-weight:600}
+/* CRM */
+.crm-filters{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center}
+.crm-filters input[type=search]{flex:1 1 16rem}
+.crm-columns{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:.35rem;padding:.75rem 0}
+.crm-columns-picker{flex-basis:100%}
+.crm-table-wrap{overflow-x:auto}
+.crm-table-wrap table{min-width:760px}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:.85rem;margin-bottom:1.25rem}
+.kpi{background:var(--admin-card);border:1px solid var(--admin-border);border-radius:18px;padding:1rem;display:flex;flex-direction:column;gap:.3rem;color:inherit;text-decoration:none}
+.kpi .kpi-icon{width:2.4rem;height:2.4rem;border-radius:12px;display:grid;place-items:center;background:var(--admin-accent-soft);color:var(--admin-accent);font-weight:700}
+.kpi strong{font-size:1.6rem;line-height:1.15;font-variant-numeric:tabular-nums}
+.kpi span{font-weight:600}
+.kpi small{color:var(--admin-muted)}
+.kpi.warn .kpi-icon{background:color-mix(in srgb,var(--admin-danger) 14%,transparent);color:var(--admin-danger)}
+.sla-badge{display:inline-block;border-radius:999px;padding:.1rem .55rem;font-size:.78rem;font-weight:600;background:var(--admin-surface);color:var(--admin-muted);white-space:nowrap}
+.sla-badge.met{background:color-mix(in srgb,#16a34a 14%,transparent);color:#15803d}
+.sla-badge.late{background:color-mix(in srgb,#d97706 16%,transparent);color:#b45309}
+.sla-badge.breached{background:color-mix(in srgb,var(--admin-danger) 14%,transparent);color:var(--admin-danger)}
+.crm-grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:1rem;align-items:start}
+.crm-grid>div{display:grid;gap:1rem}
+@media (max-width:900px){.crm-grid{grid-template-columns:1fr}}
+.stepper{display:flex;flex-wrap:wrap;gap:.35rem;list-style:none;padding:0;margin:.75rem 0}
+.stepper li{flex:1 1 6.5rem;text-align:center;padding:.45rem .5rem;border-radius:10px;background:var(--admin-surface);color:var(--admin-muted);font-size:.85rem}
+.stepper li.done{background:var(--admin-accent-soft);color:var(--admin-accent)}
+.stepper li.current{background:var(--admin-accent);color:var(--admin-accent-foreground,#fff);font-weight:700}
+.timeline{list-style:none;padding:0;margin:0;display:grid;gap:.6rem}
+.timeline li{border-inline-start:3px solid var(--admin-border);padding:.15rem .75rem}
+.timeline li small{display:block;color:var(--admin-muted)}
+.bar-list{display:grid;gap:.45rem;list-style:none;padding:0;margin:0}
+.bar-list li{display:grid;grid-template-columns:minmax(6rem,11rem) 1fr auto;gap:.6rem;align-items:center;font-size:.9rem}
+.bar-list i{display:block;height:.6rem;border-radius:999px;background:var(--admin-accent);min-width:2px}
+.cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:.35rem}
+.cal-grid .cal-head{font-weight:700;text-align:center;font-size:.8rem;color:var(--admin-muted)}
+.cal-day{min-height:6.5rem;border:1px solid var(--admin-border);border-radius:12px;padding:.35rem;display:flex;flex-direction:column;gap:.2rem;font-size:.8rem;background:var(--admin-card)}
+.cal-day.outside{opacity:.45}
+.cal-day.today{border-color:var(--admin-accent);box-shadow:0 0 0 1px var(--admin-accent)}
+.cal-day .cal-item{display:block;border-radius:6px;padding:.1rem .3rem;background:var(--admin-accent-soft);color:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:none}
+.cal-day .cal-item.overdue{background:color-mix(in srgb,var(--admin-danger) 14%,transparent)}
+.cal-day .cal-item.done{opacity:.6;text-decoration:line-through}
+@media (max-width:700px){.cal-grid{grid-template-columns:1fr}.cal-grid .cal-head{display:none}.cal-day{min-height:auto}.cal-day.outside{display:none}}
+.pipeline-card[draggable=true]{cursor:grab}
+.workflow-board section.drop-target{outline:2px dashed var(--admin-accent);outline-offset:4px}
+.crm-tabs{display:flex;flex-wrap:wrap;gap:.35rem;margin-bottom:1rem}
+.crm-tabs a{padding:.35rem .8rem;border-radius:999px;background:var(--admin-surface);color:inherit;text-decoration:none;font-size:.9rem}
+.crm-tabs a.active{background:var(--admin-accent);color:var(--admin-accent-foreground,#fff)}
+.crm-tabs a b{margin-inline-start:.35rem}
+dl.crm-facts{display:grid;grid-template-columns:minmax(7rem,auto) 1fr;gap:.35rem .9rem;margin:0}
+dl.crm-facts dt{color:var(--admin-muted)}
+dl.crm-facts dd{margin:0}

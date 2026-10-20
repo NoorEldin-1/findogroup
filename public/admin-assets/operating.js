@@ -96,3 +96,24 @@
         recalc();
     });
 })();
+(() => {
+    const form = document.querySelector('[data-crm-columns-form]');
+    if (!form) return;
+    const key = 'findo.crm.columns';
+    const params = new URLSearchParams(location.search);
+    try {
+        if (!params.has('columns[]')) {
+            const saved = JSON.parse(localStorage.getItem(key) || 'null');
+            if (Array.isArray(saved) && saved.length) {
+                saved.forEach((column) => params.append('columns[]', column));
+                location.replace(location.pathname + '?' + params.toString());
+                return;
+            }
+        }
+        form.addEventListener('submit', () => {
+            const columns = [...form.querySelectorAll('input[name="columns[]"]:checked')].map((input) => input.value);
+            localStorage.setItem(key, JSON.stringify(columns));
+        });
+        form.querySelector('[data-crm-columns-reset]')?.addEventListener('click', () => localStorage.removeItem(key));
+    } catch (error) { /* storage blocked: columns simply fall back to the defaults */ }
+})();
