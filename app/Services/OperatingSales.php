@@ -26,6 +26,42 @@ class OperatingSales
         return $this->workflow->save($type, $request, $id);
     }
 
+    public function transitionAs(User $user, int $id, string $target, string $reason): object
+    {
+        $record = DB::table('operating_records')->find($id);
+        $request = Request::create('/', 'POST', ['target' => $target, 'version' => $record->version, 'reason' => $reason]);
+        $request->setUserResolver(fn (): User => $user);
+
+        return $this->workflow->transition($id, $request);
+    }
+
+    /**
+     * A touchpoint logged after the fact: the activity is created and closed in one step, with an optional planned follow-up.
+     *
+     * @param  array{kind: string, result?: string|null, outcome: string, next_step?: string|null, follow_up_at?: string|null}  $input
+     */
+    public function logActivity(User $user, object $lead, array $input): object
+    {
+        $leadData = $this->catalog->data($lead);
+        $employee = $this->access->employeeId($user) ?? (int) ($leadData['assignee_id'] ?? 0);
+        if (! $employee) {
+            $this->workflow->fail('اربط حسابك بملف موظف أو أسند العميل لمسؤول قبل تسجيل النشاط.', 'Link your account to an employee file or assign the lead before logging activity.');
+        }
+        $kinds = collect($this->catalog->entity('activities')['fields'])->firstWhere('key', 'kind')['options'];
+        $label = $this->catalog->label($kinds[$input['kind']]);
+        $link = ['opportunity_id' => $lead->id, 'client_id' => $leadData['client_id'] ?? null, 'assignee_id' => $employee];
+
+        return DB::transaction(function () use ($user, $lead, $input, $label, $link): object {
+            $activity = $this->saveAs($user, 'activities', ['title' => $label.' — '.$lead->title, 'reason' => 'Logged from lead profile', 'data' => $link + ['kind' => $input['kind'], 'due_at' => now()->format('Y-m-d\TH:i'), 'result' => $input['result'] ?? null, 'outcome' => $input['outcome'], 'next_step' => $input['next_step'] ?? null, 'priority' => 'normal']]);
+            $this->transitionAs($user, $activity->id, 'done', 'Logged from lead profile');
+            if (! empty($input['follow_up_at'])) {
+                $this->saveAs($user, 'activities', ['title' => __('متابعة').' — '.$lead->title, 'reason' => 'Follow-up planned from lead profile', 'data' => $link + ['kind' => 'follow_up', 'due_at' => $input['follow_up_at'], 'agenda' => $input['next_step'] ?? null, 'priority' => 'normal']]);
+            }
+
+            return $activity;
+        });
+    }
+
     /**
      * @param  array{assignee?: int|string|null, source?: string|null}  $filters
      * @return array{columns: array<string, array{cards: list<array<string, mixed>>, count: int, value: array<string, float>}>, summary: array{open: int, weighted: array<string, float>, won_month: int, won_month_value: array<string, float>, lost_month: int, win_rate: float|null}}

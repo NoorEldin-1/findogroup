@@ -1028,5 +1028,7 @@
   "لا توجد بيانات": "No data",
   "ضمن المهلة": "Within SLA",
   "في الموعد": "On time",
-  "متجاوز": "Breached"
+  "متجاوز": "Breached",
+  "تم تسجيل النشاط.": "Activity logged.",
+  "متابعة": "Follow-up"
 }

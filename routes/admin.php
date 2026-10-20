@@ -47,6 +47,7 @@ Route::middleware(AdminLocale::class)->group(function () {
         Route::post('/operations/crm/settings', [C::class, 'saveSettings']);
         Route::get('/operations/crm/leads', [C::class, 'leads']);
         Route::post('/operations/crm/leads/export', [C::class, 'exportLeads']);
+        Route::post('/operations/crm/leads/{id}/activity', [C::class, 'logActivity'])->whereNumber('id');
         Route::post('/operations/crm/leads/{id}/sla-dismiss', [C::class, 'dismissSla'])->whereNumber('id');
         Route::get('/operations/opportunities/pipeline', [S::class, 'pipeline']);
         Route::post('/operations/opportunities/{id}/convert-client', [S::class, 'convertLead'])->whereNumber('id');

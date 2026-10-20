@@ -7,6 +7,7 @@ use App\Services\OperatingAccess;
 use App\Services\OperatingCatalog;
 use App\Services\OperatingCrm;
 use App\Services\OperatingLeads;
+use App\Services\OperatingSales;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
@@ -60,6 +61,20 @@ class CrmController extends Controller
         $binary = $this->leads->export($request->user(), $filters, array_values($input['columns']), (bool) ($input['mask_phones'] ?? false), $input['reason'] ?? 'Leads export');
 
         return response($binary, 200, ['Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'Content-Disposition' => 'attachment; filename="leads-'.now()->format('Ymd-His').'.xlsx"']);
+    }
+
+    public function logActivity(int $id, Request $request): Response
+    {
+        $this->authorizeCrm($request);
+        $lead = $this->access->record($request->user(), $id);
+        abort_unless($lead->type === 'opportunities', 404);
+        abort_unless($this->access->can($request->user(), 'activities', 'write'), 403);
+        $kinds = array_keys(collect($this->catalog->entity('activities')['fields'])->firstWhere('key', 'kind')['options']);
+        $results = array_keys(collect($this->catalog->entity('activities')['fields'])->firstWhere('key', 'result')['options']);
+        $input = $request->validate(['kind' => 'required|in:'.implode(',', $kinds), 'result' => 'nullable|in:'.implode(',', $results), 'outcome' => 'required|string|max:5000', 'next_step' => 'nullable|string|max:500', 'follow_up_at' => 'nullable|date_format:Y-m-d\TH:i|after:now']);
+        app(OperatingSales::class)->logActivity($request->user(), $lead, $input);
+
+        return back()->with('success', __('تم تسجيل النشاط.'));
     }
 
     /**
