@@ -1,0 +1,12 @@
+@extends('admin.layout')
+@section('title',__('التقويم'))
+@section('content')
+@php $query=fn(array $extra)=>'?'.http_build_query(array_filter(['month'=>$calendar['month'],'assignee'=>$assignee,'scope'=>$scope]+$extra)); @endphp
+<div class="page-heading"><div><span class="eyebrow">CRM</span><h1>{{ __('التقويم') }}</h1><p class="muted">{{ __('الاجتماعات والمتابعات المجدولة. اضغط على يوم لإضافة متابعة فيه.') }}</p></div>
+<div class="row-actions"><a class="button secondary" href="{{ $query(['month'=>$calendar['prev']]) }}" aria-label="{{ __('الشهر السابق') }}">→</a><b>{{ $calendar['label'] }}</b><a class="button secondary" href="{{ $query(['month'=>$calendar['next']]) }}" aria-label="{{ __('الشهر التالي') }}">←</a><a class="button secondary" href="?month={{ today()->format('Y-m') }}">{{ __('اليوم') }}</a></div></div>
+@include('admin.operating.crm-nav')
+@if($options['assignees'])<form class="filters" method="get"><input type="hidden" name="month" value="{{ $calendar['month'] }}"><select name="scope"><option value="team" @selected($scope==='team')>{{ __('الفريق') }}</option><option value="mine" @selected($scope==='mine')>{{ __('عملائي') }}</option></select><select name="assignee"><option value="">{{ __('كل المسؤولين') }}</option>@foreach($options['assignees'] as $id=>$name)<option value="{{ $id }}" @selected((int)$assignee===(int)$id)>{{ $name }}</option>@endforeach</select><button class="button secondary">{{ __('تصفية') }}</button></form>@endif
+<section class="card"><div class="cal-grid">@foreach(['سبت','أحد','اثنين','ثلاثاء','أربعاء','خميس','جمعة'] as $dayName)<span class="cal-head">{{ __($dayName) }}</span>@endforeach
+@foreach($calendar['weeks'] as $week)@foreach($week as $day)<div class="cal-day {{ $day['inMonth']?'':'outside' }} {{ $day['today']?'today':'' }}"><div class="section-heading"><b>{{ $day['day'] }}</b>@if($canCreate)<a class="text-button" href="/admin/operations/activities/create?prefill[due_at]={{ $day['date'] }}T10:00" aria-label="{{ __('إضافة متابعة في') }} {{ $day['date'] }}">+</a>@endif</div>
+@foreach(array_slice($day['items'],0,4) as $item)<a class="cal-item {{ $item['overdue']?'overdue':'' }} {{ $item['status']==='done'?'done':'' }}" href="{{ $item['lead'] ? '/admin/operations/crm/leads/'.$item['lead'] : '/admin/operations/record/'.$item['id'] }}" title="{{ $item['time'] }} {{ $item['title'] }}">{{ $item['time'] }} {{ $item['title'] }}</a>@endforeach @if(count($day['items'])>4)<small class="muted">+{{ count($day['items'])-4 }}</small>@endif</div>@endforeach @endforeach</div></section>
+@endsection

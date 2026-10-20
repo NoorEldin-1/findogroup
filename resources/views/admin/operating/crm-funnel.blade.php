@@ -1,0 +1,18 @@
+@extends('admin.layout')
+@section('title',__('قمع المبيعات'))
+@section('content')
+@php $money=fn(array $sums)=>$sums?collect($sums)->map(fn($amount,$currency)=>number_format($amount).' '.$currency)->implode(' · '):'0'; $pct=fn($value)=>$value===null?'—':$value.'%'; $maxTrend=max([1, ...array_values($trend)]); $maxMonth=max([1, ...array_column($months,'count')]); @endphp
+<div class="page-heading"><div><span class="eyebrow">CRM</span><h1>{{ __('قمع المبيعات') }}</h1><p class="muted">{{ __('تحليل تحويل العملاء عبر المراحل للفترة المختارة.') }}</p></div>
+<form class="inline-form" method="get"><input type="date" name="from" value="{{ $from }}"><span>→</span><input type="date" name="to" value="{{ $to }}">@if($crm->isManager(auth()->user()))<select name="scope"><option value="team" @selected($scope==='team')>{{ __('الفريق') }}</option><option value="mine" @selected($scope==='mine')>{{ __('عملائي') }}</option></select>@endif<button class="button secondary">{{ __('تطبيق') }}</button></form></div>
+@include('admin.operating.crm-nav')
+<div class="kpi-grid">
+<div class="kpi"><span class="kpi-icon">👥</span><strong>{{ number_format($total) }}</strong><span>{{ __('إجمالي العملاء') }}</span></div>
+<div class="kpi"><span class="kpi-icon">✓</span><strong>{{ number_format($won) }}</strong><span>{{ __('الصفقات المكتسبة') }}</span><small dir="ltr">{{ $money($won_value) }}</small></div>
+<div class="kpi"><span class="kpi-icon">↗</span><strong>{{ number_format($potential['count']) }}</strong><span>{{ __('إغلاقات محتملة') }}</span><small dir="ltr">{{ $money($potential['value']) }}</small></div>
+<div class="kpi"><span class="kpi-icon">⏱</span><strong>{{ $avg_response===null?'—':$avg_response.' '.__('ساعة') }}</strong><span>{{ __('متوسط وقت التواصل') }}</span></div>
+</div>
+<section class="card"><h2>{{ __('معدلات التحويل بين المراحل') }}</h2><ul class="bar-list">@foreach($stages as $step)<li><span>{{ $step['label'] }}</span><i style="width:{{ $total ? max(1,round($step['count']/$total*100)) : 0 }}%"></i><b>{{ $step['count'] }} <small class="muted">{{ $step['rate']===null ? '' : '('.$pct($step['rate']).')' }}</small></b></li>@endforeach</ul><p class="help">{{ __('النسبة بين القوسين = من وصلوا لهذه المرحلة مقارنة بالمرحلة السابقة. العميل الذي قفز لمرحلة متقدمة يُحسب أنه مر بما قبلها.') }}</p></section>
+<div class="crm-grid"><section class="card"><h2>{{ __('اتجاه العملاء') }}</h2><ul class="bar-list">@foreach($trend as $period=>$count)<li><span dir="ltr">{{ $period }}</span><i style="width:{{ round($count/$maxTrend*100) }}%"></i><b>{{ $count }}</b></li>@endforeach</ul></section>
+<section class="card"><h2>{{ __('الصفقات المكتسبة شهريًا') }}</h2><ul class="bar-list">@foreach($months as $month=>$row)<li><span dir="ltr">{{ $month }}</span><i style="width:{{ round($row['count']/$maxMonth*100) }}%"></i><b>{{ $row['count'] }} <small class="muted" dir="ltr">{{ $row['value'] ? $money($row['value']) : '' }}</small></b></li>@endforeach</ul></section></div>
+<section class="card table-card crm-table-wrap"><h2>{{ __('أداء الحملات') }}</h2><table><thead><tr><th>{{ __('الحملة') }}</th><th>{{ __('العملاء') }}</th><th>{{ __('تم التواصل') }}</th><th>{{ __('اجتماعات') }}</th><th>{{ __('مكسوب') }}</th><th>{{ __('الإيراد') }}</th><th>{{ __('معدل التحويل') }}</th></tr></thead><tbody>@forelse($campaigns as $row)<tr><td>{{ $row['name'] }}</td><td>{{ $row['leads'] }}</td><td>{{ $row['contacted'] }}</td><td>{{ $row['meetings'] }}</td><td>{{ $row['won'] }}</td><td dir="ltr">{{ $money($row['revenue']) }}</td><td>{{ $pct($row['conversion']) }}</td></tr>@empty<tr><td colspan="7" class="muted">{{ __('لا توجد بيانات') }}</td></tr>@endforelse</tbody></table></section>
+@endsection

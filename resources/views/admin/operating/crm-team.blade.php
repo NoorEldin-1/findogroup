@@ -1,0 +1,13 @@
+@extends('admin.layout')
+@section('title',__('لوحة الفريق'))
+@section('content')
+@php $money=fn(array $sums)=>$sums?collect($sums)->map(fn($amount,$currency)=>number_format($amount).' '.$currency)->implode(' · '):'0'; $pct=fn($value)=>$value===null?'—':$value.'%'; $stageMax=max([1, ...array_values($stages ?: [0])]); $qualityMax=max([1, ...array_values($quality)]); @endphp
+<div class="page-heading"><div><span class="eyebrow">CRM</span><h1>{{ __('لوحة الفريق') }}</h1><p class="muted">{{ __('أداء الفريق') }} · {{ __('العملاء الذين أُنشئوا في الفترة') }}</p></div>
+<form class="inline-form" method="get"><input type="date" name="from" value="{{ $from }}"><span>→</span><input type="date" name="to" value="{{ $to }}"><button class="button secondary">{{ __('تطبيق') }}</button></form></div>
+@include('admin.operating.crm-nav')
+<section class="card"><h2>{{ __('العملاء لكل مسؤول') }}</h2><ul class="bar-list">@foreach($agents as $agent)<li><span>{{ $agent['name'] }}</span><i style="width:{{ round($agent['leads']/$max*100) }}%"></i><b>{{ $agent['leads'] }}</b></li>@endforeach</ul></section>
+<section class="card table-card crm-table-wrap"><h2>{{ __('مؤشرات الأداء لكل مسؤول') }}</h2><table><thead><tr><th>{{ __('المسؤول') }}</th><th>{{ __('العملاء') }}</th><th>{{ __('مفتوح') }}</th><th>{{ __('مكسوب') }}</th><th>{{ __('خسارة') }}</th><th>{{ __('نسبة الفوز') }}</th><th>{{ __('الإيراد') }}</th><th>{{ __('مخالفات SLA') }}</th><th>{{ __('متوسط الاستجابة') }}</th><th>{{ __('الأنشطة') }}</th></tr></thead><tbody>@forelse($agents as $agent)<tr><td>{{ $agent['name'] }}</td><td>{{ $agent['leads'] }}</td><td>{{ $agent['open'] }}</td><td>{{ $agent['won'] }}</td><td>{{ $agent['lost'] }}</td><td>{{ $pct($agent['win_rate']) }}</td><td dir="ltr">{{ $money($agent['revenue']) }}</td><td>{{ $agent['sla_breaches'] }}</td><td>{{ $agent['avg_response']===null?'—':$agent['avg_response'].' '.__('ساعة') }}</td><td>{{ $agent['activities'] }}</td></tr>@empty<tr><td colspan="10" class="muted">{{ __('لا توجد بيانات') }}</td></tr>@endforelse</tbody></table></section>
+<div class="crm-grid"><section class="card"><h2>{{ __('العملاء حسب المرحلة') }}</h2><ul class="bar-list">@foreach($stages as $label=>$count)<li><span>{{ $label }}</span><i style="width:{{ round($count/$stageMax*100) }}%"></i><b>{{ $count }}</b></li>@endforeach</ul></section>
+<section class="card"><h2>{{ __('توزيع جودة العملاء') }}</h2><ul class="bar-list">@foreach($quality as $key=>$count)<li><span>{{ $qualityLabels[$key] ?? $key }}</span><i style="width:{{ round($count/$qualityMax*100) }}%"></i><b>{{ $count }}</b></li>@endforeach</ul></section></div>
+<p class="help">{{ __('الأنشطة تُحسب لمن لديه عملاء في الفترة. الإيراد = قيمة الفرص المكسوبة بعملتها.') }}</p>
+@endsection

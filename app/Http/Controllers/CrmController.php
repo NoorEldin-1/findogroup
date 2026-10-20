@@ -25,6 +25,44 @@ class CrmController extends Controller
         return $this->view('crm-dashboard', $this->reports->dashboard($request->user(), $from, $to, $scope) + ['from' => $from, 'to' => $to, 'scope' => $scope, 'calendar' => $this->reports->calendar($request->user(), today()->format('Y-m'), $scope)]);
     }
 
+    public function funnel(Request $request): Response
+    {
+        $this->authorizeCrm($request);
+        [$from, $to, $scope] = $this->period($request);
+
+        return $this->view('crm-funnel', $this->reports->funnel($request->user(), $from, $to, $scope) + ['from' => $from, 'to' => $to, 'scope' => $scope]);
+    }
+
+    public function team(Request $request): Response
+    {
+        $this->authorizeCrm($request, manager: true);
+        [$from, $to] = $this->period($request);
+
+        return $this->view('crm-team', $this->reports->team($request->user(), $from, $to) + ['from' => $from, 'to' => $to, 'qualityLabels' => array_map(fn (array $label): string => $this->catalog->label($label), (array) collect($this->catalog->entity('opportunities')['fields'])->firstWhere('key', 'lead_quality')['options'])]);
+    }
+
+    public function sla(Request $request): Response
+    {
+        $this->authorizeCrm($request);
+        [$from, $to, $scope] = $this->period($request);
+        $assignee = $this->crm->isManager($request->user()) ? ($request->integer('assignee') ?: null) : null;
+        $activityFields = collect($this->catalog->entity('activities')['fields'])->keyBy('key');
+        $labels = fn (string $key): array => array_map(fn (array $label): string => $this->catalog->label($label), (array) $activityFields[$key]['options']);
+
+        return $this->view('crm-sla', $this->reports->sla($request->user(), $from, $to, $scope, $assignee) + ['from' => $from, 'to' => $to, 'scope' => $scope, 'assignee' => $assignee, 'kindLabels' => $labels('kind'), 'resultLabels' => $labels('result'), 'options' => $this->leadOptions($request)]);
+    }
+
+    public function calendar(Request $request): Response
+    {
+        $this->authorizeCrm($request);
+        $input = $request->validate(['month' => 'nullable|date_format:Y-m', 'assignee' => 'nullable|integer', 'scope' => 'nullable|in:team,mine']);
+        $manager = $this->crm->isManager($request->user());
+        $scope = $manager ? ($input['scope'] ?? 'team') : 'mine';
+        $assignee = $manager ? ($input['assignee'] ?? null) : null;
+
+        return $this->view('crm-calendar', ['calendar' => $this->reports->calendar($request->user(), $input['month'] ?? today()->format('Y-m'), $scope, $assignee), 'assignee' => $assignee, 'scope' => $scope, 'options' => $this->leadOptions($request), 'canCreate' => $this->access->canCreate($request->user(), 'activities')]);
+    }
+
     public function settings(Request $request): Response
     {
         $this->authorizeCrm($request, manager: true);

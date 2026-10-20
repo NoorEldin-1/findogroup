@@ -103,7 +103,7 @@ class OperatingController extends Controller
             }
         }
 
-        $prefillable = collect($this->catalog->entity($type)['fields'])->whereIn('type', ['relation', 'select'])->keyBy('key');
+        $prefillable = collect($this->catalog->entity($type)['fields'])->whereIn('type', ['relation', 'select', 'datetime-local', 'date'])->keyBy('key');
         foreach ((array) $request->input('prefill', []) as $key => $value) {
             if (($prefillable[$key]['type'] ?? null) === 'relation' && is_numeric($value)) {
                 $target = $this->access->record($request->user(), (int) $value);
@@ -111,6 +111,12 @@ class OperatingController extends Controller
                 $initial[$key] = (int) $value;
             }
             if (($prefillable[$key]['type'] ?? null) === 'select' && is_string($value) && isset($prefillable[$key]['options'][$value])) {
+                $initial[$key] = $value;
+            }
+            if (($prefillable[$key]['type'] ?? null) === 'datetime-local' && is_string($value) && preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/', $value)) {
+                $initial[$key] = $value;
+            }
+            if (($prefillable[$key]['type'] ?? null) === 'date' && is_string($value) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
                 $initial[$key] = $value;
             }
         }
