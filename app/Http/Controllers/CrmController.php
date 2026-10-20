@@ -7,15 +7,17 @@ use App\Services\OperatingAccess;
 use App\Services\OperatingCatalog;
 use App\Services\OperatingCrm;
 use App\Services\OperatingCrmReports;
+use App\Services\OperatingLeadImport;
 use App\Services\OperatingLeads;
 use App\Services\OperatingSales;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Response;
 
 class CrmController extends Controller
 {
-    public function __construct(private OperatingCrm $crm, private OperatingAccess $access, private OperatingCatalog $catalog, private OperatingLeads $leads, private OperatingCrmReports $reports) {}
+    public function __construct(private OperatingCrm $crm, private OperatingAccess $access, private OperatingCatalog $catalog, private OperatingLeads $leads, private OperatingCrmReports $reports, private OperatingLeadImport $import) {}
 
     public function dashboard(Request $request): Response
     {
@@ -61,6 +63,40 @@ class CrmController extends Controller
         $assignee = $manager ? ($input['assignee'] ?? null) : null;
 
         return $this->view('crm-calendar', ['calendar' => $this->reports->calendar($request->user(), $input['month'] ?? today()->format('Y-m'), $scope, $assignee), 'assignee' => $assignee, 'scope' => $scope, 'options' => $this->leadOptions($request), 'canCreate' => $this->access->canCreate($request->user(), 'activities')]);
+    }
+
+    public function import(Request $request): Response
+    {
+        $this->authorizeCrm($request, manager: true);
+
+        return $this->view('crm-import', ['result' => session('import_result'), 'fields' => OperatingLeadImport::FIELDS]);
+    }
+
+    public function uploadImport(Request $request): Response
+    {
+        $this->authorizeCrm($request, manager: true);
+        $request->validate(['file' => 'required|file|max:5120|extensions:csv,txt,xlsx']);
+
+        return redirect('/admin/operations/crm/import/'.$this->import->stage($request->user(), $request->file('file')));
+    }
+
+    public function mapImport(string $token, Request $request): Response
+    {
+        $this->authorizeCrm($request, manager: true);
+        $staged = $this->import->load($request->user(), $token);
+        $mapping = $request->has('map') ? $this->importMapping($request, count($staged['header'])) : $this->import->guessMapping($staged['header']);
+        $options = $this->importOptions($request);
+
+        return $this->view('crm-import-map', ['token' => $token, 'file' => $staged['file'], 'header' => $staged['header'], 'mapping' => $mapping, 'options' => $options, 'preview' => $this->import->preview($request->user(), $token, $mapping, $options), 'fields' => OperatingLeadImport::FIELDS, 'choices' => $this->leadOptions($request)]);
+    }
+
+    public function commitImport(string $token, Request $request): Response
+    {
+        $this->authorizeCrm($request, manager: true);
+        $staged = $this->import->load($request->user(), $token);
+        $result = $this->import->commit($request->user(), $token, $this->importMapping($request, count($staged['header'])), $this->importOptions($request));
+
+        return redirect('/admin/operations/crm/import')->with('import_result', $result);
     }
 
     public function settings(Request $request): Response
@@ -187,6 +223,38 @@ class CrmController extends Controller
             'assignees' => $this->crm->isManager($user) ? $this->access->query($user, 'employees')->where('status', 'active')->orderBy('title')->pluck('title', 'id')->all() : [],
             'users' => $this->crm->isManager($user) ? DB::table('users')->where('active', true)->orderBy('name')->pluck('name', 'id')->all() : [],
         ];
+    }
+
+    /**
+     * @return array<int, string|null>
+     */
+    private function importMapping(Request $request, int $columns): array
+    {
+        $input = $request->validate(['map' => 'required|array', 'map.*' => 'nullable|in:'.implode(',', array_keys(OperatingLeadImport::FIELDS))]);
+        $mapping = [];
+        for ($index = 0; $index < $columns; $index++) {
+            $mapping[$index] = $input['map'][$index] ?? null;
+        }
+        $chosen = array_values(array_filter($mapping));
+        if (count($chosen) !== count(array_unique($chosen))) {
+            throw ValidationException::withMessages(['map' => __('لا يمكن ربط نفس الحقل بعمودين.')]);
+        }
+        if (! array_intersect($chosen, ['title', 'lead_phone', 'lead_company'])) {
+            throw ValidationException::withMessages(['map' => __('اربط عمود الاسم أو الهاتف أو الشركة على الأقل.')]);
+        }
+
+        return $mapping;
+    }
+
+    /**
+     * @return array{source: string, campaign_id: ?int, assignee_id: ?int, skip_sla: bool}
+     */
+    private function importOptions(Request $request): array
+    {
+        $sources = array_keys(collect($this->catalog->entity('opportunities')['fields'])->firstWhere('key', 'lead_source')['options']);
+        $input = $request->validate(['source' => 'nullable|in:'.implode(',', $sources), 'campaign_id' => 'nullable|integer', 'assignee_id' => 'nullable|integer', 'skip_sla' => 'nullable|boolean']);
+
+        return ['source' => $input['source'] ?? 'other', 'campaign_id' => isset($input['campaign_id']) ? (int) $input['campaign_id'] : null, 'assignee_id' => isset($input['assignee_id']) ? (int) $input['assignee_id'] : null, 'skip_sla' => $request->has('map') ? (bool) ($input['skip_sla'] ?? false) : true];
     }
 
     /**

@@ -50,6 +50,10 @@ Route::middleware(AdminLocale::class)->group(function () {
         Route::get('/operations/crm/calendar', [C::class, 'calendar']);
         Route::get('/operations/crm/settings', [C::class, 'settings']);
         Route::post('/operations/crm/settings', [C::class, 'saveSettings']);
+        Route::get('/operations/crm/import', [C::class, 'import']);
+        Route::post('/operations/crm/import', [C::class, 'uploadImport']);
+        Route::get('/operations/crm/import/{token}', [C::class, 'mapImport'])->whereUuid('token');
+        Route::post('/operations/crm/import/{token}', [C::class, 'commitImport'])->whereUuid('token');
         Route::get('/operations/crm/leads', [C::class, 'leads']);
         Route::post('/operations/crm/leads/export', [C::class, 'exportLeads']);
         Route::get('/operations/crm/leads/{id}', [C::class, 'lead'])->whereNumber('id');
