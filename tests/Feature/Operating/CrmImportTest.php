@@ -77,6 +77,17 @@ class CrmImportTest extends TestCase
         $this->actingAs($this->operatingUser('sales_manager'))->get("/admin/operations/crm/import/{$token}")->assertForbidden();
     }
 
+    public function test_default_campaign_and_owner_must_be_records_the_manager_can_pick(): void
+    {
+        $manager = $this->operatingUser('sales_manager');
+        $project = $this->operatingRecord('projects', 'active', [], 'Secret project');
+        $this->actingAs($manager)->post('/admin/operations/crm/import', ['file' => UploadedFile::fake()->createWithContent('a.csv', "Name,Phone\nA,01001230000\n")]);
+        $token = basename(collect(Storage::disk('local')->files('crm-imports'))->sole(), '.json');
+
+        $this->actingAs($manager)->get("/admin/operations/crm/import/{$token}?campaign_id={$project}")->assertSessionHasErrors('campaign_id');
+        $this->actingAs($manager)->post("/admin/operations/crm/import/{$token}", ['map' => ['title', 'lead_phone'], 'source' => 'other', 'assignee_id' => $project])->assertSessionHasErrors('assignee_id');
+    }
+
     public function test_oversized_or_unmapped_files_are_refused(): void
     {
         $manager = $this->operatingUser('sales_manager');

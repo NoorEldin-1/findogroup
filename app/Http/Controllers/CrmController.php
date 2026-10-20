@@ -12,6 +12,7 @@ use App\Services\OperatingLeads;
 use App\Services\OperatingSales;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -97,6 +98,18 @@ class CrmController extends Controller
         $result = $this->import->commit($request->user(), $token, $this->importMapping($request, count($staged['header'])), $this->importOptions($request));
 
         return redirect('/admin/operations/crm/import')->with('import_result', $result);
+    }
+
+    public function trash(Request $request): Response
+    {
+        $this->authorizeCrm($request, manager: true);
+        $types = array_values(array_filter(OperatingCrm::RESTORABLE, fn (string $type): bool => $this->access->can($request->user(), $type)));
+        $type = in_array($request->input('type'), $types, true) ? $request->input('type') : null;
+        $page = DB::table('operating_records')->whereIn('type', $type ? [$type] : $types)->where('status', 'archived')->latest('updated_at')->paginate(30)->withQueryString();
+        $archivedBy = DB::table('operating_events')->leftJoin('users', 'users.id', '=', 'operating_events.user_id')->whereIn('record_id', collect($page->items())->pluck('id'))->where('action', 'transition')->where('after', 'like', '%"status":"archived"%')->orderBy('operating_events.id')->get(['record_id', 'operating_events.created_at', 'reason', 'users.name'])->keyBy('record_id');
+        $counts = DB::table('operating_records')->whereIn('type', $types)->where('status', 'archived')->groupBy('type')->selectRaw('type, count(*) as total')->pluck('total', 'type');
+
+        return $this->view('crm-trash', ['page' => $page, 'archivedBy' => $archivedBy, 'counts' => $counts, 'types' => $types, 'type' => $type]);
     }
 
     public function settings(Request $request): Response
@@ -252,7 +265,8 @@ class CrmController extends Controller
     private function importOptions(Request $request): array
     {
         $sources = array_keys(collect($this->catalog->entity('opportunities')['fields'])->firstWhere('key', 'lead_source')['options']);
-        $input = $request->validate(['source' => 'nullable|in:'.implode(',', $sources), 'campaign_id' => 'nullable|integer', 'assignee_id' => 'nullable|integer', 'skip_sla' => 'nullable|boolean']);
+        $choices = $this->leadOptions($request);
+        $input = $request->validate(['source' => 'nullable|in:'.implode(',', $sources), 'campaign_id' => ['nullable', 'integer', Rule::in(array_keys($choices['campaigns']))], 'assignee_id' => ['nullable', 'integer', Rule::in(array_keys($choices['assignees']))], 'skip_sla' => 'nullable|boolean']);
 
         return ['source' => $input['source'] ?? 'other', 'campaign_id' => isset($input['campaign_id']) ? (int) $input['campaign_id'] : null, 'assignee_id' => isset($input['assignee_id']) ? (int) $input['assignee_id'] : null, 'skip_sla' => $request->has('map') ? (bool) ($input['skip_sla'] ?? false) : true];
     }

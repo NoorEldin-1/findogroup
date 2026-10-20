@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdminController as A;
 use App\Http\Controllers\AssetController as I;
 use App\Http\Controllers\AttendanceController as T;
+use App\Http\Controllers\AuditController as U;
 use App\Http\Controllers\CrmController as C;
 use App\Http\Controllers\MarketingController as M;
 use App\Http\Controllers\NotificationController as N;
@@ -35,6 +36,7 @@ Route::middleware(AdminLocale::class)->group(function () {
         Route::get('/operations/record/{id}', [O::class, 'show'])->whereNumber('id');
         Route::post('/operations/record/{id}', [O::class, 'update'])->whereNumber('id');
         Route::post('/operations/record/{id}/transition', [O::class, 'transition'])->whereNumber('id');
+        Route::post('/operations/record/{id}/restore', [O::class, 'restore'])->whereNumber('id');
         Route::post('/operations/record/{id}/comments', [O::class, 'comment'])->whereNumber('id');
         Route::post('/operations/record/{id}/attachments', [O::class, 'attach'])->whereNumber('id');
         Route::get('/operations/notifications', [N::class, 'index']);
@@ -48,6 +50,8 @@ Route::middleware(AdminLocale::class)->group(function () {
         Route::get('/operations/crm/team', [C::class, 'team']);
         Route::get('/operations/crm/sla', [C::class, 'sla']);
         Route::get('/operations/crm/calendar', [C::class, 'calendar']);
+        Route::get('/operations/crm/trash', [C::class, 'trash']);
+        Route::get('/operations/audit-log', [U::class, 'index']);
         Route::get('/operations/crm/settings', [C::class, 'settings']);
         Route::post('/operations/crm/settings', [C::class, 'saveSettings']);
         Route::get('/operations/crm/import', [C::class, 'import']);

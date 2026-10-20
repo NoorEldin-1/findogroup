@@ -481,13 +481,43 @@ class OperatingWorkflow
     }
 
     /**
+     * Bring an archived sales record back to the stage it was archived from; nothing is ever deleted, so this is the trash's only exit.
+     */
+    public function restore(int $id, Request $request): object
+    {
+        $user = $request->user();
+        abort_unless(in_array($user->role, OperatingCrm::MANAGERS, true), 403);
+        $input = $request->validate(['version' => 'required|integer', 'reason' => 'required|string|max:2000']);
+        $record = $this->access->record($user, $id, 'write');
+        abort_unless(in_array($record->type, OperatingCrm::RESTORABLE, true) && $record->status === 'archived', 404);
+
+        return DB::transaction(function () use ($record, $input, $user): object {
+            if (DB::getDriverName() === 'pgsql') {
+                DB::select("SELECT pg_advisory_xact_lock(hashtext('findo-operating-gates'))");
+            }
+            $locked = DB::table('operating_records')->where('id', $record->id)->lockForUpdate()->first();
+            if ($locked->version != $input['version']) {
+                $this->fail('السجل تغير. حدّث الصفحة.', 'Record changed. Refresh first.');
+            }
+            $data = $this->catalog->data($locked);
+            $target = $data['archived_from'] ?? $this->catalog->entity($locked->type)['statuses'][0];
+            unset($data['archived_from']);
+            DB::table('operating_records')->where('id', $locked->id)->update(['status' => $target, 'data' => json_encode($data, JSON_UNESCAPED_UNICODE), 'version' => $locked->version + 1, 'updated_at' => now()]);
+            $next = DB::table('operating_records')->find($locked->id);
+            $this->event($next, 'restore', $input['reason'], (array) $locked, (array) $next, $user->id);
+
+            return $next;
+        });
+    }
+
+    /**
      * Tell people when work newly lands on them; nobody is notified about an assignment they made to themselves.
      *
      * @param  array<string, mixed>  $before
      */
     private function notifyAssignees(string $type, object $record, array $before, User $user): void
     {
-        $fields = ['tasks' => ['assignee_id', 'reviewer_id', 'tester_id'], 'team_tasks' => ['assignee_id']][$type] ?? [];
+        $fields = ['tasks' => ['assignee_id', 'reviewer_id', 'tester_id'], 'team_tasks' => ['assignee_id'], 'opportunities' => ['assignee_id'], 'activities' => ['assignee_id']][$type] ?? [];
         $after = $this->catalog->data($record);
         $self = (int) $this->access->employeeId($user);
         foreach ($fields as $field) {
@@ -495,12 +525,10 @@ class OperatingWorkflow
             if (! $employee || $employee === (int) ($before[$field] ?? 0) || $employee === $self) {
                 continue;
             }
-            $this->notifier->send([$this->notifier->employeeUser($employee)], new OperatingAlert(
-                'work_assigned',
-                ['ar' => 'عمل جديد مسند إليك', 'en' => 'New work assigned to you'],
-                ['ar' => 'أُسند إليك "'.$record->title.'".', 'en' => 'You were assigned "'.$record->title.'".'],
-                '/admin/operations/record/'.$record->id,
-            ));
+            $alert = $type === 'opportunities'
+                ? new OperatingAlert('lead_assigned', ['ar' => 'عميل محتمل جديد مسند إليك', 'en' => 'New lead assigned to you'], ['ar' => 'أُسند إليك العميل "'.$record->title.'".', 'en' => 'The lead "'.$record->title.'" was assigned to you.'], '/admin/operations/crm/leads/'.$record->id)
+                : new OperatingAlert('work_assigned', ['ar' => 'عمل جديد مسند إليك', 'en' => 'New work assigned to you'], ['ar' => 'أُسند إليك "'.$record->title.'".', 'en' => 'You were assigned "'.$record->title.'".'], '/admin/operations/record/'.$record->id);
+            $this->notifier->send([$this->notifier->employeeUser($employee)], $alert);
         }
     }
 

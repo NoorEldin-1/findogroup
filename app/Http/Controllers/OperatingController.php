@@ -182,6 +182,13 @@ class OperatingController extends Controller
         return ($request->expectsJson() || $request->is('admin/api/*')) ? response()->json($this->serialize($record, $request)) : back()->with('success', __('تم حفظ السجل.'));
     }
 
+    public function restore(int $id, Request $request): Response
+    {
+        $this->workflow->restore($id, $request);
+
+        return back()->with('success', __('تمت استعادة السجل إلى حالته السابقة.'));
+    }
+
     public function transition(int $id, Request $request): Response
     {
         $record = $this->workflow->transition($id, $request);
