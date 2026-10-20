@@ -53,6 +53,14 @@ trait BuildsOperatingRecords
     }
 
     /**
+     * Record a stage change the way OperatingWorkflow::transition() does, so stage-reach metrics can be tested without walking every gate.
+     */
+    protected function transitionEvent(int $recordId, string $status, string $at = '2026-10-15 10:00:00'): void
+    {
+        DB::table('operating_events')->insert(['record_id' => $recordId, 'user_id' => null, 'action' => 'transition', 'reason' => 'test', 'before' => null, 'after' => json_encode(['status' => $status]), 'created_at' => $at]);
+    }
+
+    /**
      * @return array<string, mixed>
      */
     protected function recordData(int $id): array

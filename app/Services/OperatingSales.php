@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\DB;
 
 class OperatingSales
 {
-    public const OPEN_STAGES = ['new', 'contacted', 'qualified', 'discovery', 'proposal', 'negotiation'];
+    public const OPEN_STAGES = ['new', 'contacted', 'meeting', 'qualified', 'discovery', 'proposal', 'negotiation'];
 
     public function __construct(private OperatingCatalog $catalog, private OperatingAccess $access, private OperatingWorkflow $workflow) {}
 

@@ -26,7 +26,7 @@ class LeadsPipelineTest extends TestCase
         $sales = $this->operatingUser('sales');
 
         $this->actingAs($sales)->post('/admin/operations/opportunities', $this->lead())->assertSessionHasNoErrors();
-        $this->actingAs($sales)->post('/admin/operations/opportunities', $this->lead(['lead_company' => null]))->assertSessionHasErrors('workflow');
+        $this->actingAs($sales)->post('/admin/operations/opportunities', $this->lead(['lead_company' => null, 'lead_phone' => null]))->assertSessionHasErrors('workflow');
         $this->actingAs($sales)->post('/admin/operations/opportunities', $this->lead(['probability' => 120]))->assertSessionHasErrors('workflow');
     }
 
@@ -38,19 +38,19 @@ class LeadsPipelineTest extends TestCase
 
         $this->actingAs($sales)->post('/admin/operations/opportunities', $this->lead(['assignee_id' => $own]))->assertSessionHasNoErrors();
         $this->actingAs($sales)->post('/admin/operations/opportunities', $this->lead(['assignee_id' => $colleague]))->assertSessionHasErrors('workflow');
-        $this->actingAs($this->operatingUser('sales_manager'))->post('/admin/operations/opportunities', $this->lead(['assignee_id' => $colleague]))->assertSessionHasNoErrors();
+        $this->actingAs($this->operatingUser('sales_manager'))->post('/admin/operations/opportunities', $this->lead(['assignee_id' => $colleague, 'lead_phone' => '01000000001']))->assertSessionHasNoErrors();
         $this->actingAs($sales)->get('/admin/operations/opportunities/create')->assertOk()->assertSee('<option value="'.$own.'"', false)->assertDontSee('<option value="'.$colleague.'"', false);
     }
 
     public function test_proposal_requires_a_client_and_won_requires_a_value(): void
     {
         $owner = $this->operatingUser('owner');
-        $id = $this->operatingRecord('opportunities', 'qualified', ['lead_company' => 'Nile Foods', 'expected_value' => null], 'Lead');
+        $id = $this->operatingRecord('opportunities', 'qualified', ['lead_company' => 'Nile Foods', 'expected_value' => null, 'need' => 'ERP', 'solution' => 'web'], 'Lead');
 
         $this->actingAs($owner)->post("/admin/operations/record/{$id}/transition", ['target' => 'proposal', 'version' => 1, 'reason' => 'Send offer'])->assertSessionHasErrors('workflow');
 
         $clientId = $this->operatingRecord('clients', 'active', ['company' => 'Nile Foods', 'decision_maker' => 'Omar', 'contact' => '0100'], 'Nile Foods');
-        DB::table('operating_records')->where('id', $id)->update(['data' => json_encode(['lead_company' => 'Nile Foods', 'client_id' => $clientId, 'expected_value' => null])]);
+        DB::table('operating_records')->where('id', $id)->update(['data' => json_encode(['lead_company' => 'Nile Foods', 'client_id' => $clientId, 'expected_value' => null, 'need' => 'ERP', 'solution' => 'web'])]);
         $this->actingAs($owner)->post("/admin/operations/record/{$id}/transition", ['target' => 'proposal', 'version' => 1, 'reason' => 'Send offer'])->assertSessionHasNoErrors();
         $this->actingAs($owner)->post("/admin/operations/record/{$id}/transition", ['target' => 'won', 'version' => 2, 'reason' => 'Signed'])->assertSessionHasErrors('workflow');
     }

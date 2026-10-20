@@ -554,6 +554,79 @@ return json_decode(<<<'JSON'
           "required": false
         },
         {
+          "key": "country",
+          "label": { "ar": "الدولة", "en": "Country" },
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "business_profile",
+          "label": { "ar": "نوع النشاط", "en": "Business profile" },
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "lead_quality",
+          "label": { "ar": "جودة العميل", "en": "Lead quality" },
+          "type": "select",
+          "required": false,
+          "options": {
+            "hot": { "ar": "ساخن", "en": "Hot" },
+            "warm": { "ar": "دافئ", "en": "Warm" },
+            "cold": { "ar": "بارد", "en": "Cold" },
+            "bad": { "ar": "سيئ", "en": "Bad" },
+            "unknown": { "ar": "غير محدد", "en": "Unknown" }
+          }
+        },
+        {
+          "key": "fit_status",
+          "label": { "ar": "مدى الملاءمة", "en": "Fit status" },
+          "type": "select",
+          "required": false,
+          "options": {
+            "fit": { "ar": "مناسب", "en": "Fit" },
+            "not_fit": { "ar": "غير مناسب", "en": "Not fit" },
+            "review": { "ar": "قيد المراجعة", "en": "Under review" }
+          }
+        },
+        {
+          "key": "lead_channel",
+          "label": { "ar": "قناة الوارد", "en": "Inbound channel" },
+          "type": "select",
+          "required": false,
+          "options": {
+            "whatsapp": { "ar": "واتساب", "en": "WhatsApp" },
+            "messenger": { "ar": "ماسنجر", "en": "Messenger" },
+            "instagram_dm": { "ar": "رسائل إنستجرام", "en": "Instagram DM" },
+            "facebook_comments": { "ar": "تعليقات فيسبوك", "en": "Facebook comments" },
+            "instagram_comments": { "ar": "تعليقات إنستجرام", "en": "Instagram comments" },
+            "tiktok": { "ar": "تيك توك", "en": "TikTok" },
+            "website_chat": { "ar": "شات الموقع", "en": "Website chat" },
+            "phone": { "ar": "اتصال هاتفي", "en": "Phone call" },
+            "email": { "ar": "بريد إلكتروني", "en": "Email" },
+            "walk_in": { "ar": "زيارة", "en": "Walk-in" },
+            "manual": { "ar": "يدوي", "en": "Manual" }
+          }
+        },
+        {
+          "key": "ad_creative",
+          "label": { "ar": "الإعلان", "en": "Ad creative" },
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "service_introduced",
+          "label": { "ar": "الخدمة المقدمة", "en": "Service introduced" },
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "lead_date",
+          "label": { "ar": "تاريخ دخول العميل", "en": "Lead date" },
+          "type": "datetime-local",
+          "required": false
+        },
+        {
           "key": "lead_source",
           "label": {
             "ar": "مصدر الفرصة",
@@ -648,6 +721,17 @@ return json_decode(<<<'JSON'
           "required": false
         },
         {
+          "key": "deal_type",
+          "label": { "ar": "نوع الصفقة", "en": "Deal type" },
+          "type": "select",
+          "required": false,
+          "options": {
+            "contract": { "ar": "عقد جديد", "en": "New contract" },
+            "renewal": { "ar": "تجديد", "en": "Renewal" },
+            "upsell": { "ar": "بيع إضافي", "en": "Upsell" }
+          }
+        },
+        {
           "key": "expected_close",
           "label": {
             "ar": "تاريخ الإغلاق المتوقع",
@@ -663,7 +747,7 @@ return json_decode(<<<'JSON'
             "en": "Business need and outcome"
           },
           "type": "textarea",
-          "required": true
+          "required": false
         },
         {
           "key": "users",
@@ -681,7 +765,7 @@ return json_decode(<<<'JSON'
             "en": "Solution"
           },
           "type": "select",
-          "required": true,
+          "required": false,
           "options": {
             "web": {
               "ar": "ويب",
@@ -744,7 +828,7 @@ return json_decode(<<<'JSON'
             "en": "Next action"
           },
           "type": "text",
-          "required": true
+          "required": false
         },
         {
           "key": "follow_up",
@@ -753,7 +837,7 @@ return json_decode(<<<'JSON'
             "en": "Follow-up date"
           },
           "type": "date",
-          "required": true
+          "required": false
         },
         {
           "key": "reason",
@@ -781,11 +865,24 @@ return json_decode(<<<'JSON'
           },
           "type": "textarea",
           "required": false
+        },
+        {
+          "key": "notes",
+          "label": { "ar": "ملاحظات", "en": "Notes" },
+          "type": "textarea",
+          "required": false
+        },
+        {
+          "key": "media_buyer_notes",
+          "label": { "ar": "ملاحظات الميديا باير", "en": "Media buyer notes" },
+          "type": "textarea",
+          "required": false
         }
       ],
       "statuses": [
         "new",
         "contacted",
+        "meeting",
         "qualified",
         "discovery",
         "proposal",
@@ -929,6 +1026,18 @@ return json_decode(<<<'JSON'
           },
           "type": "textarea",
           "required": false
+        },
+        {
+          "key": "result",
+          "label": { "ar": "نتيجة التواصل", "en": "Contact result" },
+          "type": "select",
+          "required": false,
+          "options": {
+            "interested": { "ar": "مهتم", "en": "Interested" },
+            "not_interested": { "ar": "غير مهتم", "en": "Not interested" },
+            "no_answer": { "ar": "لا يرد", "en": "No answer" },
+            "callback": { "ar": "طلب معاودة الاتصال", "en": "Callback requested" }
+          }
         },
         {
           "key": "next_step",
@@ -7689,6 +7798,10 @@ return json_decode(<<<'JSON'
     "contacted": {
       "ar": "تم التواصل",
       "en": "Contacted"
+    },
+    "meeting": {
+      "ar": "اجتماع محدد",
+      "en": "Meeting scheduled"
     },
     "qualified": {
       "ar": "مؤهل",

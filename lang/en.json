@@ -976,5 +976,7 @@
   "لا حركات لهذا الصنف بعد.": "No movements for this item yet.",
   "الرصيد يتغير فقط عند إكمال حركة مخزون.": "The balance changes only when a stock movement is completed.",
   "المخزون عند حد إعادة الطلب أو أقل. اطلب كمية جديدة.": "Stock is at or below the reorder level. Reorder it.",
-  "ضمان الأصل ينتهي خلال 30 يومًا.": "The asset warranty ends within 30 days."
+  "ضمان الأصل ينتهي خلال 30 يومًا.": "The asset warranty ends within 30 days.",
+  "هذا الرقم مسجل بالفعل في الفرصة": "This phone is already registered on lead",
+  "اجتماع محدد": "Meeting scheduled"
 }

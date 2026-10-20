@@ -171,10 +171,16 @@ class OperatingWorkflow
             $this->fail('السجلات الصحيحة تتجاوز حجم العينة.', 'Valid rows cannot exceed the sample size.');
         }
         if ($type === 'opportunities') {
-            if (empty($data['client_id']) && empty($data['lead_company'])) {
-                $this->fail('اربط الفرصة بعميل أو سجّل اسم شركة العميل المحتمل.', 'Link a client or enter the lead company.');
+            if (empty($data['client_id']) && empty($data['lead_company']) && empty($data['lead_phone'])) {
+                $this->fail('اربط الفرصة بعميل أو سجّل اسم الشركة أو رقم الهاتف.', 'Link a client or enter the lead company or phone.');
             }
             $this->limitAssignment($user, $data, $existing);
+            $crm = app(OperatingCrm::class);
+            $data['phone_key'] = $crm->phoneKey($data['lead_phone'] ?? null);
+            if ($data['phone_key'] && ($duplicate = $crm->phoneOwner($data['phone_key'], $existing?->id))) {
+                $since = substr((string) $duplicate->created_at, 0, 10);
+                $this->fail('هذا الرقم مسجل بالفعل في الفرصة "'.$duplicate->title.'" منذ '.$since.'.', 'This phone is already registered on lead "'.$duplicate->title.'" since '.$since.'.');
+            }
         }
         if ($type === 'activities') {
             if (empty($data['client_id']) && empty($data['opportunity_id'])) {
@@ -598,7 +604,17 @@ class OperatingWorkflow
             if ($record->type === 'stock_movements' && $target === 'completed') {
                 $changes['data'] = json_encode(app(OperatingAssets::class)->applyStock($record, $user, $input['reason']), JSON_UNESCAPED_UNICODE);
             }
+            $derived = $record->type === 'opportunities' ? app(OperatingCrm::class)->onStageChange($data, $record->status, $target) : $data;
+            if ($target === 'archived' && in_array($record->type, OperatingCrm::RESTORABLE, true)) {
+                $derived['archived_from'] = $record->status;
+            }
+            if ($derived !== $data && ! isset($changes['data'])) {
+                $changes['data'] = json_encode($derived, JSON_UNESCAPED_UNICODE);
+            }
             DB::table('operating_records')->where('id', $record->id)->update($changes);
+            if ($record->type === 'activities' && $target === 'done' && ! empty($data['opportunity_id']) && in_array($data['kind'] ?? null, OperatingCrm::CONTACT_KINDS, true)) {
+                app(OperatingCrm::class)->touchFirstContact((int) $data['opportunity_id'], now()->format('Y-m-d\TH:i'));
+            }
             if ($record->type === 'supplier_payments') {
                 app(OperatingProcurement::class)->settleInvoice((int) $data['supplier_invoice_id'], $user, $input['reason']);
             }
@@ -984,6 +1000,9 @@ class OperatingWorkflow
             }
         }
         if ($record->type === 'opportunities') {
+            if (in_array($target, ['qualified', 'discovery', 'proposal', 'negotiation', 'won'], true)) {
+                $this->requireFields($data, ['need', 'solution']);
+            }
             if (in_array($target, ['lost', 'deferred', 'unsuitable'], true)) {
                 $this->requireFields($data, ['reason']);
             }
