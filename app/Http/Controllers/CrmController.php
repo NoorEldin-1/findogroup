@@ -6,6 +6,7 @@ use App\Services\Cms;
 use App\Services\OperatingAccess;
 use App\Services\OperatingCatalog;
 use App\Services\OperatingCrm;
+use App\Services\OperatingCrmReports;
 use App\Services\OperatingLeads;
 use App\Services\OperatingSales;
 use Illuminate\Http\Request;
@@ -14,7 +15,15 @@ use Symfony\Component\HttpFoundation\Response;
 
 class CrmController extends Controller
 {
-    public function __construct(private OperatingCrm $crm, private OperatingAccess $access, private OperatingCatalog $catalog, private OperatingLeads $leads) {}
+    public function __construct(private OperatingCrm $crm, private OperatingAccess $access, private OperatingCatalog $catalog, private OperatingLeads $leads, private OperatingCrmReports $reports) {}
+
+    public function dashboard(Request $request): Response
+    {
+        $this->authorizeCrm($request);
+        [$from, $to, $scope] = $this->period($request);
+
+        return $this->view('crm-dashboard', $this->reports->dashboard($request->user(), $from, $to, $scope) + ['from' => $from, 'to' => $to, 'scope' => $scope, 'calendar' => $this->reports->calendar($request->user(), today()->format('Y-m'), $scope)]);
+    }
 
     public function settings(Request $request): Response
     {
@@ -101,6 +110,16 @@ class CrmController extends Controller
         app(OperatingSales::class)->logActivity($request->user(), $lead, $input);
 
         return back()->with('success', __('تم تسجيل النشاط.'));
+    }
+
+    /**
+     * @return array{0: string, 1: string, 2: string}
+     */
+    private function period(Request $request): array
+    {
+        $input = $request->validate(['from' => 'nullable|date_format:Y-m-d', 'to' => 'nullable|date_format:Y-m-d|after_or_equal:from', 'scope' => 'nullable|in:team,mine']);
+
+        return [$input['from'] ?? today()->startOfMonth()->format('Y-m-d'), $input['to'] ?? today()->endOfMonth()->format('Y-m-d'), $this->crm->isManager($request->user()) ? ($input['scope'] ?? 'team') : 'mine'];
     }
 
     /**

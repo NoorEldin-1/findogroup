@@ -43,6 +43,7 @@ Route::middleware(AdminLocale::class)->group(function () {
         Route::post('/operations/attendance/check-out', [T::class, 'checkOut'])->middleware('throttle:10,1');
         Route::get('/operations/attendance/board', [T::class, 'board']);
         Route::get('/operations/attendance/monthly', [T::class, 'monthly']);
+        Route::get('/operations/crm', [C::class, 'dashboard']);
         Route::get('/operations/crm/settings', [C::class, 'settings']);
         Route::post('/operations/crm/settings', [C::class, 'saveSettings']);
         Route::get('/operations/crm/leads', [C::class, 'leads']);
