@@ -16,7 +16,7 @@ const PostCard = ({ post }) => {
   const imageUrl = getFeaturedImageUrl(post);
   const categories = getCategoryNames(post);
   const excerpt = stripHtml(post.excerpt.rendered);
-  const readingTime = getReadingTime(post.content?.rendered || "");
+  const readingTime = post.readingTime ?? getReadingTime(post.content?.rendered || "");
   return /* @__PURE__ */ jsxs(
     Link,
     {

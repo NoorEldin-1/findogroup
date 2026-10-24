@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\BlogPagination;
 use App\Services\LegacyRedirects;
 use App\Services\SeoPolicy;
 use App\Services\WebsiteContent;
@@ -54,11 +55,17 @@ class WebsiteController extends Controller
                 return redirect($this->redirectUrl($request, $legacyTarget), 301);
             }
         }
+        if ($normalized === '/blogs' && $request->query('page') === '1') {
+            return redirect($this->redirectUrl($request, '/blogs', ['page']), 301);
+        }
         if ($path !== $normalized) {
             return redirect($this->redirectUrl($request, $normalized), 301);
         }
         $locale = in_array($request->cookie('findo_language'), ['ar', 'en'], true) ? $request->cookie('findo_language') : 'ar';
         $page = $missingLegacyPost ? null : $content->page($normalized, $locale);
+        if ($page && $normalized === '/blogs') {
+            $page = app(BlogPagination::class)->apply($page, $request, $locale);
+        }
         $status = $page && $normalized !== '/__not-found' ? 200 : 404;
         if (! $page) {
             $page = $content->page('/__not-found', $locale) ?? ['title' => 'الصفحة غير موجودة', 'body_html' => '<main><h1>الصفحة غير موجودة</h1><a href="/">الرئيسية</a></main>', 'seo' => [], 'view_data' => [], 'path' => $normalized, 'indexable' => false];
