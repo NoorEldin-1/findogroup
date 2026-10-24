@@ -8,6 +8,7 @@ use App\Services\OperatingCatalog;
 use App\Services\OperatingCrm;
 use App\Services\OperatingCrmReports;
 use App\Services\OperatingLeadImport;
+use App\Services\OperatingLeadRelations;
 use App\Services\OperatingLeads;
 use App\Services\OperatingSales;
 use Illuminate\Http\Request;
@@ -18,7 +19,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 class CrmController extends Controller
 {
-    public function __construct(private OperatingCrm $crm, private OperatingAccess $access, private OperatingCatalog $catalog, private OperatingLeads $leads, private OperatingCrmReports $reports, private OperatingLeadImport $import) {}
+    public function __construct(private OperatingCrm $crm, private OperatingAccess $access, private OperatingCatalog $catalog, private OperatingLeads $leads, private OperatingCrmReports $reports, private OperatingLeadImport $import, private OperatingLeadRelations $relations) {}
 
     public function dashboard(Request $request): Response
     {
@@ -170,7 +171,41 @@ class CrmController extends Controller
             'kinds' => array_map(fn (array $label): string => $this->catalog->label($label), (array) $activityFields['kind']['options']),
             'results' => array_map(fn (array $label): string => $this->catalog->label($label), (array) $activityFields['result']['options']),
             'employees' => $this->crm->isManager($request->user()) ? $this->access->query($request->user(), 'employees')->where('status', 'active')->orderBy('title')->pluck('title', 'id') : collect(),
+            'sharedWith' => $this->relations->sharedWith($lead),
+            'shareable' => $this->relations->shareableUsers($request->user(), $lead),
+            'following' => $this->relations->isFollowing($request->user(), $lead),
         ]);
+    }
+
+    public function shareLead(int $id, Request $request): Response
+    {
+        $this->authorizeCrm($request);
+        $lead = $this->access->record($request->user(), $id, 'write');
+        abort_unless($lead->type === 'opportunities', 404);
+        $input = $request->validate(['user_id' => 'required|integer']);
+        $this->relations->share($request->user(), $lead, (int) $input['user_id']);
+
+        return back()->with('success', __('تمت مشاركة العميل.'));
+    }
+
+    public function unshareLead(int $id, Request $request): Response
+    {
+        $this->authorizeCrm($request);
+        $lead = $this->access->record($request->user(), $id, 'write');
+        abort_unless($lead->type === 'opportunities', 404);
+        $input = $request->validate(['user_id' => 'required|integer']);
+        $this->relations->unshare($request->user(), $lead, (int) $input['user_id']);
+
+        return back()->with('success', __('تم إلغاء المشاركة.'));
+    }
+
+    public function followLead(int $id, Request $request): Response
+    {
+        $this->authorizeCrm($request);
+        $lead = $this->access->record($request->user(), $id);
+        abort_unless($lead->type === 'opportunities', 404);
+
+        return back()->with('success', $this->relations->toggleFollow($request->user(), $lead) ? __('أنت تتابع هذا العميل الآن.') : __('تم إلغاء المتابعة.'));
     }
 
     public function handover(int $id, Request $request): Response

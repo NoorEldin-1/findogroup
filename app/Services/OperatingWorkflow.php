@@ -594,6 +594,7 @@ class OperatingWorkflow
     {
         $user = $request->user();
         $record = $this->access->record($user, $id);
+        abort_unless($this->access->query($user, $record->type, 'write')->where('id', $id)->exists(), 403);
         $entity = $this->catalog->entity($record->type);
         $input = $request->validate(['target' => 'required|in:'.implode(',', $entity['statuses']), 'version' => 'required|integer', 'reason' => 'required|string|max:2000']);
 

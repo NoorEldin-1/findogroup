@@ -191,7 +191,7 @@ class OperatingAccess
             });
         }
         if ($user->role === 'sales' && $type === 'quotes') {
-            $quoteIds = DB::table('operating_links')->where('field', 'opportunity_id')->whereIn('target_id', $this->query($user, 'opportunities')->pluck('id'))->pluck('record_id');
+            $quoteIds = DB::table('operating_links')->where('field', 'opportunity_id')->whereIn('target_id', $this->query($user, 'opportunities', 'write')->pluck('id'))->pluck('record_id');
 
             return $query->where(fn (Builder $scope) => $scope->where('owner_id', $user->id)->orWhereIn('id', $quoteIds));
         }

@@ -171,7 +171,7 @@ class OperatingLeads
             'journey' => $journey, 'timeline' => $timeline, 'upcoming' => $upcoming, 'quotes' => $quotes,
             'attachments' => DB::table('operating_attachments')->where('record_id', $lead->id)->latest('id')->get(),
             'stats' => ['last_contact' => $lastContact ? str_replace('T', ' ', $lastContact) : null, 'days_in_stage' => (int) floor(abs(now()->diffInDays($stageSince))), 'next' => $nextActivity ? str_replace('T', ' ', $this->catalog->data($nextActivity)['due_at'] ?? '').' · '.$nextActivity->title : ($data['next_action'] ?? null)],
-            'canWrite' => $this->access->can($user, 'opportunities', 'write'), 'isManager' => $this->crm->isManager($user),
+            'canWrite' => $this->access->can($user, 'opportunities', 'write') && $this->access->query($user, 'opportunities', 'write')->where('id', $lead->id)->exists(), 'isManager' => $this->crm->isManager($user),
             'nextStages' => collect($entity['statuses'])->reject(fn (string $status): bool => in_array($status, [$lead->status, 'archived'], true))->mapWithKeys(fn (string $status): array => [$status => $this->catalog->status($status)])->all(),
         ];
     }

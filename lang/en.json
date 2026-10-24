@@ -1233,5 +1233,15 @@
   "صندوق الوارد": "Inbox",
   "غير مقروء": "Unread",
   "استيراد البيانات": "Import data",
-  "ملاحظات": "Notes"
+  "ملاحظات": "Notes",
+  "المشاركة والمتابعة": "Sharing & following",
+  "إلغاء المتابعة": "Unfollow",
+  "مشاركة": "Share",
+  "شارك مع": "Share with",
+  "إلغاء المشاركة": "Remove",
+  "لم تتم مشاركة هذا العميل مع أحد.": "This lead isn't shared with anyone.",
+  "تمت مشاركة العميل.": "Lead shared.",
+  "تم إلغاء المشاركة.": "Sharing removed.",
+  "أنت تتابع هذا العميل الآن.": "You're following this lead.",
+  "تم إلغاء المتابعة.": "Unfollowed."
 }

@@ -64,6 +64,9 @@ Route::middleware(AdminLocale::class)->group(function () {
         Route::post('/operations/crm/leads/{id}/handover', [C::class, 'handover'])->whereNumber('id');
         Route::post('/operations/crm/leads/{id}/activity', [C::class, 'logActivity'])->whereNumber('id');
         Route::post('/operations/crm/leads/{id}/sla-dismiss', [C::class, 'dismissSla'])->whereNumber('id');
+        Route::post('/operations/crm/leads/{id}/share', [C::class, 'shareLead'])->whereNumber('id');
+        Route::post('/operations/crm/leads/{id}/unshare', [C::class, 'unshareLead'])->whereNumber('id');
+        Route::post('/operations/crm/leads/{id}/follow', [C::class, 'followLead'])->whereNumber('id');
         Route::get('/operations/opportunities/pipeline', [S::class, 'pipeline']);
         Route::post('/operations/opportunities/{id}/convert-client', [S::class, 'convertLead'])->whereNumber('id');
         Route::get('/operations/activities/follow-ups', [S::class, 'followUps']);
