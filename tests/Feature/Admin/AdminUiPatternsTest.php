@@ -3,6 +3,7 @@
 namespace Tests\Feature\Admin;
 
 use App\Services\OperatingCatalog;
+use App\Services\OperatingLeadRelations;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\Concerns\BuildsOperatingRecords;
@@ -86,6 +87,23 @@ class AdminUiPatternsTest extends TestCase
         $this->assertSame('/admin/operations/crm/leads/'.$mine, $results[0]['url']);
         $this->assertSame([], $this->actingAs($rep)->getJson('/admin/operations/search?q=n')->assertOk()->json('results'));
         $this->assertCount(3, $this->actingAs($this->operatingUser('owner'))->getJson('/admin/operations/search?q=NILE')->json('results'));
+    }
+
+    public function test_a_colleague_a_lead_is_shared_with_gets_a_read_only_form(): void
+    {
+        $owner = $this->operatingUser('sales');
+        $this->employeeFor($owner);
+        $colleague = $this->operatingUser('sales');
+        $this->employeeFor($colleague);
+        $lead = $this->operatingRecord('opportunities', 'new', ['lead_company' => 'Co'], 'Shared lead', $owner->id);
+        app(OperatingLeadRelations::class)->share($owner, DB::table('operating_records')->find($lead), $colleague->id);
+
+        $this->actingAs($colleague)->get('/admin/operations/record/'.$lead)->assertOk()
+            ->assertSee('<fieldset disabled>', false)
+            ->assertDontSee('<div class="form-actions">', false)
+            ->assertDontSee('/admin/operations/record/'.$lead.'/transition', false);
+        $this->actingAs($owner)->get('/admin/operations/record/'.$lead)->assertOk()
+            ->assertSee('<div class="form-actions">', false);
     }
 
     public function test_contents_type_filter_can_select_posts(): void
