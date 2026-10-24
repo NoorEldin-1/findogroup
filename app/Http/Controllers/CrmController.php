@@ -25,8 +25,9 @@ class CrmController extends Controller
     {
         $this->authorizeCrm($request);
         [$from, $to, $scope] = $this->period($request);
+        $tab = $request->validate(['tab' => 'nullable|in:leads,shared,following'])['tab'] ?? 'leads';
 
-        return $this->view('crm-dashboard', $this->reports->dashboard($request->user(), $from, $to, $scope) + ['from' => $from, 'to' => $to, 'scope' => $scope, 'calendar' => $this->reports->calendar($request->user(), today()->format('Y-m'), $scope)]);
+        return $this->view('crm-dashboard', $this->reports->dashboard($request->user(), $from, $to, $scope) + ['from' => $from, 'to' => $to, 'scope' => $scope, 'tab' => $tab, 'calendar' => $this->reports->calendar($request->user(), today()->format('Y-m'), $scope)]);
     }
 
     public function funnel(Request $request): Response
@@ -223,7 +224,7 @@ class CrmController extends Controller
     public function logActivity(int $id, Request $request): Response
     {
         $this->authorizeCrm($request);
-        $lead = $this->access->record($request->user(), $id);
+        $lead = $this->access->record($request->user(), $id, 'write');
         abort_unless($lead->type === 'opportunities', 404);
         abort_unless($this->access->can($request->user(), 'activities', 'write'), 403);
         $kinds = array_keys(collect($this->catalog->entity('activities')['fields'])->firstWhere('key', 'kind')['options']);
@@ -249,7 +250,7 @@ class CrmController extends Controller
      */
     private function leadFilters(Request $request): array
     {
-        return $request->validate(['q' => 'nullable|string|max:200', 'date_field' => 'nullable|in:created,contact,closed', 'from' => 'nullable|date_format:Y-m-d', 'to' => 'nullable|date_format:Y-m-d|after_or_equal:from', 'stage' => 'nullable|string|max:40', 'quality' => 'nullable|string|max:40', 'fit' => 'nullable|string|max:40', 'source' => 'nullable|string|max:40', 'channel' => 'nullable|string|max:40', 'campaign' => 'nullable|integer', 'assignee' => 'nullable|integer', 'added_by' => 'nullable|integer', 'sla' => 'nullable|in:breached']);
+        return $request->validate(['q' => 'nullable|string|max:200', 'date_field' => 'nullable|in:created,contact,closed', 'from' => 'nullable|date_format:Y-m-d', 'to' => 'nullable|date_format:Y-m-d|after_or_equal:from', 'stage' => 'nullable|string|max:40', 'quality' => 'nullable|string|max:40', 'fit' => 'nullable|string|max:40', 'source' => 'nullable|string|max:40', 'channel' => 'nullable|string|max:40', 'campaign' => 'nullable|integer', 'assignee' => 'nullable|integer', 'added_by' => 'nullable|integer', 'sla' => 'nullable|in:breached', 'relation' => 'nullable|in:shared,following']);
     }
 
     /**

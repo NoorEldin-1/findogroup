@@ -22,7 +22,7 @@ $funnel=\App\Services\OperatingCrm::FUNNEL; $current=array_search($lead->status,
 @if($slaOpen && $isManager)<form method="post" action="/admin/operations/crm/leads/{{ $lead->id }}/sla-dismiss" class="notice error inline-form">@csrf<span>{{ __('هذا العميل تجاوز مهلة التواصل.') }}</span><input name="reason" required placeholder="{{ __('سبب إخفاء التنبيه') }}"><button class="button small secondary">{{ __('إخفاء التنبيه') }}</button></form>@elseif($slaOpen)<div class="notice error">{{ __('هذا العميل تجاوز مهلة التواصل. سجّل أول تواصل الآن.') }}</div>@endif
 
 <div class="crm-grid"><div>
-@if($access->can(auth()->user(),'activities','write'))<section class="card"><h2>{{ __('تسجيل نشاط') }}</h2><form method="post" action="/admin/operations/crm/leads/{{ $lead->id }}/activity" class="field-grid">@csrf
+@if($canWrite && $access->can(auth()->user(),'activities','write'))<section class="card"><h2>{{ __('تسجيل نشاط') }}</h2><form method="post" action="/admin/operations/crm/leads/{{ $lead->id }}/activity" class="field-grid">@csrf
 <label>{{ __('نوع النشاط') }}<select name="kind" required>@foreach($kinds as $key=>$label)<option value="{{ $key }}" @selected($key==='call')>{{ $label }}</option>@endforeach</select></label>
 <label>{{ __('نتيجة التواصل') }}<select name="result"><option value="">—</option>@foreach($results as $key=>$label)<option value="{{ $key }}">{{ $label }}</option>@endforeach</select></label>
 <label class="long">{{ __('ماذا حدث؟') }}<textarea name="outcome" required maxlength="5000"></textarea></label>

@@ -9,7 +9,7 @@ use Illuminate\Support\Collection;
 
 class OperatingCrmReports
 {
-    public function __construct(private OperatingCatalog $catalog, private OperatingAccess $access, private OperatingCrm $crm, private OperatingSales $sales, private OperatingLeads $leadRows) {}
+    public function __construct(private OperatingCatalog $catalog, private OperatingAccess $access, private OperatingCrm $crm, private OperatingSales $sales, private OperatingLeads $leadRows, private OperatingLeadRelations $relations) {}
 
     /**
      * @return Collection<int, object>
@@ -63,6 +63,9 @@ class OperatingCrmReports
             $this->addValue($potential, $this->catalog->data($lead));
         }
         $alerts = $leads->filter(fn (object $lead): bool => $this->crm->openAlert($lead));
+        $related = fn (string $relation): Collection => $this->access->query($user, 'opportunities')->whereIn('id', $this->relations->leadIds($user, $relation))->where('status', '!=', 'archived')->latest('updated_at')->get();
+        $shared = $related(OperatingLeadRelations::SHARED);
+        $following = $related(OperatingLeadRelations::FOLLOWING);
         $canActivities = $this->access->can($user, 'activities');
         $employee = (int) ($this->access->employeeId($user) ?? 0);
 
@@ -74,6 +77,9 @@ class OperatingCrmReports
                 'contact_to_meeting' => $this->percent($meetings, $contacted), 'meeting_to_close' => $this->percent($closedFromMeeting, $meetings),
             ],
             'recent' => $this->leadRows->rows($leads->sortByDesc('created_at')->take(6)),
+            'shared' => $this->leadRows->rows($shared->take(6)),
+            'following' => $this->leadRows->rows($following->take(6)),
+            'tabCounts' => ['leads' => $leads->count(), 'shared' => $shared->count(), 'following' => $following->count()],
             'breached' => $this->leadRows->rows($alerts->sortBy(fn (object $lead): string => $this->catalog->data($lead)['sla_due_at'] ?? '')->take(6)),
             'today' => $canActivities ? $this->access->query($user, 'activities')->where('status', 'planned')->where('data->assignee_id', $employee)->where('data->due_at', '<=', today()->format('Y-m-d').'T23:59')->get()->sortBy(fn (object $row): string => $this->catalog->data($row)['due_at'] ?? '')->values() : collect(),
             'mine' => $canActivities ? $this->access->query($user, 'activities')->where('status', 'done')->where('data->assignee_id', $employee)->latest('updated_at')->limit(6)->get() : collect(),

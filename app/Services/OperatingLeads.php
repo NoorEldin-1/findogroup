@@ -24,7 +24,7 @@ class OperatingLeads
 
     public const EXPORT_LIMIT = 5000;
 
-    public function __construct(private OperatingCatalog $catalog, private OperatingAccess $access, private OperatingCrm $crm, private OperatingSales $sales, private OperatingWorkflow $workflow, private Spreadsheet $spreadsheet) {}
+    public function __construct(private OperatingCatalog $catalog, private OperatingAccess $access, private OperatingCrm $crm, private OperatingSales $sales, private OperatingWorkflow $workflow, private Spreadsheet $spreadsheet, private OperatingLeadRelations $relations) {}
 
     /**
      * @param  array<string, mixed>  $filters
@@ -61,6 +61,9 @@ class OperatingLeads
         }
         if (($filters['sla'] ?? null) === 'breached') {
             $query->whereIn('status', OperatingSales::OPEN_STAGES)->where('data->sla_due_at', '<', now()->format('Y-m-d\TH:i'))->whereNull('data->first_contact_at');
+        }
+        if (in_array($filters['relation'] ?? null, [OperatingLeadRelations::SHARED, OperatingLeadRelations::FOLLOWING], true)) {
+            $query->whereIn('id', $this->relations->leadIds($user, $filters['relation']));
         }
 
         return $query;

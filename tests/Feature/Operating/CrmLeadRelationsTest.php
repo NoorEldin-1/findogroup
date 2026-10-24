@@ -83,6 +83,8 @@ class CrmLeadRelationsTest extends TestCase
         $this->actingAs($colleague)->post('/admin/operations/record/'.$lead.'/transition', ['target' => 'contacted', 'version' => 1, 'reason' => 'x'])->assertForbidden();
         $this->assertSame('new', DB::table('operating_records')->find($lead)->status);
         $this->assertFalse(app(OperatingAccess::class)->query($colleague, 'quotes')->where('id', $quote)->exists());
+        $this->actingAs($colleague)->post('/admin/operations/crm/leads/'.$lead.'/activity', ['kind' => 'call', 'outcome' => 'x'])->assertForbidden();
+        $this->actingAs($colleague)->get('/admin/operations/crm/leads/'.$lead)->assertOk()->assertDontSee(__('تسجيل نشاط'));
     }
 
     public function test_a_lead_cannot_be_shared_with_yourself_or_a_user_without_crm_access(): void

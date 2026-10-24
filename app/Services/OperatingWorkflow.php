@@ -93,6 +93,7 @@ class OperatingWorkflow
                     $this->fail('العلاقة لا تشير إلى سجل صالح من النوع المطلوب.', 'The relationship must reference an active record of the required type.');
                 }
                 $this->access->record($user, $target->id);
+                abort_if($target->type === 'opportunities' && ! $this->access->query($user, 'opportunities', 'write')->where('id', $target->id)->exists(), 403);
                 if ($field['entity'] === 'employees' && $limitedEmployee && in_array($type, ['leave', 'time_entries', 'data_batches'], true) && $value != $this->access->employeeId($user)) {
                     abort(403);
                 }
