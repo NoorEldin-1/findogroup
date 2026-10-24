@@ -148,3 +148,24 @@
         });
     });
 })();
+(() => {
+    const translate = text => window.findoAdminTranslations?.[text] ?? text;
+    document.querySelectorAll('[data-filter-panel]').forEach(panel => {
+        const toggle = panel.querySelector('[data-filter-toggle]');
+        if (!toggle) return;
+        const key = 'findo-filters-hidden:' + location.pathname;
+        const apply = hidden => {
+            panel.classList.toggle('collapsed', hidden);
+            toggle.setAttribute('aria-expanded', String(!hidden));
+            toggle.textContent = translate(hidden ? 'إظهار الفلاتر' : 'إخفاء الفلاتر');
+        };
+        let hidden = false;
+        try { hidden = localStorage.getItem(key) === '1'; } catch {}
+        apply(hidden);
+        toggle.addEventListener('click', () => {
+            hidden = !hidden;
+            apply(hidden);
+            try { hidden ? localStorage.setItem(key, '1') : localStorage.removeItem(key); } catch {}
+        });
+    });
+})();

@@ -1,0 +1,1 @@
+<div class="filter-head"><span class="filter-icon">@include('admin.icon',['name'=>'filter'])</span><div><b>{{ __('الفلاتر والبحث') }}</b><small>{{ $subtitle ?? __('ابحث وفلتر للوصول للبيانات المطلوبة بسرعة') }}</small></div><button type="button" class="button small secondary" data-filter-toggle aria-expanded="true">{{ __('إخفاء الفلاتر') }}</button></div>
