@@ -10,7 +10,7 @@ const PostsGridBoard = ({
   error,
   totalPages,
   currentPage,
-  onPageChange,
+  getPageHref,
   hasActiveFilters,
   onClearFilters,
   filters
@@ -41,15 +41,14 @@ const PostsGridBoard = ({
         /* @__PURE__ */ jsx("p", { className: "mb-4 text-muted-foreground", children: t("\u062C\u0631\u0628 \u062A\u063A\u064A\u064A\u0631 \u0627\u0644\u0641\u0644\u0627\u062A\u0631 \u0623\u0648 \u0627\u0644\u0628\u062D\u062B \u0628\u0643\u0644\u0645\u0627\u062A \u0645\u062E\u062A\u0644\u0641\u0629", "Try changing filters or search with different keywords") }),
         hasActiveFilters && /* @__PURE__ */ jsx("button", { type: "button", onClick: onClearFilters, className: "text-primary hover:underline", children: t("\u0645\u0633\u062D \u062C\u0645\u064A\u0639 \u0627\u0644\u0641\u0644\u0627\u062A\u0631", "Clear All Filters") })
       ] }),
-      totalPages > 1 && /* @__PURE__ */ jsxs("div", { className: "mt-12 flex items-center justify-center gap-2", children: [
+      totalPages > 1 && /* @__PURE__ */ jsxs("nav", { "aria-label": t("ترقيم المدونة", "Blog pages"), className: "mt-12 flex items-center justify-center gap-2", children: [
         /* @__PURE__ */ jsx(
-          "button",
+          currentPage === 1 ? "span" : "a",
           {
-            type: "button",
-            onClick: () => onPageChange(Math.max(1, currentPage - 1)),
-            disabled: currentPage === 1,
+            href: currentPage === 1 ? undefined : getPageHref(currentPage - 1),
+            "aria-disabled": currentPage === 1 ? true : undefined,
             "aria-label": t("\u0627\u0644\u0635\u0641\u062D\u0629 \u0627\u0644\u0633\u0627\u0628\u0642\u0629", "Previous page"),
-            className: "grid h-10 w-10 place-items-center rounded-full border border-border bg-popover text-muted-foreground transition-all duration-200 ease-ds hover:border-primary/60 hover:text-primary disabled:cursor-not-allowed disabled:opacity-40",
+            className: cn("grid h-10 w-10 place-items-center rounded-full border border-border bg-popover text-muted-foreground transition-all duration-200 ease-ds hover:border-primary/60 hover:text-primary", currentPage === 1 && "cursor-not-allowed opacity-40"),
             children: /* @__PURE__ */ jsx(ChevronRight, { className: "h-5 w-5", strokeWidth: 1.75 })
           }
         ),
@@ -65,12 +64,12 @@ const PostsGridBoard = ({
             pageNum = currentPage - 2 + i;
           }
           return /* @__PURE__ */ jsx(
-            "button",
+            "a",
             {
-              type: "button",
-              onClick: () => onPageChange(pageNum),
+              href: getPageHref(pageNum),
+              "aria-current": currentPage === pageNum ? "page" : undefined,
               className: cn(
-                "h-10 w-10 rounded-full border font-display font-semibold transition-all duration-200 ease-ds",
+                "inline-flex items-center justify-center h-10 w-10 rounded-full border font-display font-semibold transition-all duration-200 ease-ds",
                 currentPage === pageNum ? "border-primary bg-primary/15 text-primary" : "border-border bg-popover text-muted-foreground hover:border-primary/60 hover:text-primary"
               ),
               children: pageNum
@@ -79,13 +78,12 @@ const PostsGridBoard = ({
           );
         }) }),
         /* @__PURE__ */ jsx(
-          "button",
+          currentPage === totalPages ? "span" : "a",
           {
-            type: "button",
-            onClick: () => onPageChange(Math.min(totalPages, currentPage + 1)),
-            disabled: currentPage === totalPages,
+            href: currentPage === totalPages ? undefined : getPageHref(currentPage + 1),
+            "aria-disabled": currentPage === totalPages ? true : undefined,
             "aria-label": t("\u0627\u0644\u0635\u0641\u062D\u0629 \u0627\u0644\u062A\u0627\u0644\u064A\u0629", "Next page"),
-            className: "grid h-10 w-10 place-items-center rounded-full border border-border bg-popover text-muted-foreground transition-all duration-200 ease-ds hover:border-primary/60 hover:text-primary disabled:cursor-not-allowed disabled:opacity-40",
+            className: cn("grid h-10 w-10 place-items-center rounded-full border border-border bg-popover text-muted-foreground transition-all duration-200 ease-ds hover:border-primary/60 hover:text-primary", currentPage === totalPages && "cursor-not-allowed opacity-40"),
             children: /* @__PURE__ */ jsx(ChevronLeft, { className: "h-5 w-5", strokeWidth: 1.75 })
           }
         )

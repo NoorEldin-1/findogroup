@@ -1,24 +1,42 @@
 import { jsx, jsxs } from "react/jsx-runtime";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import SEO from "@/components/SEO";
 import { PageShell } from "@/components/v2/layout";
 import { BlogsHeroBoard, BlogFiltersBar, PostsGridBoard } from "@/components/v2/blog";
 import { usePosts, useCategories } from "@/hooks/useWordPress";
 import { getDateFilterOptions } from "@/lib/wordpress";
-const Blogs = () => {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  const [selectedDateFilter, setSelectedDateFilter] = useState("all");
-  const [currentPage, setCurrentPage] = useState(1);
-  const dateFilterOptions = getDateFilterOptions();
+import { blogPaginationUrl } from "@/lib/blogPagination";
+const Blogs = ({ initialData = null, initialCategories = null, initialFilters = {}, initialDateFilterOptions = null, initialSeo = null }) => {
+  const [searchQuery, setSearchQuery] = useState(initialFilters.search || "");
+  const [debouncedSearch, setDebouncedSearch] = useState(initialFilters.search || "");
+  const [selectedCategory, setSelectedCategory] = useState(initialFilters.category ?? null);
+  const [selectedDateFilter, setSelectedDateFilter] = useState(initialFilters.date || "all");
+  const [currentPage, setCurrentPage] = useState(initialFilters.page || 1);
+  const mounted = useRef(false);
+  const dateFilterOptions = initialDateFilterOptions || getDateFilterOptions();
   useEffect(() => {
+    if (searchQuery === debouncedSearch) return;
     const timer = setTimeout(() => {
       setDebouncedSearch(searchQuery);
       setCurrentPage(1);
     }, 500);
     return () => clearTimeout(timer);
-  }, [searchQuery]);
+  }, [searchQuery, debouncedSearch]);
+  useEffect(() => {
+    if (!mounted.current) { mounted.current = true; return; }
+    const path = blogPaginationUrl(currentPage, { category: selectedCategory, search: debouncedSearch, date: selectedDateFilter });
+    history.replaceState(history.state, '', path);
+    if (initialSeo) {
+      const canonical = initialSeo.baseUrl + path;
+      const title = initialSeo.title + (currentPage > 1 ? (document.documentElement.lang === 'ar' ? ' — الصفحة ' : ' — Page ') + currentPage : '');
+      const filtered = selectedCategory !== null || debouncedSearch !== '' || selectedDateFilter !== 'all';
+      document.title = title;
+      document.querySelector('link[rel="canonical"]')?.setAttribute('href', canonical);
+      document.querySelector('meta[property="og:url"]')?.setAttribute('content', canonical);
+      for (const selector of ['meta[property="og:title"]', 'meta[name="twitter:title"]']) document.querySelector(selector)?.setAttribute('content', title);
+      document.querySelector('meta[name="robots"]')?.setAttribute('content', filtered || !initialSeo.indexable ? 'noindex, follow' : initialSeo.robots);
+    }
+  }, [currentPage, selectedCategory, debouncedSearch, selectedDateFilter]);
   const dateFilter = dateFilterOptions.find((opt) => opt.value === selectedDateFilter);
   const postsParams = useMemo(() => ({
     page: currentPage,
@@ -27,8 +45,8 @@ const Blogs = () => {
     search: debouncedSearch || void 0,
     after: dateFilter?.after
   }), [currentPage, selectedCategory, debouncedSearch, dateFilter?.after]);
-  const { posts, totalPages, isLoading, error } = usePosts(postsParams);
-  const { categories } = useCategories();
+  const { posts, totalPages, isLoading, error } = usePosts(postsParams, initialData);
+  const { categories } = useCategories(initialCategories);
   const handleCategoryChange = (categoryId) => {
     setSelectedCategory(categoryId);
     setCurrentPage(1);
@@ -66,7 +84,7 @@ const Blogs = () => {
             error,
             totalPages,
             currentPage,
-            onPageChange: setCurrentPage,
+            getPageHref: (page) => blogPaginationUrl(page, { category: selectedCategory, search: debouncedSearch, date: selectedDateFilter }),
             hasActiveFilters,
             onClearFilters: clearFilters,
             filters: /* @__PURE__ */ jsx(

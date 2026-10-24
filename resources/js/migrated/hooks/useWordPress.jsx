@@ -1,8 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { insertLocal } from "@/adapters/local-api.jsx";
-function useLocalData(endpoint) {
-  const [state, setState] = useState({ posts: [], categories: [], comments: [], total: 0, totalPages: 1, isLoading: true, error: null });
+function useLocalData(endpoint, initialData = null) {
+  const initialPending = useRef(initialData !== null);
+  const [state, setState] = useState(() => ({ posts: [], categories: [], comments: [], total: 0, totalPages: 1, ...initialData, isLoading: initialData === null, error: null }));
   useEffect(() => {
+    if (initialPending.current) {
+      initialPending.current = false;
+      return;
+    }
+    setState((previous) => ({ ...previous, isLoading: true, error: null }));
     const controller = new AbortController();
     fetch(endpoint, { signal: controller.signal }).then((r) => {
       if (!r.ok) throw new Error("Unable to load local content");
@@ -14,8 +20,8 @@ function useLocalData(endpoint) {
   }, [endpoint]);
   return state;
 }
-export const usePosts = (params = {}) => useLocalData("/local-api/posts?" + new URLSearchParams(Object.entries(params).filter(([, v]) => v !== void 0)));
-export const useCategories = () => useLocalData("/local-api/categories");
+export const usePosts = (params = {}, initialData = null) => useLocalData("/local-api/posts?" + new URLSearchParams(Object.entries(params).filter(([, v]) => v !== void 0)), initialData);
+export const useCategories = (initialCategories = null) => useLocalData("/local-api/categories", initialCategories === null ? null : { categories: initialCategories });
 export const usePost = (slug) => useLocalData("/local-api/posts?slug=" + encodeURIComponent(slug));
 export const useComments = (postId) => ({ ...useLocalData("/local-api/comments?post=" + postId), refetch() {
 }, async addComment(data) {
