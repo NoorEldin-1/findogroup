@@ -20,7 +20,7 @@
 @forelse($rows as $row)<tr>@foreach($columns as $column)<td>@switch($column)
 @case('title')<a class="item-title" href="/admin/operations/crm/leads/{{ $row['id'] }}">{{ $row['title'] }}</a>@break
 @case('lead_phone')<span dir="ltr">{{ $row['lead_phone'] ?? '—' }}</span>@break
-@case('status')<span class="badge">{{ $row['status'] }}</span>@break
+@case('status')<span class="badge {{ $row['status_key'] ?? '' }}">{{ $row['status'] }}</span>@break
 @case('sla')@if($row['sla'])<span class="sla-badge {{ $row['sla'] }}">{{ __(\App\Services\OperatingCrm::SLA_LABELS[$row['sla']]) }}</span>@else — @endif @break
 @case('expected_value')<span dir="ltr">{{ $row['expected_value'] ?? '—' }}</span>@break
 @default{{ $row[$column] ?? '—' }}
