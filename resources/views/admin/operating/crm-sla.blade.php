@@ -2,7 +2,7 @@
 @section('title',__('المهام وSLA'))
 @section('content')
 @php $pct=fn($value)=>$value===null?'—':$value.'%'; $kindMax=max([1, ...array_values($kinds ?: [0])]); $resultMax=max([1, ...array_values($results ?: [0])]); $manager=$crm->isManager(auth()->user()); @endphp
-<div class="page-heading"><div><span class="eyebrow">CRM</span><h1>{{ __('المهام وSLA') }}</h1><p class="muted">{{ __('مراقبة الأنشطة والالتزام بمهلة التواصل مع العملاء الجدد.') }}</p></div>
+<div class="page-heading"><div>@include('admin.page-icon',['name'=>'alert'])<span class="eyebrow">CRM</span><h1>{{ __('المهام وSLA') }}</h1><p class="muted">{{ __('مراقبة الأنشطة والالتزام بمهلة التواصل مع العملاء الجدد.') }}</p></div>
 <form class="inline-form" method="get"><input type="date" name="from" value="{{ $from }}"><span>→</span><input type="date" name="to" value="{{ $to }}">@if($manager)<select name="scope"><option value="team" @selected($scope==='team')>{{ __('الفريق') }}</option><option value="mine" @selected($scope==='mine')>{{ __('عملائي') }}</option></select><select name="assignee"><option value="">{{ __('كل المسؤولين') }}</option>@foreach($options['assignees'] as $id=>$name)<option value="{{ $id }}" @selected($assignee===(int)$id)>{{ $name }}</option>@endforeach</select>@endif<button class="button secondary">{{ __('تطبيق') }}</button></form></div>
 @include('admin.operating.crm-nav')
 <div class="kpi-grid">

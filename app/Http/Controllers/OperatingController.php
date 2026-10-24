@@ -58,10 +58,34 @@ class OperatingController extends Controller
         return $this->view('overview', ['groups' => $groups, 'counts' => $counts, 'alerts' => $alerts, 'decisions' => $decisions->sortByDesc('updated_at')->take(20), 'attendanceToday' => app(OperatingAttendance::class)->today($request->user())]);
     }
 
+    /**
+     * Search record titles across every entity type the user may open, scoped by the same access rules as the lists.
+     */
+    public function search(Request $request): Response
+    {
+        $term = mb_strtolower(trim((string) $request->query('q', '')));
+        $results = [];
+        if (mb_strlen($term) >= 2) {
+            $pattern = '%'.addcslashes($term, '%_\\').'%';
+            foreach ($this->catalog->entities() as $type => $entity) {
+                if (count($results) >= 20 || ! $this->access->can($request->user(), $type)) {
+                    continue;
+                }
+                $matches = $this->access->query($request->user(), $type)->whereRaw('lower(title) like ?', [$pattern])->latest('updated_at')->limit(min(5, 20 - count($results)))->get(['id', 'title']);
+                foreach ($matches as $record) {
+                    $results[] = ['title' => $record->title, 'type' => $this->catalog->label($entity['label']), 'url' => $type === 'opportunities' ? '/admin/operations/crm/leads/'.$record->id : '/admin/operations/record/'.$record->id];
+                }
+            }
+        }
+
+        return response()->json(['results' => $results]);
+    }
+
     public function listing(string $type, Request $request): Response
     {
         $entity = $this->catalog->entity($type);
         $query = $this->access->query($request->user(), $type);
+        $statusCounts = (clone $query)->select('status', DB::raw('count(*) as total'))->groupBy('status')->pluck('total', 'status')->map(fn ($total): int => (int) $total);
         if ($request->filled('q')) {
             $query->where('title', 'like', '%'.$request->string('q').'%');
         }
@@ -76,7 +100,7 @@ class OperatingController extends Controller
             return response()->json(['data' => $items->map(fn (object $record): array => $this->serialize($record, $request)), 'page' => $items->currentPage(), 'total' => $items->total()]);
         }
 
-        return $this->view('listing', ['type' => $type, 'entity' => $entity, 'items' => $items]);
+        return $this->view('listing', ['type' => $type, 'entity' => $entity, 'items' => $items, 'statusCounts' => $statusCounts]);
     }
 
     private function serialize(object $record, Request $request): array

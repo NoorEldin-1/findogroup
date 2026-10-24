@@ -1,7 +1,7 @@
 @extends('admin.layout')
 @section('title',__('التكاملات والمزامنة'))
 @section('content')
-<div class="page-heading"><div><h1>{{ __('التكاملات والمزامنة') }}</h1><p class="muted">{{ __('مصدر واحد لكل حقل، معرفات ثابتة، ومزامنة واضحة المصدر والتاريخ.') }}</p></div></div>
+<div class="page-heading"><div>@include('admin.page-icon',['name'=>'plug'])<h1>{{ __('التكاملات والمزامنة') }}</h1><p class="muted">{{ __('مصدر واحد لكل حقل، معرفات ثابتة، ومزامنة واضحة المصدر والتاريخ.') }}</p></div></div>
 <div class="stats-grid"><div class="stat"><span>Jira</span><strong class="smaller">{{ $jira?->status??__('غير متصل') }}</strong><small>{{ __('آخر نجاح') }}: {{ $jira?->last_success_at??'—' }}</small></div><div class="stat"><span>{{ __('النشر الاجتماعي') }}</span><strong class="smaller">{{ __('إدارة محلية') }}</strong><small>{{ __('لا يوجد اتصال نشر خارجي مهيأ') }}</small></div><div class="stat"><span>{{ __('منصات الإعلان') }}</span><strong class="smaller">{{ __('إدارة محلية') }}</strong><small>{{ __('الإنفاق والنتائج من أدلة مسجلة') }}</small></div><div class="stat"><span>Search Console</span><strong class="smaller">{{ __('فحص محلي') }}</strong><small>{{ __('فهرسة Google تحتاج تحققًا مستقلًا') }}</small></div></div>
 <div class="notice">{{ __('Jira يملك حالة ومسؤول وموعد مهام البرمجة. Findo يملك النطاق والموافقات والماليات والقبول. المزامنة قراءة فقط؛ لا كتابة خارجية.') }}</div>
 @if($jira?->last_error)<div class="notice error">{{ $jira->last_error }}</div>@endif

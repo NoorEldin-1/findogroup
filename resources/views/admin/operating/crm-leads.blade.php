@@ -2,7 +2,7 @@
 @section('title',__('العملاء المحتملون'))
 @section('content')
 @php $canWrite=$access->can(auth()->user(),'opportunities','write'); $q=request()->query(); @endphp
-<div class="page-heading"><div><span class="eyebrow">CRM</span><h1>{{ __('العملاء المحتملون') }}</h1><p class="muted">{{ __('إدارة ومتابعة جميع العملاء المحتملين') }}</p></div><div class="row-actions">@include('admin.head-stat',['value'=>$page->total(),'label'=>__('إجمالي العملاء')])
+<div class="page-heading"><div>@include('admin.page-icon',['name'=>'users'])<span class="eyebrow">CRM</span><h1>{{ __('العملاء المحتملون') }}</h1><p class="muted">{{ __('إدارة ومتابعة جميع العملاء المحتملين') }}</p></div><div class="row-actions">@include('admin.head-stat',['value'=>$page->total(),'label'=>__('إجمالي العملاء')])
 <details class="head-menu"><summary class="button secondary">@include('admin.icon',['name'=>'download']){{ __('تصدير Excel') }}</summary><div class="head-menu-panel"><small class="muted">{{ __('يُطبَّق على الفلاتر الحالية، حتى 5,000 صف، ويُسجَّل في سجل العمليات.') }}</small>
 <form method="post" action="/admin/operations/crm/leads/export" class="inline-form">@csrf @foreach($filters as $key=>$value)@if($value!==null && $value!=='')<input type="hidden" name="{{ $key }}" value="{{ $value }}">@endif @endforeach @foreach($columns as $column)<input type="hidden" name="columns[]" value="{{ $column }}">@endforeach
 <label class="checkbox"><input type="checkbox" name="mask_phones" value="1" checked> {{ __('إخفاء أرقام الهاتف (آخر 4 أرقام فقط)') }}</label><input name="reason" placeholder="{{ __('سبب التصدير (اختياري)') }}" maxlength="2000"><button class="button">{{ __('تنزيل Excel') }}</button></form></div></details>

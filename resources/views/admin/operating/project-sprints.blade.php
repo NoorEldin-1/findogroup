@@ -1,7 +1,7 @@
 @extends('admin.layout')
 @section('title',__('الباكلوج والسبرنتات'))
 @section('content')
-<div class="page-heading"><div><span class="eyebrow"><a href="/admin/operations/record/{{ $project->id }}">{{ $project->title }}</a></span><h1>{{ __('الباكلوج والسبرنتات') }}</h1><p class="muted">{{ __('خطط السبرنت من الباكلوج، وتابع تقدمه والمهام المتأخرة.') }}</p></div>@if($canPlan)<div class="row-actions"><a class="button secondary" href="/admin/operations/tasks/create?prefill[project_id]={{ $project->id }}">+ {{ __('مهمة جديدة') }}</a><a class="button" href="/admin/operations/sprints/create?prefill[project_id]={{ $project->id }}">+ {{ __('سبرنت جديد') }}</a></div>@endif</div>
+<div class="page-heading"><div>@include('admin.page-icon',['name'=>'tasks'])<span class="eyebrow"><a href="/admin/operations/record/{{ $project->id }}">{{ $project->title }}</a></span><h1>{{ __('الباكلوج والسبرنتات') }}</h1><p class="muted">{{ __('خطط السبرنت من الباكلوج، وتابع تقدمه والمهام المتأخرة.') }}</p></div>@if($canPlan)<div class="row-actions"><a class="button secondary" href="/admin/operations/tasks/create?prefill[project_id]={{ $project->id }}">+ {{ __('مهمة جديدة') }}</a><a class="button" href="/admin/operations/sprints/create?prefill[project_id]={{ $project->id }}">+ {{ __('سبرنت جديد') }}</a></div>@endif</div>
 
 @if($active)@php $sprintData=$catalog->data($active['sprint']); @endphp
 <section class="card"><h2><a href="/admin/operations/record/{{ $active['sprint']->id }}">{{ $active['sprint']->title }}</a> <span class="badge">{{ $catalog->status('active') }}</span></h2><p class="muted">{{ $sprintData['goal'] ?? '' }} · <span dir="ltr">{{ $sprintData['start_date'] }} → {{ $sprintData['end_date'] }}</span></p>

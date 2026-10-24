@@ -2,7 +2,7 @@
 @section('title',__('قمع المبيعات'))
 @section('content')
 @php $money=fn(array $sums)=>$sums?collect($sums)->map(fn($amount,$currency)=>number_format($amount).' '.$currency)->implode(' · '):'0'; $pct=fn($value)=>$value===null?'—':$value.'%'; $maxTrend=max([1, ...array_values($trend)]); $maxMonth=max([1, ...array_column($months,'count')]); @endphp
-<div class="page-heading"><div><span class="eyebrow">CRM</span><h1>{{ __('قمع المبيعات') }}</h1><p class="muted">{{ __('تحليل تحويل العملاء عبر المراحل للفترة المختارة.') }}</p></div>
+<div class="page-heading"><div>@include('admin.page-icon',['name'=>'filter'])<span class="eyebrow">CRM</span><h1>{{ __('قمع المبيعات') }}</h1><p class="muted">{{ __('تحليل تحويل العملاء عبر المراحل للفترة المختارة.') }}</p></div>
 <form class="inline-form" method="get"><input type="date" name="from" value="{{ $from }}"><span>→</span><input type="date" name="to" value="{{ $to }}">@if($crm->isManager(auth()->user()))<select name="scope"><option value="team" @selected($scope==='team')>{{ __('الفريق') }}</option><option value="mine" @selected($scope==='mine')>{{ __('عملائي') }}</option></select>@endif<button class="button secondary">{{ __('تطبيق') }}</button></form></div>
 @include('admin.operating.crm-nav')
 <div class="kpi-grid">

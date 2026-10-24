@@ -1,7 +1,7 @@
 @extends('admin.layout')
 @section('title',__('خط البيع'))
 @section('content')
-<div class="page-heading"><div><span class="eyebrow">{{ __('المبيعات') }}</span><h1>{{ __('خط البيع') }}</h1><p class="muted">{{ __('الفرص المفتوحة حسب المرحلة، مع القيمة المتوقعة والمتابعة القادمة.') }}</p></div><div class="row-actions"><a class="button secondary" href="/admin/operations/opportunities">{{ __('جدول الفرص') }}</a>@if($access->can(auth()->user(),'opportunities','write'))<a class="button" href="/admin/operations/opportunities/create">+ {{ __('فرصة جديدة') }}</a>@endif</div></div>
+<div class="page-heading"><div>@include('admin.page-icon',['name'=>'trend'])<span class="eyebrow">{{ __('المبيعات') }}</span><h1>{{ __('خط البيع') }}</h1><p class="muted">{{ __('الفرص المفتوحة حسب المرحلة، مع القيمة المتوقعة والمتابعة القادمة.') }}</p></div><div class="row-actions"><a class="button secondary" href="/admin/operations/opportunities">{{ __('جدول الفرص') }}</a>@if($access->can(auth()->user(),'opportunities','write'))<a class="button" href="/admin/operations/opportunities/create">+ {{ __('فرصة جديدة') }}</a>@endif</div></div>
 <section class="card"><div class="inline-stats">
 <span>{{ __('فرص مفتوحة') }}: <b>{{ $summary['open'] }}</b></span>
 <span>{{ __('الإيراد المتوقع المرجّح') }}: @forelse($summary['weighted'] as $currency=>$amount)<b dir="ltr">{{ number_format($amount,2) }} {{ $currency }}</b> @empty — @endforelse</span>

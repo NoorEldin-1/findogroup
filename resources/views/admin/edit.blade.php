@@ -1,7 +1,7 @@
 @extends('admin.layout')
 @section('title',__('تحرير المحتوى وSEO'))
 @section('content')
-<div class="page-heading"><div><a class="muted" href="/admin/contents">المحتوى / #{{ $content->id }}</a><h1>{{ Str::limit($translation->title,70) }}</h1></div><div class="row-actions"><a class="button secondary" href="/admin/content/{{ $content->id }}/preview?locale={{ $locale }}" target="_blank">{{ __('معاينة ↗') }}</a><a class="button secondary" href="/admin/content/{{ $content->id }}/design?locale={{ $locale }}">{{ __('تحرير الأقسام') }}</a></div></div>
+<div class="page-heading"><div>@include('admin.page-icon',['name'=>'pages'])<a class="muted" href="/admin/contents">المحتوى / #{{ $content->id }}</a><h1>{{ Str::limit($translation->title,70) }}</h1></div><div class="row-actions"><a class="button secondary" href="/admin/content/{{ $content->id }}/preview?locale={{ $locale }}" target="_blank">{{ __('معاينة ↗') }}</a><a class="button secondary" href="/admin/content/{{ $content->id }}/design?locale={{ $locale }}">{{ __('تحرير الأقسام') }}</a></div></div>
 <div class="tabs"><a class="{{ $locale==='ar'?'active':'' }}" href="?locale=ar">{{ __('العربية') }}</a><a class="{{ $locale==='en'?'active':'' }}" href="?locale=en">{{ __('English / بيانات البحث') }}</a></div>
 <form method="post" action="/admin/content/{{ $content->id }}" class="editor-form" data-unsaved>@csrf<input type="hidden" name="version" value="{{ $content->version }}"><input type="hidden" name="locale" value="{{ $locale }}"><div class="editor-grid"><div>
 <section class="card"><h2>{{ __('المحتوى') }}</h2><label>{{ __('العنوان') }}<input name="title" value="{{ old('title',$post?strip_tags($post['title']['rendered']):$translation->title) }}" required maxlength="500"></label>

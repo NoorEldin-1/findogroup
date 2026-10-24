@@ -1,7 +1,7 @@
 @extends('admin.layout')
 @section('title',__('إعدادات CRM'))
 @section('content')
-<div class="page-heading"><div><span class="eyebrow">CRM</span><h1>{{ __('إعدادات CRM') }}</h1><p class="muted">{{ __('مهلة التواصل مع العملاء الجدد، والتوزيع الدوري على فريق المبيعات. كل تغيير يُسجَّل بسببه في سجل العمليات.') }}</p></div></div>
+<div class="page-heading"><div>@include('admin.page-icon',['name'=>'settings'])<span class="eyebrow">CRM</span><h1>{{ __('إعدادات CRM') }}</h1><p class="muted">{{ __('مهلة التواصل مع العملاء الجدد، والتوزيع الدوري على فريق المبيعات. كل تغيير يُسجَّل بسببه في سجل العمليات.') }}</p></div></div>
 <form method="post" action="/admin/operations/crm/settings" class="card narrow">@csrf<input type="hidden" name="version" value="{{ $version }}">
 <h2>{{ __('مهلة التواصل (SLA)') }}</h2>
 <label class="checkbox"><input type="checkbox" name="sla_enabled" value="1" @checked($settings['sla_enabled'])> {{ __('تفعيل SLA') }}</label>

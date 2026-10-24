@@ -2,6 +2,7 @@
 
 return json_decode(<<<'JSON'
 {
+  "group_icons": {"governance": "scale", "delivery": "code", "quality": "shield", "marketing": "megaphone", "social": "message", "creative": "palette", "advertising": "target", "sales": "briefcase", "people": "users", "finance": "wallet", "procurement": "cart", "assets": "box", "support": "lifebuoy", "seo": "seo"},
   "groups": {
     "governance": {
       "label": {

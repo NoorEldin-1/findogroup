@@ -39,6 +39,7 @@ Route::middleware(AdminLocale::class)->group(function () {
         Route::post('/operations/record/{id}/restore', [O::class, 'restore'])->whereNumber('id');
         Route::post('/operations/record/{id}/comments', [O::class, 'comment'])->whereNumber('id');
         Route::post('/operations/record/{id}/attachments', [O::class, 'attach'])->whereNumber('id');
+        Route::get('/operations/search', [O::class, 'search']);
         Route::get('/operations/notifications', [N::class, 'index']);
         Route::post('/operations/notifications/read', [N::class, 'markRead']);
         Route::post('/operations/attendance/check-in', [T::class, 'checkIn'])->middleware('throttle:10,1');

@@ -2,7 +2,7 @@
 @section('title',__('لوحة الفريق'))
 @section('content')
 @php $money=fn(array $sums)=>$sums?collect($sums)->map(fn($amount,$currency)=>number_format($amount).' '.$currency)->implode(' · '):'0'; $pct=fn($value)=>$value===null?'—':$value.'%'; $stageMax=max([1, ...array_values($stages ?: [0])]); $qualityMax=max([1, ...array_values($quality)]); @endphp
-<div class="page-heading"><div><span class="eyebrow">CRM</span><h1>{{ __('لوحة الفريق') }}</h1><p class="muted">{{ __('أداء الفريق') }} · {{ __('العملاء الذين أُنشئوا في الفترة') }}</p></div>
+<div class="page-heading"><div>@include('admin.page-icon',['name'=>'users'])<span class="eyebrow">CRM</span><h1>{{ __('لوحة الفريق') }}</h1><p class="muted">{{ __('أداء الفريق') }} · {{ __('العملاء الذين أُنشئوا في الفترة') }}</p></div>
 <form class="inline-form" method="get"><input type="date" name="from" value="{{ $from }}"><span>→</span><input type="date" name="to" value="{{ $to }}"><button class="button secondary">{{ __('تطبيق') }}</button></form></div>
 @include('admin.operating.crm-nav')
 <section class="card"><h2>{{ __('العملاء لكل مسؤول') }}</h2><ul class="bar-list">@foreach($agents as $agent)<li><span>{{ $agent['name'] }}</span><i style="width:{{ round($agent['leads']/$max*100) }}%"></i><b>{{ $agent['leads'] }}</b></li>@endforeach</ul></section>

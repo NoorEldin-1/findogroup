@@ -1,7 +1,7 @@
 @extends('admin.layout')
 @section('title',__('سلة المحذوفات'))
 @section('content')
-<div class="page-heading"><div><span class="eyebrow">CRM</span><h1>{{ __('سلة المحذوفات') }}</h1><p class="muted">{{ __('السجلات المؤرشفة محفوظة هنا ويمكن استعادتها إلى حالتها السابقة. لا يوجد حذف نهائي في النظام.') }}</p></div></div>
+<div class="page-heading"><div>@include('admin.page-icon',['name'=>'box'])<span class="eyebrow">CRM</span><h1>{{ __('سلة المحذوفات') }}</h1><p class="muted">{{ __('السجلات المؤرشفة محفوظة هنا ويمكن استعادتها إلى حالتها السابقة. لا يوجد حذف نهائي في النظام.') }}</p></div></div>
 @include('admin.operating.crm-nav')
 <nav class="crm-tabs"><a href="/admin/operations/crm/trash" class="{{ $type?'':'active' }}">{{ __('الكل') }} <b>{{ $counts->sum() }}</b></a>@foreach($types as $key)<a href="?type={{ $key }}" class="{{ $type===$key?'active':'' }}">{{ $catalog->label($catalog->entity($key)['label']) }} <b>{{ $counts[$key] ?? 0 }}</b></a>@endforeach</nav>
 <section class="card table-card crm-table-wrap"><table><thead><tr><th>{{ __('النوع') }}</th><th>{{ __('الاسم') }}</th><th>{{ __('حُذف بواسطة') }}</th><th>{{ __('تاريخ الحذف') }}</th><th>{{ __('السبب') }}</th><th>{{ __('الإجراءات') }}</th></tr></thead><tbody>

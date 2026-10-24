@@ -1,7 +1,7 @@
 @extends('admin.layout')
 @section('title',__('ربط الأعمدة'))
 @section('content')
-<div class="page-heading"><div><span class="eyebrow">CRM · {{ $file }}</span><h1>{{ __('ربط الأعمدة والمعاينة') }}</h1><p class="muted">{{ $preview['total'] }} {{ __('صف') }} · {{ $preview['duplicates'] }} {{ __('مكرر سيتم تخطيه') }}</p></div></div>
+<div class="page-heading"><div>@include('admin.page-icon',['name'=>'download'])<span class="eyebrow">CRM · {{ $file }}</span><h1>{{ __('ربط الأعمدة والمعاينة') }}</h1><p class="muted">{{ $preview['total'] }} {{ __('صف') }} · {{ $preview['duplicates'] }} {{ __('مكرر سيتم تخطيه') }}</p></div></div>
 <ol class="stepper"><li class="done">{{ __('رفع الملف') }}</li><li class="current">{{ __('ربط الأعمدة') }}</li><li class="current">{{ __('معاينة') }}</li><li>{{ __('اكتمل') }}</li></ol>
 <form method="get" class="card" id="import-form"><h2>{{ __('ربط الأعمدة') }}</h2><div class="field-grid">@foreach($header as $index=>$title)<label>{{ $title ?: __('عمود').' '.($index+1) }}<select name="map[{{ $index }}]"><option value="">{{ __('تجاهل هذا العمود') }}</option>@foreach($fields as $key=>$label)<option value="{{ $key }}" @selected(($mapping[$index] ?? null)===$key)>{{ __($label) }}</option>@endforeach</select></label>@endforeach</div>
 <h2>{{ __('إعدادات التوزيع') }}</h2><div class="field-grid">
