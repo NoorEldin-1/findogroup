@@ -141,7 +141,10 @@ class OperatingAccess
         return DB::table('operating_records')->where('type', 'delegations')->where('status', 'active')->where('data->user_id', $user->id)->where('data->entity_type', $type)->where('data->action', 'approve')->where('data->starts_at', '<=', today()->toDateString())->where('data->expires_at', '>=', today()->toDateString())->first();
     }
 
-    public function query(User $user, string $type): Builder
+    /**
+     * Records of a type the user may see; a lead shared with a sales rep is included for reading only.
+     */
+    public function query(User $user, string $type, string $action = 'read'): Builder
     {
         abort_unless($this->can($user, $type), 403);
         $query = DB::table('operating_records')->where('type', $type);
@@ -175,12 +178,15 @@ class OperatingAccess
         }
         $salesScoped = $user->role === 'sales' && in_array($type, self::SALES_SCOPED, true);
         if ($salesScoped || (($entity['assigned'] ?? false) && ! in_array($user->role, ['delivery', 'tech_lead', 'marketing', 'sales', 'sales_manager', 'finance'], true))) {
-            return $query->where(function (Builder $scope) use ($user, $employeeId): void {
+            return $query->where(function (Builder $scope) use ($user, $employeeId, $type, $action): void {
                 $scope->where('owner_id', $user->id);
                 if ($employeeId) {
                     foreach (['assignee_id', 'reviewer_id', 'tester_id'] as $field) {
                         $scope->orWhere('data->'.$field, $employeeId);
                     }
+                }
+                if ($type === 'opportunities' && $action === 'read') {
+                    $scope->orWhereIn('id', DB::table('crm_lead_relations')->where('user_id', $user->id)->where('relation', OperatingLeadRelations::SHARED)->select('lead_id'));
                 }
             });
         }
@@ -209,7 +215,7 @@ class OperatingAccess
     {
         $record = DB::table('operating_records')->find($id);
         abort_unless($record, 404);
-        abort_unless($this->can($user, $record->type, $action) && $this->query($user, $record->type)->where('id', $id)->exists(), 403);
+        abort_unless($this->can($user, $record->type, $action) && $this->query($user, $record->type, $action)->where('id', $id)->exists(), 403);
 
         return $record;
     }
