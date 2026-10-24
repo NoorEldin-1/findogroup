@@ -1243,5 +1243,12 @@
   "تمت مشاركة العميل.": "Lead shared.",
   "تم إلغاء المشاركة.": "Sharing removed.",
   "أنت تتابع هذا العميل الآن.": "You're following this lead.",
-  "تم إلغاء المتابعة.": "Unfollowed."
+  "تم إلغاء المتابعة.": "Unfollowed.",
+  "الليدز": "Leads",
+  "مشترك معي": "Shared with me",
+  "لا يوجد عملاء مشتركون معك.": "No leads are shared with you.",
+  "أنت لا تتابع أي عميل بعد.": "You aren't following any leads yet.",
+  "هذا الشهر": "This month",
+  "لا توجد مهام لليوم": "No tasks for today",
+  "كل شيء تحت السيطرة ✨": "You're all caught up ✨"
 }

@@ -3,6 +3,7 @@
 namespace Tests\Feature\Operating;
 
 use App\Services\OperatingCrmReports;
+use App\Services\OperatingLeadRelations;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\Concerns\BuildsOperatingRecords;
@@ -73,5 +74,51 @@ class CrmDashboardTest extends TestCase
         $this->actingAs($rep)->get('/admin/operations/crm')->assertOk()->assertSee(__('الإيراد المحتمل'))->assertSee(__('تحويل التواصل للاجتماع'))->assertSee('2026-10-01');
         $this->actingAs($rep)->get('/admin/operations/crm?from=2026-10-10&to=2026-10-01')->assertSessionHasErrors('to');
         $this->actingAs($this->operatingUser('designer'))->get('/admin/operations/crm')->assertForbidden();
+    }
+
+    public function test_the_shared_and_following_tabs_list_their_leads_with_empty_states(): void
+    {
+        $this->travelTo('2026-10-20 12:00:00');
+        $owner = $this->operatingUser('sales');
+        $this->employeeFor($owner);
+        $rep = $this->operatingUser('sales');
+        $this->employeeFor($rep);
+        $lead = DB::table('operating_records')->find($this->lead('new', [], '2026-10-02 10:00:00', $owner->id));
+        $relations = app(OperatingLeadRelations::class);
+
+        $this->actingAs($rep)->get('/admin/operations/crm?tab=shared')->assertOk()->assertSee(__('لا يوجد عملاء مشتركون معك.'));
+        $relations->share($owner, $lead, $rep->id);
+        $relations->toggleFollow($rep, $lead);
+
+        $dashboard = app(OperatingCrmReports::class)->dashboard($rep, '2026-10-01', '2026-10-31', 'mine');
+        $this->assertSame([$lead->id], array_column($dashboard['shared'], 'id'));
+        $this->assertSame([$lead->id], array_column($dashboard['following'], 'id'));
+        $this->assertSame(['leads' => 0, 'shared' => 1, 'following' => 1], $dashboard['tabCounts']);
+        $this->actingAs($rep)->get('/admin/operations/crm?tab=following')->assertOk()->assertSee($lead->title);
+        $this->actingAs($rep)->get('/admin/operations/crm/leads?relation=shared')->assertOk()->assertSee($lead->title);
+        $this->actingAs($rep)->get('/admin/operations/crm?tab=bogus')->assertSessionHasErrors('tab');
+    }
+
+    public function test_the_my_clients_button_toggles_the_manager_scope_and_links_reps_to_their_leads(): void
+    {
+        $this->travelTo('2026-10-20 12:00:00');
+        $manager = $this->operatingUser('sales_manager');
+        $rep = $this->operatingUser('sales');
+        $this->employeeFor($rep);
+
+        $this->actingAs($manager)->get('/admin/operations/crm')->assertOk()->assertSee('scope=mine', false);
+        $this->actingAs($manager)->get('/admin/operations/crm?scope=mine')->assertOk()->assertSee('scope=team', false);
+        $this->actingAs($rep)->get('/admin/operations/crm')->assertOk()->assertSee('class="hero-button" href="/admin/operations/crm/leads"', false)->assertDontSee('scope=mine', false);
+    }
+
+    public function test_todays_tasks_show_kind_and_overdue_status(): void
+    {
+        $this->travelTo('2026-10-20 12:00:00');
+        $rep = $this->operatingUser('sales');
+        $employee = $this->employeeFor($rep);
+        $this->operatingRecord('activities', 'planned', ['kind' => 'call', 'assignee_id' => $employee, 'due_at' => '2026-10-20T09:00'], 'Morning call');
+        $this->operatingRecord('activities', 'planned', ['kind' => 'meeting', 'assignee_id' => $employee, 'due_at' => '2026-10-20T15:00'], 'Afternoon meeting');
+
+        $this->actingAs($rep)->get('/admin/operations/crm')->assertOk()->assertSeeInOrder(['Morning call', __('متأخرة'), '09:00', 'Afternoon meeting', __('اليوم'), '15:00']);
     }
 }
