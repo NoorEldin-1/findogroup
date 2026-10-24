@@ -112,3 +112,7 @@ dl.crm-facts dd{margin:0}
 .section-heading h2{display:flex;align-items:center;gap:.5rem}
 .section-heading .heading-icon,h2 .heading-icon{width:1.15rem;height:1.15rem;flex:none;margin:0;color:var(--admin-accent)}
 @media (max-width:640px){.crm-hero{padding:1rem;border-radius:18px}.crm-hero-actions,.date-pill{width:100%}.date-pill input[type=date]{flex:1 1 7.5rem}.hero-button{justify-content:center;width:100%}}
+.admin-main .card,.admin-main .notice,.admin-main .page-heading{min-width:0;overflow-wrap:anywhere}
+.admin-main .card td,.admin-main .card th{max-width:28rem;word-break:break-word}
+.admin-main .card pre{white-space:pre-wrap}
+.crm-grid>div,.dashboard-grid>*,.operating-editor>*{min-width:0}
